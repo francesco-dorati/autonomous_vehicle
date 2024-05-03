@@ -3,9 +3,9 @@
 <package format="3">
   <name>autonomous_vehicle</name>
   <version>0.0.0</version>
-  <description></description>
+  <description>Description</description>
   <maintainer email="fd.francescodorati@egmail.com">Francesco Dorati</maintainer>
-  <license></license>
+  <license>License</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
