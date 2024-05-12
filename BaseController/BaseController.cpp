@@ -4,10 +4,10 @@ BaseController::BaseController(
     int mr_pwm, int mr_in1, int mr_in2, int mr_enc_a, int mr_enc_b,
     int ml_pwm, int ml_in1, int ml_in2, int ml_enc_a, int ml_enc_b,
     int s1_trig, int s1_echo,
-    float wheel_radius, float wheel_distance
+    float wheel_radius, float wheel_distance, float counts_per_rev
 ) {
-    _motor_right = MotorController(mr_pwm, mr_in1, mr_in2, mr_enc_a, mr_enc_b);
-    _motor_left = MotorController(ml_pwm, ml_in1, ml_in2, ml_enc_a, ml_enc_b);
+    _motor_right = MotorController(mr_pwm, mr_in1, mr_in2, mr_enc_a, mr_enc_b, counts_per_rev);
+    _motor_left = MotorController(ml_pwm, ml_in1, ml_in2, ml_enc_a, ml_enc_b, counts_per_rev);
     _sensor1 = DistanceSensor(s1_trig, s1_echo);
     _wheel_radius = wheel_radius;
     _wheel_distance = wheel_distance;

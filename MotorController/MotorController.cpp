@@ -14,41 +14,31 @@ MotorController::MotorController(int enable_pin, int in1_pin, int in2_pin, int e
   pinMode(_enc_a_pin, INPUT);
   pinMode(_enc_b_pin, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(enc_b), readEncoder, RISING);
+  attachInterrupt(digitalPinToInterrupt(_enc_b_pin), _read_encoder, RISING);
 }
 
-float MotorController::updateVelocity(float goal_rps) {
+float MotorController::updateVelocity(float goal_rpm) {
   // goal_rps in round/s
   // return current_rps in round/s
 
   int power;
-  float rps_error;
-  float proportional, integral;
-  
-  if (_encoder_prev_counts == 0) { // first iteration
-    _current_rps = 0;
-    _encoder_prev_time = millis();
+  float error_rpm;
+  int delta_counts;
+  unsigned long delta_t_ms;
 
-  } else { // update current rps
-    // calculate delta values
-    int delta_counts = _encoder_counts - _encoder_prev_counts;
-    unsigned long delta_t = millis() - _encoder_prev_time;
-
-    // calculate current speed
-    _current_rps = delta_counts / (delta_t*_counts_per_rev);
-
-    // update values for next iteration
-    _encoder_prev_counts = _encoder_counts;
-    _encoder_prev_time = millis();
-  }
+  // update speed
+  delta_counts = _encoder_counts - _encoder_prev_counts;
+  delta_t_ms = millis() - _encoder_prev_time_ms;
+  _encoder_prev_counts = _encoder_counts;
+  _encoder_prev_time_ms = millis();
+  _current_rpm = (delta_counts*60000) / (delta_t_ms*_counts_per_rev); 
   
   // calculate error
-  rps_error = goal_rps - _current_rps;
+  error_rpm = goal_rpm - _current_rpm;
 
   // PID
-  proportional = _kp*rps_error;
-  integral = _ki*rps_error*delta_t;
-  power = proportional + integral;
+  _error_integral = _error_integral + error_rpm*delta_t_ms;
+  power = _kp*error_rpm + _ki*_error_integral;
 
   // saturation
   if (power > 255) power = 255;
@@ -56,7 +46,7 @@ float MotorController::updateVelocity(float goal_rps) {
 
   _set_motor_power(power);
 
-  return _current_rps;
+  return _current_rpm;
 }
 
 void MotorController::_set_motor_power(int power) {
@@ -76,7 +66,7 @@ void MotorController::_set_motor_power(int power) {
 }
 
 void MotorController::_read_encoder() {
-  if (digitalRead(enc_a) > 0) {
+  if (digitalRead(_enc_a_pin) > 0) {
     pos--;
   } else {
     pos++;
