@@ -3,7 +3,7 @@ import time
 import keyboard
 from enum import Enum
 
-serial_port = '/dev/cu.usbserial-110'
+serial_port = '/dev/cu.usbserial-10'
 baud_rate = 9600
 
 MANUAL_FREQ = 5
@@ -28,19 +28,20 @@ def main():
             command = input("AUTO> ").split()
             if command[0] == "exit":
                 mode = 0
+                s.write("exit\n".encode())
                 continue
 
-            elif command[0] == "mv":
+            elif command[0] == "mv" or command[0] == "m":
                 try:
                     dist_cm = int(command[1])
-                    s.write(f"mv {dist_cm}\n".encode())
+                    s.write(f"m {dist_cm}\n".encode())
                 finally:
                     continue
   
-            elif command[0] == "rot":
+            elif command[0] == "rot" or command[0] == "r":
                 try:
                     angle_deg = int(command[1])
-                    s.write(f"rot {angle_deg}\n".encode())
+                    s.write(f"r {angle_deg}\n".encode())
                 finally:
                     continue
             else: 
@@ -49,10 +50,12 @@ def main():
 
         elif mode == Mode.MANUAL: # MANUAL MODE
             while True:
+                t_start = time.time()
                 kbd_buffer = []
                 # keyboard reading
                 if keyboard.is_pressed("esc") or keyboard.is_pressed("space"):
                     mode = 0
+                    s.write("exit\n".encode())
                     break
                 if keyboard.is_pressed("w"):
                     kbd_buffer.append("f") # forward
@@ -74,7 +77,8 @@ def main():
                 command = "".join(kbd_buffer)
                 s.write(f"{command}\n".encode())
 
-                
+                time.sleep(1/MANUAL_FREQ - (time.time() - t_start))
+
 
 def mode_menu():
     print("Mode: ")
@@ -93,40 +97,6 @@ def mode_menu():
             continue
 
 
-def manual_controller():
-    while True:
-        input_data = input("")
-        try:
-            lin_vel, ang_vel = map(int, input_data.split(" "))
-        except:
-            print("Invalid input")
-
-        s.write(f"{lin_vel} {ang_vel}\n".encode())
-# while True:
-#     input_data = input("Enter data: ")
-#     try:
-#         lin_vel, ang_vel = map(int, input_data.split(" "))
-#     except:
-#         print("Invalid input")
-
-#     s.write(f"{lin_vel} {ang_vel}\n".encode())
-s.write(f"0 0\n".encode())
-print("Starting...")
-time.sleep(5)
-s.write(f"3 0\n".encode())
-print("Sent 3 0")
-time.sleep(5)
-s.write(f"0 10\n".encode())
-print("Sent 0 10")
-time.sleep(5)
-s.write(f"0 -10\n".encode())
-print("Sent 0 -10")
-time.sleep(5)
-s.write(f"-3 0\n".encode())
-print("Sent -3 0")
-time.sleep(5)
-s.write(f"0 0\n".encode())
-print("END")
     
 if __name__ == "__main__":
     main()

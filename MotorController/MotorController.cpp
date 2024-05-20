@@ -18,7 +18,7 @@ MotorController::MotorController(
   pinMode(_in2_pin, OUTPUT);
 }
 
-float MotorController::velocity(float goal_rpm) {
+float MotorController::set_velocity(float goal_rpm) {
   if (goal_rpm < 50 && goal_rpm > -50) {
     _set_motor_power(0);
     return 0;

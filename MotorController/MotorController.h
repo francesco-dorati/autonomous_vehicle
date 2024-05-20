@@ -13,7 +13,7 @@ class MotorController {
       int counts_per_rev, bool reverse = false
     );
 
-    float velocity(float goal_rpm);
+    float set_velocity(float goal_rpm);
 
   private:
       Encoder _encoder;
