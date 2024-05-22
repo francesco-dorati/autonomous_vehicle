@@ -3,43 +3,61 @@ import time
 import keyboard
 from enum import Enum
 
-serial_port = '/dev/ttyAMA0'
+serial_port = '/dev/ttyUSB0'
 baud_rate = 9600
 
+SOCKET_PORT = 5500
 MANUAL_FREQ = 5
 
+
 class Mode(Enum):
+    NULL = 0
     AUTO = 1
     MANUAL = 2
 
+class SocketServer:
+    def __init__(port):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        hostname = socket.gethostname()
+        self.socket.bind((hostname, port))
+        server_socket.listen(1)
+        print(f"Server listening on {hostname}:{port}")
+    
+    def listen():
+        while True:
+            client_socket, addr = server_socket.accept()
+            print("Established a connection with", addr)
+
 def main():
     print("Starting serial...")
-
     s = serial.Serial(serial_port, baud_rate, timeout=0)
     time.sleep(2)
-    print("Connected.\n")
 
-    if s.isOpen():
-        print("Serial port is open")
+    if not s.isOpen():
+        print("Serial port is closed. Exiting..")
+        exit(1)
     else:
-        print("Serial port is not open")
+        print("Successfully connected.")
+      
     
     mode = 0
     while True:
         if mode == 0: # CHANGE MODE
             
             mode = mode_menu()
-            print(mode.name)
-            s.flush()
-            s.write(f"{mode.name}\n".encode())
+
+            s.flushInput()
+            s.write(f"{mode.name}\n".encode("utf-8"))
             # response = ser.readline().decode().strip()  # Read response from Arduino
             # print("Response from Arduino:", response)
-            print("sent")
             continue
 
         if mode == Mode.AUTO: # AUTO MODE
             command = input("AUTO> ").split()
-            if command[0] == "exit":
+            if len(command) == 0:
+                continue
+
+            elif command[0] == "exit":
                 mode = 0
                 s.write("exit\n".encode())
                 continue
@@ -61,42 +79,48 @@ def main():
                 continue
             
 
-        elif mode == MANUAL: # MANUAL MODE
+        elif mode == Mode.MANUAL: # MANUAL MODE
             print("MANUAL MODE")
             while True:
                 t_start = time.time()
                 kbd_buffer = []
                 # keyboard reading
-                if keyboard.is_pressed("esc") or keyboard.is_pressed("space"):
-                    mode = 0
-                    s.write("exit\n".encode())
-                    break
+                keyboard.wait('a')
+                print('space')
+                # if keyboard.is_pressed('^[') or keyboard.is_pressed("space"):
+                #     mode = 0
+                #     s.write("exit\n".encode())
+                #     break
 
-                if keyboard.is_pressed("w"):
-                    kbd_buffer.append("f") # forward
-                if keyboard.is_pressed("s"):
-                    kbd_buffer.append("b") # backward
-                if keyboard.is_pressed("a"):
-                    kbd_buffer.append("l") # left
-                if keyboard.is_pressed("d"):
-                    kbd_buffer.append("r") # right
+                # if keyboard.is_pressed('w'):
+                #     kbd_buffer.append("f") # forward
+                # if keyboard.is_pressed("s"):
+                #     kbd_buffer.append("b") # backward
+                # if keyboard.is_pressed("a"):
+                #     kbd_buffer.append("l") # left
+                # if keyboard.is_pressed("d"):
+                #     kbd_buffer.append("r") # right
                 
-                # buffer processing
-                if "f" in kbd_buffer and "b" in kbd_buffer:
-                    kbd_buffer.remove("f")
-                    kbd_buffer.remove("b")
-                if "l" in kbd_buffer and "r" in kbd_buffer:
-                    kbd_buffer.remove("l")
-                    kbd_buffer.remove("r")
+                # # buffer processing
+                # if "f" in kbd_buffer and "b" in kbd_buffer:
+                #     kbd_buffer.remove("f")
+                #     kbd_buffer.remove("b")
+                # if "l" in kbd_buffer and "r" in kbd_buffer:
+                #     kbd_buffer.remove("l")
+                #     kbd_buffer.remove("r")
                 
-                command = "".join(kbd_buffer)
-                s.write(f"{command}\n".encode())
+                # command = "".join(kbd_buffer)
+                # print(kbd_buffer)
+                # s.write(f"{command}\n".encode())
 
-                time.sleep(1/MANUAL_FREQ - (time.time() - t_start))
+                # dt = time.time() - t_start
+                # if dt < (1/MANUAL_FREQ):
+                #     time.sleep((1/MANUAL_FREQ) - dt) 
 
 
 def mode_menu():
-    print("Mode: ")
+    print("\n\nROBOT CONTROLLER\n")
+    print("Select a mode: ")
     for m in Mode:
         print(f"{m.value}. {m.name}")
     print("0. Exit")
@@ -107,7 +131,6 @@ def mode_menu():
         if mode == "0":
             exit()
         try:
-            print(Mode(int(mode)))
             return Mode(int(mode))
         except ValueError:
             continue

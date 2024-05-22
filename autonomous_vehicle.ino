@@ -105,7 +105,7 @@ void loop() {
         }
 
         // read buffer
-        for (int i = 0; i < s.length(); i++) {
+        for (unsigned int i = 0; i < s.length(); i++) {
             if (s[i] == 'f') 
                 goal_vel.x_velocity += 15;
             else if (s[i] == 'b') 
