@@ -4,7 +4,7 @@ MotorController::MotorController(
   uint8_t enable_pin, 
   uint8_t in1_pin, uint8_t in2_pin, 
   uint8_t enc_a_pin, uint8_t enc_b_pin, 
-  int counts_per_rev, bool reverse = false
+  int counts_per_rev, bool reverse
 ):
   _enable_pin(enable_pin), 
   _in1_pin(in1_pin), 

@@ -66,8 +66,7 @@ void loop() {
         Serial.println("IDLE");
         while(!Serial.available()) delay(10); // wait for serial
 
-
-        String s = Serial.readStringUntil("\n");
+        String s = Serial.readStringUntil('\n');
         if (s == "AUTO") mode = AUTO;
         else if (s == "MANUAL") mode = MANUAL;
     }
@@ -76,7 +75,7 @@ void loop() {
         Serial.println("AUTO");
         while(!Serial.available()) delay(10); // wait for serial
 
-        String s = Serial.readStringUntil("\n");
+        String s = Serial.readStringUntil('\n');
         if (s == "exit") {
             mode = IDLE;
             return;
@@ -99,7 +98,7 @@ void loop() {
         while(!Serial.available()) delay(5); // wait for serial
         state_vel goal_vel;
 
-        String s = Serial.readStringUntil("\n");
+        String s = Serial.readStringUntil('\n');
         if (s == "exit") {
             mode = IDLE;
             return;

@@ -3,7 +3,7 @@ import time
 import keyboard
 from enum import Enum
 
-serial_port = '/dev/cu.usbserial-10'
+serial_port = '/dev/ttyAMA0'
 baud_rate = 9600
 
 MANUAL_FREQ = 5
@@ -14,14 +14,27 @@ class Mode(Enum):
 
 def main():
     print("Starting serial...")
-    s = serial.Serial(serial_port, baud_rate)
+
+    s = serial.Serial(serial_port, baud_rate, timeout=0)
+    time.sleep(2)
     print("Connected.\n")
+
+    if s.isOpen():
+        print("Serial port is open")
+    else:
+        print("Serial port is not open")
     
     mode = 0
     while True:
         if mode == 0: # CHANGE MODE
+            
             mode = mode_menu()
+            print(mode.name)
+            s.flush()
             s.write(f"{mode.name}\n".encode())
+            # response = ser.readline().decode().strip()  # Read response from Arduino
+            # print("Response from Arduino:", response)
+            print("sent")
             continue
 
         if mode == Mode.AUTO: # AUTO MODE
@@ -48,7 +61,8 @@ def main():
                 continue
             
 
-        elif mode == Mode.MANUAL: # MANUAL MODE
+        elif mode == MANUAL: # MANUAL MODE
+            print("MANUAL MODE")
             while True:
                 t_start = time.time()
                 kbd_buffer = []
@@ -57,6 +71,7 @@ def main():
                     mode = 0
                     s.write("exit\n".encode())
                     break
+
                 if keyboard.is_pressed("w"):
                     kbd_buffer.append("f") # forward
                 if keyboard.is_pressed("s"):
@@ -92,6 +107,7 @@ def mode_menu():
         if mode == "0":
             exit()
         try:
+            print(Mode(int(mode)))
             return Mode(int(mode))
         except ValueError:
             continue
