@@ -13,7 +13,10 @@
 #define COUNTS_PER_REV 1500
 #define WHEEL_RADIUS 3.4 // cm
 #define WHEEL_DISTANCE_FROM_CENTER 24 // cm
-#define CONTROLLER_FREQ 50 // Hz
+#define CONTROLLER_FREQ 100 // Hz
+#define CONTROLLER_UPDATE_TIME (1000/CONTROLLER_FREQ)
+#define SERIAL_RATE 50  // Hz
+#define SERIAL_UPDATE_TIME (1000/SERIAL_RATE)
 
 
 #include "Arduino.h"
@@ -21,14 +24,6 @@
 #include "MotorController.h"
 
 
-MotorController motor_left(PWM_ML, IN1_ML, IN2_ML, ENCA_ML, ENCB_ML, COUNTS_PER_REV, true);
-MotorController motor_right(PWM_MR, IN1_MR, IN2_MR, ENCA_MR, ENCB_MR, COUNTS_PER_REV, false);
-
-enum Mode {
-    IDLE,
-    AUTO,
-    MANUAL
-};
 
 
 struct state {
@@ -40,11 +35,10 @@ struct state {
 };
 
 struct state_vel {
-    float x_velocity;    // cm/s
-    float y_velocity;    // cm/s
-    float theta_velocity;  // degrees/s
-    state_vel(): x_velocity(0), y_velocity(0), theta_velocity(0) {};
-    state_vel(float x, float y, float t): x_velocity(x), y_velocity(y), theta_velocity(t) {};
+    float vx;    // cm/s
+    float va;  // degrees/s
+    state_vel(): vx(0), va(0) {};
+    state_vel(float x, float t): vx(x), va(t) {};
 };
 
 struct wheels_vel {
@@ -54,74 +48,76 @@ struct wheels_vel {
     wheels_vel(float l, float r): left(l), right(r) {};
 };
 
-Mode mode = IDLE;
+MotorController motor_left(PWM_ML, IN1_ML, IN2_ML, ENCA_ML, ENCB_ML, COUNTS_PER_REV, true);
+MotorController motor_right(PWM_MR, IN1_MR, IN2_MR, ENCA_MR, ENCB_MR, COUNTS_PER_REV, false);
+
+unsigned long previous_millis_controller = 0; 
+unsigned long previous_millis_serial = 0; 
+
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
+    Serial.println("OK");
 }
 
 
+state_vel goal_velocity;
+bool serial_ok = true;
 void loop() {
+    unsigned long t_start = millis()
+
+    if (serial_ok && Serial.available() > 0) {
+        String s = Serial.readStringUntil("\n");
+        float vx, va;
+        sscanf(s.c_str(), "%f %f", &vx, &va);
+        goal_velocity = state_vel(vx, va);
+    }
+    serial_ok = !serial_ok;
+
+    wheels_vel w_vel = inverse_kinematics(goal_velocity);
+    motor_left.set_velocity(w_vel.left)
+    motor_right.set_velocity(w_vel.right)
+
+    // update change in position
+    
+
+
+
+    unsigned long current_millis = millis();
+
+    if (current_millis - previous_millis_controller >= CONTROLLER_UPDATE_TIME) {
+        previous_millis_controller = current_millis;
+        
+        // PID control
+        motor_left.
+
+        // control
+    }
+
+    if (current_millis - previous_millis_serial >= SERIAL_UPDATE_TIME) {
+        previous_millis_serial = current_millis;
+
+        // send previous state
+        
+        // update goal velocity
+        if (Serial.available() > 0) {
+            String s = Serial.readStringUntil("\n");
+            float vx, va;
+            sscanf(s.c_str(), "%f %f", &vx, &va);
+            goal_velocity = state_vel(vx, va);
+        }
+
+    }
+
+
     // Serial.println(mode);
-    if (mode == IDLE) {
-        Serial.println("IDLE");
-        while(!Serial.available()) delay(10); // wait for serial
-
-        String s = Serial.readStringUntil('\n');
-        if (s == "AUTO") mode = AUTO;
-        else if (s == "MANUAL") mode = MANUAL;
+    if (Serial.available() > 0) {
+        state goal(x, y, t);
+        state_vel goal_vel(x, y, t);
+        wheels_vel wheels = inverse_kinematics(goal_vel);
+        motor_left.velocity(wheels.left);
+        motor_right.velocity(wheels.right);
     }
 
-    if (mode == AUTO) {
-        Serial.println("AUTO");
-        while(!Serial.available()) delay(10); // wait for serial
-
-        String s = Serial.readStringUntil('\n');
-        if (s == "exit") {
-            mode = IDLE;
-            return;
-        }
-
-        char action;
-        int dist;
-        sscanf(s.c_str(), "%c %d", &action, &dist);
-
-        if (action == 'm') {
-            // while inside
-        } else if (action == 'r') {
-            // while inside
-        }
-        
-    }
-
-    if  (mode == MANUAL) {
-        Serial.println("MANUAL");
-        while(!Serial.available()) delay(5); // wait for serial
-        state_vel goal_vel;
-
-        String s = Serial.readStringUntil('\n');
-        if (s == "exit") {
-            mode = IDLE;
-            return;
-        }
-
-        // read buffer
-        for (unsigned int i = 0; i < s.length(); i++) {
-            if (s[i] == 'f') 
-                goal_vel.x_velocity += 15;
-            else if (s[i] == 'b') 
-                goal_vel.x_velocity -= 15;
-            else if (s[i] == 'l')
-                goal_vel.theta_velocity += 35;
-            else if (s[i] == 'r') 
-                goal_vel.theta_velocity -= 35;
-        }
-
-        // give motor velocity
-        wheels_vel goal_wheels = inverse_kinematics(goal_vel);
-        motor_left.set_velocity(goal_wheels.left);
-        motor_right.set_velocity(goal_wheels.right);
-        
-    }
 }
 
  wheels_vel inverse_kinematics(state_vel goal_vel) {

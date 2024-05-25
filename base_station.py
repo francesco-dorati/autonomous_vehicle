@@ -27,26 +27,26 @@ class RemoteConsole:
 
         self.mode = Mode.NULL
 
-    def start():
+    def start(self):
         while True:
             if mode == Mode.NULL:
-                mode = _mode_menu()
+                mode = self._mode_menu()
                 self.socket.send(mode.name.encode("utf-8"))
                 continue
 
             elif mode == Mode.AUTO:
-                _autonomous_console()
+                self._autonomous_console()
                 self.mode = Mode.NULL
                 self.socket.send("EXIT".encode())
                 continue
 
             elif mode == Mode.MANUAL:
-                _manual_console()
+                self._manual_console()
                 self.mode = Mode.NULL
                 self.socket.send("EXIT".encode())
                 continue
     
-    def _mode_menu():
+    def _mode_menu(self):
         print("\n\nROBOT CONTROLLER\n")
         print("Select a mode: ")
         for m in Mode:
@@ -64,7 +64,7 @@ class RemoteConsole:
             except ValueError:
                 continue
 
-    def _autonomous_console():
+    def _autonomous_console(self):
         print("\nAUTONOMOUS CONSOLE\n")
         while True:
             command = input("AUTO> ").split()
@@ -96,7 +96,7 @@ class RemoteConsole:
             else: 
                 continue
 
-    def _manual_console():
+    def _manual_console(self):
         print("\nMANUAL CONSOLE\n")
         while True:
             start_time = time.time()
@@ -135,11 +135,8 @@ class RemoteConsole:
 
 
 def main():
-
     r = RemoteConsole()
     r.start()
-
-
     
 if __name__ == "__main__":
     main()

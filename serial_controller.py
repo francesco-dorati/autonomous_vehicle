@@ -1,10 +1,11 @@
 import serial
+import socket
 import time
 import keyboard
 from enum import Enum
 
-serial_port = '/dev/ttyUSB0'
-baud_rate = 9600
+SERIAL_PORT = '/dev/ttyUSB0'
+SERIAL_RATE = 9600
 
 SOCKET_PORT = 5500
 MANUAL_FREQ = 5
@@ -16,28 +17,51 @@ class Mode(Enum):
     MANUAL = 2
 
 class SocketServer:
-    def __init__(port):
+    def __init__(self, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         hostname = socket.gethostname()
         self.socket.bind((hostname, port))
-        server_socket.listen(1)
+        self.socket.listen(1)
         print(f"Server listening on {hostname}:{port}")
     
-    def listen():
+    def await_connection(self):
         while True:
-            client_socket, addr = server_socket.accept()
+            client_socket, addr = self.socket.accept()
             print("Established a connection with", addr)
+            return client_socket
+        
+
+class SerialClient:
+    def __init__(self, port, baud_rate):
+        print("Starting serial...")
+        self.serial = serial.Serial(port, baud_rate, timeout=0)
+        time.sleep(2)
+        if not self.serial.isOpen():
+            print("Serial port is closed. Exiting..")
+            exit(1)
+        else:
+            print("Successfully connected.")
+        
+
+def command_handler(command):
+
 
 def main():
-    print("Starting serial...")
-    s = serial.Serial(serial_port, baud_rate, timeout=0)
-    time.sleep(2)
+    ser = SerialClient(SERIAL_PORT, SERIAL_RATE)
 
-    if not s.isOpen():
-        print("Serial port is closed. Exiting..")
-        exit(1)
-    else:
-        print("Successfully connected.")
+    socket_server = SocketServer(SOCKET_PORT)
+    socket_connection = socket_server.await_connection()
+
+    # start serial
+    # wait for socket connection
+
+    # recv command
+    # send to serial
+    # wait for serial response
+    # send response to socket
+    
+
+
       
     
     mode = 0
