@@ -74,9 +74,9 @@ void loop() {
         prev_ticks_l += d_ticks_l;
         prev_ticks_r += d_ticks_r;
 
-        String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
-        // String debugger = produce_debugger();
-        Serial.println(r);
+        //String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
+        String debug = produce_debugger();
+        Serial.println(debug);
 
     } else {
         motor_left.update(w_vel.left);
@@ -110,4 +110,8 @@ String produce_response(int ticks_l, int ticks_r, float dist[4], MotorController
     String data_res = "DATA TICKS " + String(ticks_l) + " " + String(ticks_r) + ";\n";
     // String log_res = "LOG ";
     return data_res;
+}
+
+String produce_debugger(MotorController ml, MotorController mr) {
+    return String(ml._goal_rpm) + " " + String(ml._actual_rpm) + " " + String(mr._goal_rpm) + " " + String(mr._actual_rpm);
 }
