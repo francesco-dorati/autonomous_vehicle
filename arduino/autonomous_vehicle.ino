@@ -22,14 +22,6 @@
 #include "Arduino.h"
 #include "MotorController.h"
 
-struct state {
-    float x;    // cm
-    float y;    // cm
-    float theta;  // degrees
-    state(): x(0), y(0), theta(0) {};
-    state(float x, float y, float t): x(x), y(y), theta(t) {};
-};
-
 struct state_vel {
     float vx;    // cm/s
     float va;  // degrees/s
@@ -74,8 +66,8 @@ void loop() {
             goal_w_vel = inverse_kinematics(goal_velocity);
         }
 
-        motor_left.set_velocity(w_vel.left);
-        motor_right.set_velocity(w_vel.right);
+        motor_left.update(w_vel.left);
+        motor_right.update(w_vel.right);
         
         d_ticks_l = motor_left.ticks() - prev_ticks_l;
         d_ticks_r = motor_right.ticks() - prev_ticks_r;
@@ -83,11 +75,12 @@ void loop() {
         prev_ticks_r += d_ticks_r;
 
         String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
+        // String debugger = produce_debugger();
         Serial.println(r);
 
     } else {
-        motor_left.set_velocity(w_vel.left);
-        motor_right.set_velocity(w_vel.right);
+        motor_left.update(w_vel.left);
+        motor_right.update(w_vel.right);
     }
 
     unsigned long dt = millis() - t_start;
@@ -114,7 +107,7 @@ wheels_vel inverse_kinematics(state_vel goal_vel) {
 
 
 String produce_response(int ticks_l, int ticks_r, float dist[4], MotorController ml, MotorController mr) {
-    String data_res = "DATA TICKS " + String(ticks_l) + " " + String(ticks_r) + "; ";
+    String data_res = "DATA TICKS " + String(ticks_l) + " " + String(ticks_r) + ";\n";
     // String log_res = "LOG ";
     return data_res;
 }

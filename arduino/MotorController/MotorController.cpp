@@ -10,40 +10,56 @@ MotorController::MotorController(
   _in1_pin(in1_pin), 
   _in2_pin(in2_pin), 
   _encoder(enc_a_pin, enc_b_pin),
+  _motor_pid(&_actual_rpm, &_power, &_goal_rpm, KI, KP, KD, DIRECT),
   _ticks_per_rev(counts_per_rev),
   _reverse(reverse)
 {
   pinMode(_enable_pin, OUTPUT);
   pinMode(_in1_pin, OUTPUT);
   pinMode(_in2_pin, OUTPUT);
+
+  _encoder_prev_counts = 0;
+  _encoder_prev_time = 0;
+
+  _goal_rpm = 0;
+  _actual_rpm = 0;
+  _power = 0;
 }
+
+// float MotorController::update(float goal_rpm) {
+//   if (goal_rpm < MIN_RPM && goal_rpm > -MIN_RPM) {
+//     _set_motor_power(0);
+//     return 0;
+//   }
+
+//   if (goal_rpm > MAX_RPM) goal_rpm = MAX_RPM;
+//   else if (goal_rpm < -MAX_RPM) goal_rpm = -MAX_RPM;
+
+
+//   float curent_rpm = _update_current_rpm();
+
+//   float error_rpm = goal_rpm - curent_rpm;
+
+//   if (abs(error_rpm) < 5) error_rpm = 0;
+  
+//   _power += floor(2*error_rpm);
+//   if (_power > 255) _power = 255;
+//   else if (_power < -255) _power = -255;
+
+//   _set_motor_power(_power);
+
+//   return curent_rpm;
+// }
 
 float MotorController::update(float goal_rpm) {
-  if (goal_rpm < MIN_RPM && goal_rpm > -MIN_RPM) {
-    _set_motor_power(0);
-    return 0;
-  }
+  _goal_rpm = goal_rpm;
+  _actual_rpm = _get_current_rpm();
 
-  if (goal_rpm > MAX_RPM) goal_rpm = MAX_RPM;
-  else if (goal_rpm < -MAX_RPM) goal_rpm = -MAX_RPM;
-
-
-  float curent_rpm = _get_current_rpm();
-
-  float error_rpm = goal_rpm - curent_rpm;
-
-  if (abs(error_rpm) < 5) error_rpm = 0;
-  
-  _power += floor(2*error_rpm);
-  if (_power > 255) _power = 255;
-  else if (_power < -255) _power = -255;
+  motor_pid.Compute();
 
   _set_motor_power(_power);
-
-  return curent_rpm;
+  return _actual_rpm;
 }
-
-float MotorController
 
 long MotorController::ticks() {
   return _reverse ? -_encoder.read() : _encoder.read();
