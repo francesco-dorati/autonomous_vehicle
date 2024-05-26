@@ -10,7 +10,7 @@ MotorController::MotorController(
   _in1_pin(in1_pin), 
   _in2_pin(in2_pin), 
   _encoder(enc_a_pin, enc_b_pin),
-  _counts_per_rev(counts_per_rev),
+  _ticks_per_rev(counts_per_rev),
   _reverse(reverse)
 {
   pinMode(_enable_pin, OUTPUT);
@@ -18,14 +18,15 @@ MotorController::MotorController(
   pinMode(_in2_pin, OUTPUT);
 }
 
-float MotorController::set_velocity(float goal_rpm) {
-  if (goal_rpm < 50 && goal_rpm > -50) {
+float MotorController::update(float goal_rpm) {
+  if (goal_rpm < MIN_RPM && goal_rpm > -MIN_RPM) {
     _set_motor_power(0);
     return 0;
   }
 
-  if (goal_rpm > 150) goal_rpm = 150;
-  else if (goal_rpm < -150) goal_rpm = -150;
+  if (goal_rpm > MAX_RPM) goal_rpm = MAX_RPM;
+  else if (goal_rpm < -MAX_RPM) goal_rpm = -MAX_RPM;
+
 
   float curent_rpm = _get_current_rpm();
 
@@ -42,13 +43,19 @@ float MotorController::set_velocity(float goal_rpm) {
   return curent_rpm;
 }
 
+float MotorController
+
+long MotorController::ticks() {
+  return _reverse ? -_encoder.read() : _encoder.read();
+}
+
 float MotorController::_get_current_rpm() {
-    long encoder_counts = _reverse ? -_encoder.read() : _encoder.read();
+    long encoder_counts = ticks()
     int delta_counts = encoder_counts - _encoder_prev_counts;
     _encoder_prev_counts = encoder_counts;
     float delta_t_ms = ((float) (micros() - _encoder_prev_time))/1000;
     _encoder_prev_time = micros();
-    return (delta_counts*60000) / (delta_t_ms*_counts_per_rev); 
+    return (delta_counts*60000) / (delta_t_ms*_ticks_per_rev); 
 }
 
 void MotorController::_set_motor_power(int power) {

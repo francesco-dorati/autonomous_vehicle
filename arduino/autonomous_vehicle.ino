@@ -20,11 +20,7 @@
 
 
 #include "Arduino.h"
-#include <string.h>
 #include "MotorController.h"
-
-
-
 
 struct state {
     float x;    // cm
@@ -51,9 +47,6 @@ struct wheels_vel {
 MotorController motor_left(PWM_ML, IN1_ML, IN2_ML, ENCA_ML, ENCB_ML, COUNTS_PER_REV, true);
 MotorController motor_right(PWM_MR, IN1_MR, IN2_MR, ENCA_MR, ENCB_MR, COUNTS_PER_REV, false);
 
-unsigned long previous_millis_controller = 0; 
-unsigned long previous_millis_serial = 0; 
-
 void setup() {
     Serial.begin(115200);
     Serial.println("OK");
@@ -62,38 +55,40 @@ void setup() {
 state_vel goal_velocity;
 wheels_vel goal_w_vel;
 bool serial_loop = false;
-int ticks_l = 0, ticks_r = 0;
+
+int d_ticks_l = 0;
+int d_ticks_r = 0;
+long prev_ticks_l = 0;
+long prev_ticks_r = 0;
+
 float dist[4];
+
 void loop() {
     unsigned long t_start = millis()
     serial_loop = !serial_loop;
 
-    if (serial_loop && Serial.available() > 0) {
-        String s = Serial.readStringUntil("\n");
-        goal_velocity = read_data(s);
-        goal_w_vel = inverse_kinematics(goal_velocity);
-    }
+    if (serial_loop) {
+        if (Serial.available() > 0) {
+            String s = Serial.readStringUntil("\n");
+            goal_velocity = read_data(s);
+            goal_w_vel = inverse_kinematics(goal_velocity);
+        }
 
-    motor_left.set_velocity(w_vel.left);
-    motor_right.set_velocity(w_vel.right);
+        motor_left.set_velocity(w_vel.left);
+        motor_right.set_velocity(w_vel.right);
+        
+        d_ticks_l = motor_left.ticks() - prev_ticks_l;
+        d_ticks_r = motor_right.ticks() - prev_ticks_r;
+        prev_ticks_l += d_ticks_l;
+        prev_ticks_r += d_ticks_r;
 
-    if (!serial_loop) {
-        ticks_l = motor_left.ticks();
-        ticks_r = motor_right.ticks();
-
-        // sensor first two
-    } else {
-        ticks_l += motor_left.ticks();
-        ticks_r += motor_right.ticks();
-
-        // sensor secondo two
-
-        String r = produce_response(ticks_l, ticks_r, dist);
+        String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
         Serial.println(r);
-    }
 
-    motor_left.reset_enoders()
-    motor_right.reset_enoders()
+    } else {
+        motor_left.set_velocity(w_vel.left);
+        motor_right.set_velocity(w_vel.right);
+    }
 
     unsigned long dt = millis() - t_start;
     if (dt < CONTROLLER_UPDATE_TIME)
@@ -118,6 +113,8 @@ wheels_vel inverse_kinematics(state_vel goal_vel) {
 }
 
 
-String produce_response(int ticks_l, int ticks_r, float dist[4]) {
-
+String produce_response(int ticks_l, int ticks_r, float dist[4], MotorController ml, MotorController mr) {
+    String data_res = "DATA TICKS " + String(ticks_l) + " " + String(ticks_r) + "; ";
+    // String log_res = "LOG ";
+    return data_res;
 }

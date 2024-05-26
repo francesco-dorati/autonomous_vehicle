@@ -4,6 +4,9 @@
 #include "Arduino.h"
 #include "Encoder.h"
 
+#define MAX_RPM 15
+#define MIN_RPM 130
+
 class MotorController {
   public:
     MotorController(
@@ -13,7 +16,7 @@ class MotorController {
       int counts_per_rev, bool reverse
     );
 
-    float set_velocity(float goal_rpm);
+    float update(float goal_rpm);
     long ticks()
 
   private:
