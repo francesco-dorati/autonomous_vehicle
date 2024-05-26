@@ -14,6 +14,7 @@ class MotorController {
     );
 
     float set_velocity(float goal_rpm);
+    long ticks()
 
   private:
       Encoder _encoder;

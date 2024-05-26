@@ -59,68 +59,55 @@ void setup() {
     Serial.println("OK");
 }
 
-
 state_vel goal_velocity;
-bool serial_ok = true;
+wheels_vel goal_w_vel;
+bool serial_loop = false;
+int ticks_l = 0, ticks_r = 0;
+float dist[4];
 void loop() {
     unsigned long t_start = millis()
+    serial_loop = !serial_loop;
 
-    if (serial_ok && Serial.available() > 0) {
+    if (serial_loop && Serial.available() > 0) {
         String s = Serial.readStringUntil("\n");
-        float vx, va;
-        sscanf(s.c_str(), "%f %f", &vx, &va);
-        goal_velocity = state_vel(vx, va);
+        goal_velocity = read_data(s);
+        goal_w_vel = inverse_kinematics(goal_velocity);
     }
-    serial_ok = !serial_ok;
 
-    wheels_vel w_vel = inverse_kinematics(goal_velocity);
-    motor_left.set_velocity(w_vel.left)
-    motor_right.set_velocity(w_vel.right)
+    motor_left.set_velocity(w_vel.left);
+    motor_right.set_velocity(w_vel.right);
 
-    // update change in position
+    if (!serial_loop) {
+        ticks_l = motor_left.ticks();
+        ticks_r = motor_right.ticks();
+
+        // sensor first two
+    } else {
+        ticks_l += motor_left.ticks();
+        ticks_r += motor_right.ticks();
+
+        // sensor secondo two
+
+        String r = produce_response(ticks_l, ticks_r, dist);
+        Serial.println(r);
+    }
+
+    motor_left.reset_enoders()
+    motor_right.reset_enoders()
+
+    unsigned long dt = millis() - t_start;
+    if (dt < CONTROLLER_UPDATE_TIME)
+        delay(CONTROLLER_UPDATE_TIME - dt);
     
-
-
-
-    unsigned long current_millis = millis();
-
-    if (current_millis - previous_millis_controller >= CONTROLLER_UPDATE_TIME) {
-        previous_millis_controller = current_millis;
-        
-        // PID control
-        motor_left.
-
-        // control
-    }
-
-    if (current_millis - previous_millis_serial >= SERIAL_UPDATE_TIME) {
-        previous_millis_serial = current_millis;
-
-        // send previous state
-        
-        // update goal velocity
-        if (Serial.available() > 0) {
-            String s = Serial.readStringUntil("\n");
-            float vx, va;
-            sscanf(s.c_str(), "%f %f", &vx, &va);
-            goal_velocity = state_vel(vx, va);
-        }
-
-    }
-
-
-    // Serial.println(mode);
-    if (Serial.available() > 0) {
-        state goal(x, y, t);
-        state_vel goal_vel(x, y, t);
-        wheels_vel wheels = inverse_kinematics(goal_vel);
-        motor_left.velocity(wheels.left);
-        motor_right.velocity(wheels.right);
-    }
-
 }
 
- wheels_vel inverse_kinematics(state_vel goal_vel) {
+state_vel read_data(String s) {
+    float vx, va;
+    sscanf(s.c_str(), "%f %f", &vx, &va);
+    return state_vel(vx, va);
+}
+
+wheels_vel inverse_kinematics(state_vel goal_vel) {
     float x = goal_vel.x_velocity;
     float theta = goal_vel.theta_velocity;
 
@@ -128,6 +115,9 @@ void loop() {
     float right = (x*60 + theta*WHEEL_DISTANCE_FROM_CENTER/6) / WHEEL_RADIUS;
 
     return wheels_vel(left, right);
- }
+}
 
 
+String produce_response(int ticks_l, int ticks_r, float dist[4]) {
+
+}

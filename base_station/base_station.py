@@ -1,11 +1,12 @@
-import socket
+
 import time
 import keyboard
 import json
 from enum import Enum
 
 HOSTNAME = "172.20.10.7"
-PORT = 0
+MANUAL_PORT = 0
+AUTO_PORT = 0
 MANUAL_FREQ = 5
 MANUAL_TAO = 1/MANUAL_FREQ
 
@@ -15,52 +16,59 @@ class Mode(Enum):
     MANUAL = 2
 
 class RemoteConsole:
-    def __init__(self, hostname, port):
-        try:
-            print("Establishing socket connection...")
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((hostname, port))
-            print(f"Connected successfully to socket {hostname}:{port}")
-        except:
-            print("Connection failed. Exiting...")
-            exit(1)
+    def __init__(self, hostname, port_auto, port_manual):
+        print("OK")
+        self.hostname = hostname
+        self.port_auto = port_auto
+        self.port_manual = port_manual
+        # try:
+        #     print("Establishing socket connection...")
+
+        #     # self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #     # self.socket.connect((hostname, port))
+        #     # print(f"Connected successfully to socket {hostname}:{port}")
+        # except:
+        #     print("Connection failed. Exiting...")
+        #     exit(1)
 
         self.mode = Mode.NULL
 
     def start(self):
         while True:
-            if mode == Mode.NULL:
-                mode = self._mode_menu()
-                self.socket.send(mode.name.encode("utf-8"))
+            if self.mode == Mode.NULL:
+                self.mode = self._mode_menu()
+                # self.socket.send(self.mode.name.encode("utf-8"))
                 continue
 
-            elif mode == Mode.AUTO:
+            elif self.mode == Mode.AUTO:
                 self._autonomous_console()
                 self.mode = Mode.NULL
                 self.socket.send("EXIT".encode())
                 continue
 
-            elif mode == Mode.MANUAL:
+            elif self.mode == Mode.MANUAL:
                 self._manual_console()
                 self.mode = Mode.NULL
-                self.socket.send("EXIT".encode())
+                # self.socket.send("EXIT".encode())
                 continue
     
     def _mode_menu(self):
         print("\n\nROBOT CONTROLLER\n")
         print("Select a mode: ")
         for m in Mode:
+            if m.value == 0:
+                continue
             print(f"{m.value}. {m.name}")
         print("0. Exit")
         print()
 
         while True:
-            mode = input("> ")
-            if mode == "0":
-                self.socket.close()
-                exit()
             try:
-                return Mode(int(mode))
+                self.mode = Mode(int(input("> ")))
+                if self.mode == Mode.NULL:
+                    exit(0)
+                return self.mode
+            
             except ValueError:
                 continue
 
@@ -97,12 +105,19 @@ class RemoteConsole:
                 continue
 
     def _manual_console(self):
-        print("\nMANUAL CONSOLE\n")
+        print("\nMANUAL CONSOLE\n\n\n")
+        try:
+            socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            
+        except:
+            raise Exception("Socket connection failed.")
+
         while True:
             start_time = time.time()
             input_buffer = []
 
             if keyboard.is_pressed('esc') or keyboard.is_pressed("space"):
+                socket.sendto("EXIT".encode('utf-8'), (self.hostname, self.port_manual))
                 return
             
             # read keypresses
@@ -124,22 +139,33 @@ class RemoteConsole:
                 input_buffer.remove("r")
             
             # send buffer
-            self.socket.send(json.dumps(input_buffer).encode('utf-8'))
+            arrow_up = '\u2191'
+            arrow_down = '\u2193'
+            arrow_left = '\u2190'
+            arrow_right = '\u2192'
+            arrows = {
+                "f": arrow_up,
+                "b": arrow_down,
+                "l": arrow_left,
+                "r": arrow_right
+            }
+            input_arrows = ''.join(arrows[key] for key in input_buffer)
+            print('\r' + ' ' * 80 + '\r ', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print(f'    {input_arrows}  \n')
+            socket.sendto(json.dumps(input_buffer).encode('utf-8'), (self.hostname, self.port_manual))
 
             # wait until next iteration
             dt = time.time() - start_time
             if dt < MANUAL_TAO:
                 time.sleep(MANUAL_TAO - dt) 
 
-
-
-
-def main():
-    r = RemoteConsole()
-    r.start()
     
 if __name__ == "__main__":
-    main()
+    print("OK")
+    r = RemoteConsole(HOSTNAME, AUTO_PORT, MANUAL_PORT)
+    r.start()
 
 # commands
 # rot <degrees>
