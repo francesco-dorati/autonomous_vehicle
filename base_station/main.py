@@ -4,8 +4,8 @@ from manual_console import ManualConsole
 from autonomous_console import AutonomousConsole
 
 HOSTNAME = "172.20.10.7"
-MANUAL_PORT = 5500
-AUTO_PORT = 5501
+AUTO_PORT = 5500
+MANUAL_PORT = 5501
 
 
 class Mode(Enum):
