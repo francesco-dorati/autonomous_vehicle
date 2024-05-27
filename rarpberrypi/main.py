@@ -27,7 +27,7 @@ def main():
     auto_socket.start()
     manual_socket.start()
 
-    mode == Mode.WAIT_CONNECTION
+    mode = Mode.WAIT_CONNECTION
     while True:
         if mode == Mode.WAIT_CONNECTION:
             if auto_socket.connected and manual_socket.connected:

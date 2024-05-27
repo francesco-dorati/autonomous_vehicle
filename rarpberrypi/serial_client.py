@@ -12,10 +12,10 @@ class SerialClient:
         else:
             print("Successfully connected.")
 
-        data = self.read()
-        if data != "OK":
-            print(f"RECEIVED: <{data}> instead of OK")
-            exit()
+        # data = self.read()
+        # if data != "OK\n":
+        #     print(f"RECEIVED: <{data}> instead of OK")
+        #     exit()
 
     def send(self, lin_vel, ang_vel):
         self.serial.write(f"{lin_vel} {ang_vel}".encode())

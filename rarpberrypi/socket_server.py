@@ -14,7 +14,7 @@ class TCPServer(threading.Thread):
     
     def run(self):
         self.socket.bind((self.hostname, self.port))
-        self.server_socket.listen(1)
+        self.socket.listen(1)
         print(f"TCP server listening on {self.hostname}:{self.port}")
         while self.running:
             try:
@@ -52,7 +52,7 @@ class TCPServer(threading.Thread):
 class UDPServer(threading.Thread):
     def __init__(self, port):
         super().__init__(daemon=True)
-        self.host = socket.gethostname()
+        self.hostname = socket.gethostname()
         self.port = port
         self.queue = queue.Queue()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -60,11 +60,11 @@ class UDPServer(threading.Thread):
         self.connected = False
     
     def run(self):
-        self.socket.bind((self.host, self.port))
+        self.socket.bind((self.hostname, self.port))
         print(f"UDP server listening on {self.hostname}:{self.port}")
         while self.running:
             try:
-                data, addr = self.server_socket.recvfrom(1024)
+                data, addr = self.socket.recvfrom(1024)
                 self.queue.put(data.decode())
                 self.connected = True
             except socket.error:
@@ -75,4 +75,4 @@ class UDPServer(threading.Thread):
 
     def stop(self):
         self.running = False
-        self.server_socket.close()
+        self.socket.close()
