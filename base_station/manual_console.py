@@ -15,6 +15,7 @@ class ManualConsole:
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.sendto("SYN\n".encode('utf-8'), (self.hostname, self.port))
+            print("[MANUAL] SYN sent.")
             ack, _ = self.socket.recvfrom(1024)
             if ack.decode().strip() == "ACK":
                 print("[MANUAL] Connection established.")
