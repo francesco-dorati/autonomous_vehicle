@@ -74,7 +74,6 @@ class UDPServer(threading.Thread):
         while self.running:
             try:
                 data, addr = self.socket.recvfrom(1024)
-                print(f"Received <{data.decode()}>")
 
                 if not self.connected and data.decode().strip() == "SYN":
                     self.socket.sendto("ACK".encode(), addr)

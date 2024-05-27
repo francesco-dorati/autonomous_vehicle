@@ -66,15 +66,19 @@ void loop() {
     if (serial_loop) {
         if (Serial.available() > 0) {
             String s = Serial.readStringUntil("\n");
+
+            Serial.print("Received: ");
+            Serial.println(s);
+
             goal_velocity = read_data(s);
             goal_w_vel = inverse_kinematics(goal_velocity);
 
-            Serial.print(goal_velocity.vx);
-            Serial.print("   e    ");
-            Serial.println(goal_velocity.va);
-            Serial.print(goal_w_vel.left);
-            Serial.print("   e    ");
-            Serial.println(goal_w_vel.right);
+            // Serial.print(goal_velocity.vx);
+            // Serial.print("   e    ");
+            // Serial.println(goal_velocity.va);
+            // Serial.print(goal_w_vel.left);
+            // Serial.print("   e    ");
+            // Serial.println(goal_w_vel.right);
         }
 
         double actual_rpm_left = motor_left.update(goal_w_vel.left);
@@ -86,7 +90,7 @@ void loop() {
         prev_ticks_r += d_ticks_r;
 
         //String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
-        String debug = produce_debugger(goal_w_vel, actual_rpm_left, actual_rpm_right);
+        String debug = produce_debugger(goal_w_vel, actual_rpm_left, actual_rpm_right, motor_left.ticks(), motor_right.ticks());
         Serial.println(debug);
 
     } else {

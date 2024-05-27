@@ -58,11 +58,9 @@ double MotorController::update(double goal_rpm) {
   _goal_rpm = goal_rpm;
   _actual_rpm = _get_current_rpm();
 
-  if (_goal_rpm == 0.0)
-    _power = 0.0
-
-  else 
-    _motor_pid.Compute();
+  if (_goal_rpm == 0.0) _power = 0.0;
+  
+  else _motor_pid.Compute();
 
   _set_motor_power(_power);
   return _actual_rpm;
