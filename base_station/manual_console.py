@@ -14,10 +14,8 @@ class ManualConsole:
         print(f"[MANUAL] Connecting to {self.hostname}:{self.port}...")
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.sendto("SYN\n".encode('utf-8'), (self.hostname, self.port))
-            print("[MANUAL] SYN sent.")
+            self.socket.sendto("SYN\n".encode(), (self.hostname, self.port))
             ack, _ = self.socket.recvfrom(1024)
-            print("[MANUAL] response.")
             if ack.decode().strip() == "ACK":
                 print("[MANUAL] Connection established.")
             else:
@@ -39,7 +37,7 @@ class ManualConsole:
                 input_buffer = []
 
                 if keyboard.is_pressed('esc') or keyboard.is_pressed("space"):
-                    self.socket.sendto("EXIT".encode('utf-8'), (self.hostname, self.port_manual))
+                    self.socket.sendto("EXIT".encode(), (self.hostname, self.port))
                     self.socket.close()
                     return
                 

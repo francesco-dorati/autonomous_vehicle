@@ -3,9 +3,9 @@ import socket
 import queue
 
 class TCPServer(threading.Thread):
-    def __init__(self, port):
+    def __init__(self, hostname, port):
         super().__init__(daemon=True)
-        self.hostname = socket.gethostname()
+        self.hostname = hostname
         self.port = port
         self.queue = queue.Queue()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -59,24 +59,25 @@ class TCPServer(threading.Thread):
 
 
 class UDPServer(threading.Thread):
-    def __init__(self, port):
+    def __init__(self, hostname, port):
         super().__init__(daemon=True)
-        self.hostname = socket.gethostname()
+        self.hostname = hostname
         self.port = port
         self.queue = queue.Queue()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.running = True
         self.connected = False
-    
-    def run(self):
         self.socket.bind((self.hostname, self.port))
         print(f"[UDP SERVER] Listening on {self.hostname}:{self.port}")
+    
+    def run(self):
         while self.running:
             try:
                 data, addr = self.socket.recvfrom(1024)
-                print(f"Received {data}")
+                print(f"Received <{data.decode()}>")
+
                 if not self.connected and data.decode().strip() == "SYN":
-                    self.socket.send("ACK".encode(), addr)
+                    self.socket.sendto("ACK".encode(), addr)
                     print(f"[UDP SERVER] Connected with {addr}")
                     self.connected = True
 
@@ -85,7 +86,7 @@ class UDPServer(threading.Thread):
                     print("[UDP SERVER] Connection closed by client.\n")
 
                 else:
-                    self.queue.put(data.decode('utf-8'))
+                    self.queue.put(data.decode())
 
             except socket.error:
                 self.connected = False

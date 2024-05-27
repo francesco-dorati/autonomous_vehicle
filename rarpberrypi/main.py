@@ -10,6 +10,7 @@ from manual_controller import ManualController
 SERIAL_PORT = '/dev/ttyUSB0'
 SERIAL_RATE = 115200
 
+HOSTNAME = '172.20.10.7'
 AUTO_SOCKET_PORT = 5500
 MANUAL_SOCKET_PORT = 5501
 
@@ -21,8 +22,8 @@ class Mode(Enum):
 def main():
     # Start Sockets
     serial = SerialClient(SERIAL_PORT, SERIAL_RATE)
-    auto_socket = TCPServer(AUTO_SOCKET_PORT)
-    manual_socket = UDPServer(MANUAL_SOCKET_PORT)
+    auto_socket = TCPServer(HOSTNAME, AUTO_SOCKET_PORT)
+    manual_socket = UDPServer(HOSTNAME, MANUAL_SOCKET_PORT)
 
     auto_socket.start()
     manual_socket.start()
