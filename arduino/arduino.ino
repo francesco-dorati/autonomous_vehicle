@@ -20,9 +20,10 @@
 
 /*
 TODO
-- check minimum power for motors
-- get encoder counte per rev
-- update printer and test manual
+- [arduino] create idle state, handshake with serial frequency
+- [rpi] stop running of a server if the other control is on
+- [console] add settings with all constants
+
 
 */
 #include "Arduino.h"
@@ -64,6 +65,11 @@ void loop() {
     serial_loop = !serial_loop;
 
     if (serial_loop) {
+        String s = Serial.readStringUntil("\n");
+
+        Serial.print("Received: ");
+        Serial.println(s);
+
         if (Serial.available() > 0) {
             String s = Serial.readStringUntil("\n");
 
@@ -91,7 +97,7 @@ void loop() {
 
         //String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
         String debug = produce_debugger(goal_w_vel, actual_rpm_left, actual_rpm_right, motor_left.ticks(), motor_right.ticks());
-        Serial.println(debug);
+        //Serial.println(debug);
 
     } else {
         motor_left.update(goal_w_vel.left);

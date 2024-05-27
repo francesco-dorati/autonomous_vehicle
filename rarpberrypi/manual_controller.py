@@ -13,7 +13,7 @@ class ManualController:
         self.serial = serial
 
     def loop(self):
-        while True:
+        while self.socket.connected:
             t_start = time.time()
             lin_vel, ang_vel = (.0, .0)
             self.serial.read()

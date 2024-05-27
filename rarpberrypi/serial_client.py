@@ -13,7 +13,9 @@ class SerialClient:
             print("[SERIAL] Successfully connected.\n")
 
     def send(self, lin_vel, ang_vel):
-        self.serial.write(f"{lin_vel} {ang_vel}\n".encode())
+        data = f"{lin_vel} {ang_vel}\n"
+        print(f"[SERIAL] Sending: {data.strip()}")
+        self.serial.write(data.encode())
 
     def read(self):
         data = self.serial.readline().decode()
