@@ -33,42 +33,46 @@ class ManualConsole:
         print("\n\n\n\n")
 
     def run(self):
-        while True:
-            start_time = time.time()
-            input_buffer = []
+        try:
+            while True:
+                start_time = time.time()
+                input_buffer = []
 
-            if keyboard.is_pressed('esc') or keyboard.is_pressed("space"):
-                self.socket.sendto("EXIT".encode('utf-8'), (self.hostname, self.port_manual))
-                self.socket.close()
-                return
-            
-            # read keypresses
-            if keyboard.is_pressed('w'):
-                input_buffer.append("f") # forward
-            if keyboard.is_pressed("s"):
-                input_buffer.append("b") # backward
-            if keyboard.is_pressed("a"):
-                input_buffer.append("l") # left
-            if keyboard.is_pressed("d"):
-                input_buffer.append("r") # right
-            
-            # buffer processing
-            if "f" in input_buffer and "b" in input_buffer:
-                input_buffer.remove("f")
-                input_buffer.remove("b")
-            if "l" in input_buffer and "r" in input_buffer:
-                input_buffer.remove("l")
-                input_buffer.remove("r")
-            
-            # send buffer
-            self._print_direction(input_buffer)
+                if keyboard.is_pressed('esc') or keyboard.is_pressed("space"):
+                    self.socket.sendto("EXIT".encode('utf-8'), (self.hostname, self.port_manual))
+                    self.socket.close()
+                    return
+                
+                # read keypresses
+                if keyboard.is_pressed('w'):
+                    input_buffer.append("f") # forward
+                if keyboard.is_pressed("s"):
+                    input_buffer.append("b") # backward
+                if keyboard.is_pressed("a"):
+                    input_buffer.append("l") # left
+                if keyboard.is_pressed("d"):
+                    input_buffer.append("r") # right
+                
+                # buffer processing
+                if "f" in input_buffer and "b" in input_buffer:
+                    input_buffer.remove("f")
+                    input_buffer.remove("b")
+                if "l" in input_buffer and "r" in input_buffer:
+                    input_buffer.remove("l")
+                    input_buffer.remove("r")
+                
+                self._print_direction(input_buffer)
 
-            self.socket.sendto(''.join(input_buffer).encode('utf-8'), (self.hostname, self.port_manual))
+                # send buffer
+                self.socket.sendto(''.join(input_buffer).encode('utf-8'), (self.hostname, self.port))
 
-            # wait until next iteration
-            dt = time.time() - start_time
-            if dt < MANUAL_TAO:
-                time.sleep(MANUAL_TAO - dt) 
+                # wait until next iteration
+                dt = time.time() - start_time
+                if dt < MANUAL_TAO:
+                    time.sleep(MANUAL_TAO - dt) 
+        except:
+            self.socket.close()
+            return
 
     def _print_direction(self, input_buffer):
             arrow_up = '\u2191' if "f" in input_buffer else ''
