@@ -24,6 +24,9 @@ MotorController::MotorController(
   _goal_rpm = 0;
   _actual_rpm = 0;
   _power = 0;
+
+  _motor_pid.SetMode(AUTOMATIC);
+  _motor_pid.SetOutputLimits(PWM_MIN, PWM_MAX);
 }
 
 // float MotorController::update(float goal_rpm) {
@@ -51,11 +54,15 @@ MotorController::MotorController(
 //   return curent_rpm;
 // }
 
-float MotorController::update(float goal_rpm) {
+double MotorController::update(double goal_rpm) {
   _goal_rpm = goal_rpm;
   _actual_rpm = _get_current_rpm();
 
-  motor_pid.Compute();
+  if (_goal_rpm == 0.0)
+    _power = 0.0
+
+  else 
+    _motor_pid.Compute();
 
   _set_motor_power(_power);
   return _actual_rpm;
@@ -65,24 +72,31 @@ long MotorController::ticks() {
   return _reverse ? -_encoder.read() : _encoder.read();
 }
 
-float MotorController::_get_current_rpm() {
-    long encoder_counts = ticks()
+double MotorController::_get_current_rpm() {
+    long encoder_counts = ticks();
     int delta_counts = encoder_counts - _encoder_prev_counts;
     _encoder_prev_counts = encoder_counts;
-    float delta_t_ms = ((float) (micros() - _encoder_prev_time))/1000;
+    double delta_t_ms = ((double) (micros() - _encoder_prev_time))/1000;
     _encoder_prev_time = micros();
     return (delta_counts*60000) / (delta_t_ms*_ticks_per_rev); 
 }
 
-void MotorController::_set_motor_power(int power) {
-  if (power > 0) {
+void MotorController::_set_motor_power(double power) {
+  int pwm_val = constrain(power, -255, 255);
+
+  // MIN POWER
+  if (pwm_val < 60 && pwm_val > -60) {
+    pwm_val = 0;
+  }
+
+  if (pwm_val > 0) {
     digitalWrite(_in1_pin, LOW);
     digitalWrite(_in2_pin, HIGH);
-    analogWrite(_enable_pin, power);
-  } else if (power < 0) {
+    analogWrite(_enable_pin, pwm_val);
+  } else if (pwm_val < 0) {
     digitalWrite(_in1_pin, HIGH);
     digitalWrite(_in2_pin, LOW);
-    analogWrite(_enable_pin, -power);
+    analogWrite(_enable_pin, -pwm_val);
   } else {
     digitalWrite(_in1_pin, LOW);
     digitalWrite(_in2_pin, LOW);

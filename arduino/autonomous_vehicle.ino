@@ -12,26 +12,32 @@
 
 #define COUNTS_PER_REV 1500
 #define WHEEL_RADIUS 3.4 // cm
-#define WHEEL_DISTANCE_FROM_CENTER 24 // cm
+#define WHEEL_DISTANCE_FROM_CENTER 12 // cm
 #define CONTROLLER_FREQ 100 // Hz
 #define CONTROLLER_UPDATE_TIME (1000/CONTROLLER_FREQ)
 #define SERIAL_RATE 50  // Hz
 #define SERIAL_UPDATE_TIME (1000/SERIAL_RATE)
 
+/*
+TODO
+- check minimum power for motors
+- get encoder counte per rev
+- update printer and test manual
 
+*/
 #include "Arduino.h"
 #include "MotorController.h"
 
 struct state_vel {
-    float vx;    // cm/s
-    float va;  // degrees/s
+    double vx;    // cm/s
+    double va;  // degrees/s
     state_vel(): vx(0), va(0) {};
     state_vel(float x, float t): vx(x), va(t) {};
 };
 
 struct wheels_vel {
-    float left; // rpm
-    float right; // rpm
+    double left; // rpm
+    double right; // rpm
     wheels_vel(): left(0), right(0) {};
     wheels_vel(float l, float r): left(l), right(r) {};
 };
@@ -48,15 +54,13 @@ state_vel goal_velocity;
 wheels_vel goal_w_vel;
 bool serial_loop = false;
 
-int d_ticks_l = 0;
-int d_ticks_r = 0;
 long prev_ticks_l = 0;
 long prev_ticks_r = 0;
 
 float dist[4];
 
 void loop() {
-    unsigned long t_start = millis()
+    unsigned long t_start = millis();
     serial_loop = !serial_loop;
 
     if (serial_loop) {
@@ -64,23 +68,30 @@ void loop() {
             String s = Serial.readStringUntil("\n");
             goal_velocity = read_data(s);
             goal_w_vel = inverse_kinematics(goal_velocity);
+
+            Serial.print(goal_velocity.vx);
+            Serial.print("   e    ");
+            Serial.println(goal_velocity.va);
+            Serial.print(goal_w_vel.left);
+            Serial.print("   e    ");
+            Serial.println(goal_w_vel.right);
         }
 
-        motor_left.update(w_vel.left);
-        motor_right.update(w_vel.right);
+        double actual_rpm_left = motor_left.update(goal_w_vel.left);
+        double actual_rpm_right = motor_right.update(goal_w_vel.right);
         
-        d_ticks_l = motor_left.ticks() - prev_ticks_l;
-        d_ticks_r = motor_right.ticks() - prev_ticks_r;
+        int d_ticks_l = motor_left.ticks() - prev_ticks_l;
+        int d_ticks_r = motor_right.ticks() - prev_ticks_r;
         prev_ticks_l += d_ticks_l;
         prev_ticks_r += d_ticks_r;
 
         //String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
-        String debug = produce_debugger();
+        String debug = produce_debugger(goal_w_vel, actual_rpm_left, actual_rpm_right);
         Serial.println(debug);
 
     } else {
-        motor_left.update(w_vel.left);
-        motor_right.update(w_vel.right);
+        motor_left.update(goal_w_vel.left);
+        motor_right.update(goal_w_vel.right);
     }
 
     unsigned long dt = millis() - t_start;
@@ -90,17 +101,21 @@ void loop() {
 }
 
 state_vel read_data(String s) {
-    float vx, va;
-    sscanf(s.c_str(), "%f %f", &vx, &va);
-    return state_vel(vx, va);
+    state_vel vel;  
+    int spaceIndex = s.indexOf(' ');
+
+    vel.vx = s.substring(0, spaceIndex).toDouble();
+    vel.va = s.substring(spaceIndex + 1).toDouble();
+
+    return vel;
 }
 
 wheels_vel inverse_kinematics(state_vel goal_vel) {
-    float x = goal_vel.x_velocity;
-    float theta = goal_vel.theta_velocity;
+    double x = goal_vel.vx;
+    double theta = goal_vel.va;
 
-    float left = (x*60 - theta*WHEEL_DISTANCE_FROM_CENTER/6) / WHEEL_RADIUS;
-    float right = (x*60 + theta*WHEEL_DISTANCE_FROM_CENTER/6) / WHEEL_RADIUS;
+    double left = (goal_vel.vx * 60) / (2*PI*WHEEL_RADIUS) - (goal_vel.va * WHEEL_DISTANCE_FROM_CENTER) / (6*WHEEL_RADIUS);
+    double right = (goal_vel.vx * 60) / (2*PI*WHEEL_RADIUS) + (goal_vel.va * WHEEL_DISTANCE_FROM_CENTER) / (6*WHEEL_RADIUS);
 
     return wheels_vel(left, right);
 }
@@ -112,6 +127,8 @@ String produce_response(int ticks_l, int ticks_r, float dist[4], MotorController
     return data_res;
 }
 
-String produce_debugger(MotorController ml, MotorController mr) {
-    return String(ml._goal_rpm) + " " + String(ml._actual_rpm) + " " + String(mr._goal_rpm) + " " + String(mr._actual_rpm);
+String produce_debugger(wheels_vel goal, double actual_l, double actual_r, int ticks_l, int ticks_r) {
+    String s = String(goal.left) +  " " + String(actual_l) + " " + String(goal.right) + " " + String(actual_r);
+    s += "\n " +  String(ticks_l) + " " + String(ticks_r);
+    return s;
 }

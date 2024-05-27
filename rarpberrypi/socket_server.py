@@ -36,10 +36,10 @@ class TCPServer(threading.Thread):
 
         self.end_connection()
 
-    def send(self, data):
+    def send(self, lin_vel, ang_vel):
         if not self.connected:
             raise Exception("No client connected")
-        self.connection.send(data.encode())
+        self.connection.send(f"{lin_vel} {ang_vel}".encode())
 
     def end_connection(self): 
         self.connection.close()

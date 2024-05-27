@@ -2,11 +2,12 @@
 import time
 import keyboard
 import json
+import socket
 from enum import Enum
 
 HOSTNAME = "172.20.10.7"
-MANUAL_PORT = 0
-AUTO_PORT = 0
+MANUAL_PORT = 5500
+AUTO_PORT = 5501
 MANUAL_FREQ = 5
 MANUAL_TAO = 1/MANUAL_FREQ
 
@@ -21,15 +22,6 @@ class RemoteConsole:
         self.hostname = hostname
         self.port_auto = port_auto
         self.port_manual = port_manual
-        # try:
-        #     print("Establishing socket connection...")
-
-        #     # self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #     # self.socket.connect((hostname, port))
-        #     # print(f"Connected successfully to socket {hostname}:{port}")
-        # except:
-        #     print("Connection failed. Exiting...")
-        #     exit(1)
 
         self.mode = Mode.NULL
 
@@ -107,7 +99,7 @@ class RemoteConsole:
     def _manual_console(self):
         print("\nMANUAL CONSOLE\n\n\n")
         try:
-            socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             
         except:
             raise Exception("Socket connection failed.")
@@ -117,7 +109,7 @@ class RemoteConsole:
             input_buffer = []
 
             if keyboard.is_pressed('esc') or keyboard.is_pressed("space"):
-                socket.sendto("EXIT".encode('utf-8'), (self.hostname, self.port_manual))
+                sock.sendto("EXIT".encode('utf-8'), (self.hostname, self.port_manual))
                 return
             
             # read keypresses
@@ -154,7 +146,7 @@ class RemoteConsole:
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print(f'    {input_arrows}  \n')
-            socket.sendto(json.dumps(input_buffer).encode('utf-8'), (self.hostname, self.port_manual))
+            sock.sendto(json.dumps(input_buffer).encode('utf-8'), (self.hostname, self.port_manual))
 
             # wait until next iteration
             dt = time.time() - start_time

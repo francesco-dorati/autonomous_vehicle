@@ -12,9 +12,9 @@
 #define PWM_MIN -255
 #define TICKS_PER_REV 1500
 
-#define KP 1
-#define KI 0
-#define KD 0
+#define KP 12.0
+#define KI .5
+#define KD .01
 
 class MotorController {
   public:
@@ -25,24 +25,24 @@ class MotorController {
       int counts_per_rev, bool reverse
     );
 
-    float update(float goal_rpm);
+    double update(double goal_rpm);
     long ticks();
+    
+    double _goal_rpm = 0, _actual_rpm = 0, _power = 0;
 
   private:
-      Encoder _encoder;
-      PID _motor_pid;
-      uint8_t _enable_pin, _in1_pin, _in2_pin;
-      int _counts_per_rev;
-      bool _reverse;
+    Encoder _encoder;
+    PID _motor_pid;
+    uint8_t _enable_pin, _in1_pin, _in2_pin;
+    int _ticks_per_rev;
+    bool _reverse;
 
-      float _goal_rpm, _actual_rpm;
-      int _power;
 
-      long _encoder_prev_counts;
-      unsigned long _encoder_prev_time;
-      float _get_current_rpm();
+    long _encoder_prev_counts;
+    unsigned long _encoder_prev_time;
+    double _get_current_rpm();
 
-      void _set_motor_power(int power);
+    void _set_motor_power(double power);
 };  
 
 #endif 
