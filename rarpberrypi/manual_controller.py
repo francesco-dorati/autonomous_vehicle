@@ -2,6 +2,7 @@ import time
 
 MANUAL_LOOP_FREQ = 10 # Hz
 MANUAL_TAO = (1/MANUAL_LOOP_FREQ) # s
+
 MANUAL_LIN_VEL = 15 # cm/s
 MANUAL_ANG_VEL = 50 # deg/s
 
@@ -18,8 +19,7 @@ class ManualController:
 
             if not self.socket.queue.empty():
                 keyboard_buffer = self.socket.queue.get()
-                if keyboard_buffer == "EXIT":
-                    return
+                
                 if "f" in keyboard_buffer:
                     lin_vel += MANUAL_LIN_VEL
                 if "b" in keyboard_buffer:
