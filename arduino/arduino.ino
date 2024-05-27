@@ -29,6 +29,12 @@ TODO
 #include "Arduino.h"
 #include "MotorController.h"
 
+
+enum mode {
+    IDLE = 0,
+    RUNNING = 1
+} 
+
 struct state_vel {
     double vx;    // cm/s
     double va;  // degrees/s
@@ -46,10 +52,7 @@ struct wheels_vel {
 MotorController motor_left(PWM_ML, IN1_ML, IN2_ML, ENCA_ML, ENCB_ML, COUNTS_PER_REV, true);
 MotorController motor_right(PWM_MR, IN1_MR, IN2_MR, ENCA_MR, ENCB_MR, COUNTS_PER_REV, false);
 
-void setup() {
-    Serial.begin(115200);
-    Serial.println("OK");
-}
+mode controller_mode = IDLE;
 
 state_vel goal_velocity;
 wheels_vel goal_w_vel;
@@ -60,19 +63,34 @@ long prev_ticks_r = 0;
 
 float dist[4];
 
+void setup() {
+    Serial.begin(115200);
+}
+
 void loop() {
+    if (controller_mode == IDLE) {
+        if (Serial.available() > 0) {
+            String s = Serial.readStringUntil("\n");
+            Serial.println("OK");
+            
+            if (s == "START") controller_mode = RUNNING;
+            
+        } else delay(100);
+        
+        continue;
+    }
+
     unsigned long t_start = millis();
     serial_loop = !serial_loop;
 
     if (serial_loop) {
-        String s = Serial.readStringUntil("\n");
-
-        Serial.print("Received: ");
-        Serial.println(s);
 
         if (Serial.available() > 0) {
             String s = Serial.readStringUntil("\n");
-
+            if (s == "STOP") {
+                controller_mode = IDLE;
+                return;
+            }
             Serial.print("Received: ");
             Serial.println(s);
 
@@ -95,9 +113,9 @@ void loop() {
         prev_ticks_l += d_ticks_l;
         prev_ticks_r += d_ticks_r;
 
-        //String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
-        String debug = produce_debugger(goal_w_vel, actual_rpm_left, actual_rpm_right, motor_left.ticks(), motor_right.ticks());
-        //Serial.println(debug);
+        // String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
+        // String debug = produce_debugger(goal_w_vel, actual_rpm_left, actual_rpm_right, motor_left.ticks(), motor_right.ticks());
+        // Serial.println(res);
 
     } else {
         motor_left.update(goal_w_vel.left);

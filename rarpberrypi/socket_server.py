@@ -63,8 +63,9 @@ class UDPServer(threading.Thread):
         super().__init__(daemon=True)
         self.hostname = hostname
         self.port = port
-        self.queue = queue.Queue()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.queue = queue.Queue()
+        self.send_queue = queue.Queue()
         self.running = True
         self.connected = False
         self.socket.bind((self.hostname, self.port))
@@ -86,11 +87,18 @@ class UDPServer(threading.Thread):
 
                 else:
                     self.queue.put(data.decode())
+                
+                if not self.send_queue.empty():
+                    data = self.send_queue.get()
+                    self.socket.sendto(data.encode(), addr)
 
             except socket.error:
                 self.connected = False
                 print("[UDP SERVER] Socket error, connection lost.")
                 continue
+
+    def send(self, data):
+        self.send_queue.put(data)
 
     def end_connection(self):
         self.connected = False

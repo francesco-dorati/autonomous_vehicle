@@ -11,6 +11,18 @@ class SerialClient:
             exit(1)
         else:
             print("[SERIAL] Successfully connected.\n")
+    
+    def start(self):
+        self.serial.write("START\n".encode())
+        print("[SERIAL] Starting controller...\n")
+        data = self.serial.readline().decode().strip()
+        if data == "OK":
+            print("[SERIAL] Controller started.\n")
+        else:
+            print(f"[SERIAL] Received: {data}")
+            print("[SERIAL] Controller failed to start. Exiting...")
+            exit(1)
+            
 
     def send(self, lin_vel, ang_vel):
         data = f"{lin_vel} {ang_vel}\n"
@@ -19,5 +31,6 @@ class SerialClient:
 
     def read(self):
         data = self.serial.readline().decode()
-        print(f"[SERIAL] {data.strip()}")
+        if data.strip() != "":
+            print(f"[SERIAL] {data.strip()}")
         return data
