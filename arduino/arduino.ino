@@ -33,7 +33,7 @@ TODO
 enum mode {
     IDLE = 0,
     RUNNING = 1
-} 
+} ;
 
 struct state_vel {
     double vx;    // cm/s
@@ -71,40 +71,35 @@ void loop() {
     if (controller_mode == IDLE) {
         if (Serial.available() > 0) {
             String s = Serial.readStringUntil("\n");
-            Serial.println("OK");
             
-            if (s == "START") controller_mode = RUNNING;
+            if (s == "START\n"){
+                controller_mode = RUNNING;
+                Serial.println("OK");
+            }
             
         } else delay(100);
         
-        continue;
+        return;
     }
 
     unsigned long t_start = millis();
     serial_loop = !serial_loop;
 
-    if (serial_loop) {
 
+    if (serial_loop) {
+        Serial.println("HI!");
         if (Serial.available() > 0) {
             String s = Serial.readStringUntil("\n");
-            if (s == "STOP") {
+            if (s == "STOP\n") {
                 controller_mode = IDLE;
                 return;
             }
-            Serial.print("Received: ");
-            Serial.println(s);
+            // Serial.print("Received: ");
+            // Serial.println(s);
 
             goal_velocity = read_data(s);
             goal_w_vel = inverse_kinematics(goal_velocity);
-
-            // Serial.print(goal_velocity.vx);
-            // Serial.print("   e    ");
-            // Serial.println(goal_velocity.va);
-            // Serial.print(goal_w_vel.left);
-            // Serial.print("   e    ");
-            // Serial.println(goal_w_vel.right);
         }
-
         double actual_rpm_left = motor_left.update(goal_w_vel.left);
         double actual_rpm_right = motor_right.update(goal_w_vel.right);
         

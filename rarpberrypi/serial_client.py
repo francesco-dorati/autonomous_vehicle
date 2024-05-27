@@ -16,21 +16,29 @@ class SerialClient:
         self.serial.write("START\n".encode())
         print("[SERIAL] Starting controller...\n")
         data = self.serial.readline().decode().strip()
-        if data == "OK":
-            print("[SERIAL] Controller started.\n")
-        else:
-            print(f"[SERIAL] Received: {data}")
-            print("[SERIAL] Controller failed to start. Exiting...")
-            exit(1)
+        while data != "OK":
+            time.sleep(.01)
+            data = self.serial.readline().decode().strip()
+        print("[SERIAL] Controller started.\n")
+
+    # def stop(self):
+    #     self.serial.write("STOP\n".encode())
+    #     print("[SERIAL] Stopping controller...\n")
+    #     data = self.serial.readline().decode().strip()
+    #     while data != "OK":
+    #         data = self.serial.readline().decode().strip()
+    #         print(f"[SERIAL] Received: <{data}>")
+    #         time.sleep(.01)
+    #     print("[SERIAL] Controller started.\n")
             
 
     def send(self, lin_vel, ang_vel):
         data = f"{lin_vel} {ang_vel}\n"
-        print(f"[SERIAL] Sending: {data.strip()}")
-        self.serial.write(data.encode())
+        # print(f"[SERIAL] Sending: {data.strip()}")
+        self.serial.write(data.encode('utf-8'))
 
     def read(self):
-        data = self.serial.readline().decode()
-        if data.strip() != "":
-            print(f"[SERIAL] {data.strip()}")
+        data = self.serial.readline().decode().strip()
+        if data != "":
+            print(f"[SERIAL] Received: {data}")
         return data
