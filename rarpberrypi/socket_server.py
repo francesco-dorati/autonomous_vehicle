@@ -15,7 +15,7 @@ class TCPServer(threading.Thread):
     def run(self):
         self.socket.bind((self.hostname, self.port))
         self.socket.listen(1)
-        print(f"[TCP SERVER] Listening on {self.hostname}:{self.port} ...")
+        print(f"[TCP SERVER] Listening on {self.hostname}:{self.port}")
         while self.running:
             try:
                 self.connection, addr = self.socket.accept()
@@ -74,6 +74,7 @@ class UDPServer(threading.Thread):
         while self.running:
             try:
                 data, addr = self.socket.recvfrom(1024)
+                print(f"Received {data}")
                 if not self.connected and data.decode().strip() == "SYN":
                     self.socket.send("ACK".encode(), addr)
                     print(f"[UDP SERVER] Connected with {addr}")
