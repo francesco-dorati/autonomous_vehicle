@@ -25,10 +25,10 @@ class MotorController {
       int counts_per_rev, bool reverse
     );
 
-    double update(double goal_rpm);
+    double update(double goal);
     long ticks();
     
-    double _goal_rpm = 0, _actual_rpm = 0, _power = 0;
+    double goal_rpm = 0, actual_rpm = 0, power = 0;
 
   private:
     Encoder _encoder;

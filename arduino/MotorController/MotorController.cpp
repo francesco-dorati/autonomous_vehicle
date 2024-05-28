@@ -10,7 +10,7 @@ MotorController::MotorController(
   _in1_pin(in1_pin), 
   _in2_pin(in2_pin), 
   _encoder(enc_a_pin, enc_b_pin),
-  _motor_pid(&_actual_rpm, &_power, &_goal_rpm, KI, KP, KD, DIRECT),
+  _motor_pid(&actual_rpm, &power, &goal_rpm, KI, KP, KD, DIRECT),
   _ticks_per_rev(counts_per_rev),
   _reverse(reverse)
 {
@@ -21,9 +21,9 @@ MotorController::MotorController(
   _encoder_prev_counts = 0;
   _encoder_prev_time = 0;
 
-  _goal_rpm = 0;
-  _actual_rpm = 0;
-  _power = 0;
+  goal_rpm = 0;
+  actual_rpm = 0;
+  power = 0;
 
   _motor_pid.SetMode(AUTOMATIC);
   _motor_pid.SetOutputLimits(PWM_MIN, PWM_MAX);
@@ -54,16 +54,16 @@ MotorController::MotorController(
 //   return curent_rpm;
 // }
 
-double MotorController::update(double goal_rpm) {
-  _goal_rpm = goal_rpm;
-  _actual_rpm = _get_current_rpm();
+double MotorController::update(double goal) {
+  goal_rpm = goal;
+  actual_rpm = _get_current_rpm();
 
-  if (_goal_rpm == 0.0) _power = 0.0;
+  if (goal_rpm == 0.0) power = 0.0;
   
   else _motor_pid.Compute();
 
-  _set_motor_power(_power);
-  return _actual_rpm;
+  _set_motor_power(power);
+  return actual_rpm;
 }
 
 long MotorController::ticks() {
