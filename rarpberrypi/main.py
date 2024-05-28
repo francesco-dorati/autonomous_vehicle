@@ -21,7 +21,7 @@ class Mode(Enum):
 
 def main():
     # Start Sockets
-    serial = SerialClient(SERIAL_PORT, SERIAL_RATE)
+    ser = SerialClient(SERIAL_PORT, SERIAL_RATE)
     auto_socket = TCPServer(HOSTNAME, AUTO_SOCKET_PORT)
     manual_socket = UDPServer(HOSTNAME, MANUAL_SOCKET_PORT)
 
@@ -41,14 +41,14 @@ def main():
                 mode = Mode.MANUAL
 
         elif mode == Mode.AUTO:
-            auto_controller = AutonomousController(auto_socket, serial)
+            auto_controller = AutonomousController(auto_socket, ser)
             auto_controller.loop()
             auto_socket.end_connection()
             mode = Mode.WAIT_CONNECTION
             continue
 
         elif mode == Mode.MANUAL:
-            manual_controller = ManualController(manual_socket, serial)
+            manual_controller = ManualController(manual_socket, ser)
             manual_controller.loop()
             manual_socket.end_connection()
             mode = Mode.WAIT_CONNECTION

@@ -73,47 +73,8 @@ void loop() {
     } else {
         running_loop();
     }
-
-    unsigned long t_start = millis();
-    serial_loop = !serial_loop;
-
-
-    if (serial_loop) {
-        Serial.println("HI!");
-        if (Serial.available() > 0) {
-            String s = Serial.readStringUntil("\n");
-            if (s == "STOP\n") {
-                controller_mode = IDLE;
-                return;
-            }
-            // Serial.print("Received: ");
-            // Serial.println(s);
-
-            goal_velocity = read_data(s);
-            goal_w_vel = inverse_kinematics(goal_velocity);
-        }
-        double actual_rpm_left = motor_left.update(goal_w_vel.left);
-        double actual_rpm_right = motor_right.update(goal_w_vel.right);
-        
-        int d_ticks_l = motor_left.ticks() - prev_ticks_l;
-        int d_ticks_r = motor_right.ticks() - prev_ticks_r;
-        prev_ticks_l += d_ticks_l;
-        prev_ticks_r += d_ticks_r;
-
-        // String res = produce_response(d_ticks_l, d_ticks_r, dist, motor_left, motor_right);
-        // String debug = produce_debugger(goal_w_vel, actual_rpm_left, actual_rpm_right, motor_left.ticks(), motor_right.ticks());
-        // Serial.println(res);
-
-    } else {
-        motor_left.update(goal_w_vel.left);
-        motor_right.update(goal_w_vel.right);
-    }
-
-    unsigned long dt = millis() - t_start;
-    if (dt < CONTROLLER_UPDATE_TIME)
-        delay(CONTROLLER_UPDATE_TIME - dt);
-    
 }
+ 
 void idle_loop() {
     if (Serial.available() > 0) {
         String s = Serial.readStringUntil("\n");
