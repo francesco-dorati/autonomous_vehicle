@@ -5,17 +5,18 @@ import queue
 class TCPServer(threading.Thread):
     def __init__(self, hostname, port):
         super().__init__(daemon=True)
+        self.running = True
+        self.connected = False
         self.hostname = hostname
         self.port = port
         self.queue = queue.Queue()
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.running = True
-        self.connected = False
-    
-    def run(self):
         self.socket.bind((self.hostname, self.port))
         self.socket.listen(1)
         print(f"[TCP SERVER] Listening on {self.hostname}:{self.port}")
+
+    def run(self):
         while self.running:
             try:
                 self.connection, addr = self.socket.accept()
@@ -44,10 +45,10 @@ class TCPServer(threading.Thread):
                 break
 
 
-    def send(self, lin_vel, ang_vel):
-        if not self.connected:
-            raise Exception("No client connected")
-        self.connection.send(f"{lin_vel} {ang_vel}".encode())
+    # def send(self, lin_vel, ang_vel):
+    #     if not self.connected:
+    #         raise Exception("No client connected")
+    #     self.connection.send(f"{lin_vel} {ang_vel}".encode())
 
     def end_connection(self): 
         self.connection.close()
