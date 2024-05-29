@@ -45,11 +45,11 @@ class ManualController:
                     skip = 0
 
             self.serial.send(lin_vel, ang_vel)
-            dt = time.time() - t_start
 
             self.serial.read()
 
-            print(f"[MANUAL] Loop time: {(dt*1000):.4f} ms instead of {(MANUAL_TAO*1000):.4f} ms")
+            dt = time.time() - t_start
+            print(f"[MANUAL] Loop time: {(dt*1000):.3f} ms instead of {(MANUAL_TAO*1000)} ms")
             if dt < MANUAL_TAO:
                 time.sleep(MANUAL_TAO - dt)
 

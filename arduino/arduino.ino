@@ -86,6 +86,7 @@ void loop() {
             controller_mode = IDLE;
             Serial.println("OK");
             return;
+
         } else if (d.startsWith("V")) {
             goal_velocity = process_data(d);
             goal_velocity_wheels = inverse_kinematics(goal_velocity);
@@ -124,9 +125,12 @@ String read_serial() {
 
 state_vel process_data(String s) {
     state_vel vel;  
-    int spaceIndex = s.indexOf(' ');
-    vel.vx = s.substring(0, spaceIndex).toDouble();
-    vel.va = s.substring(spaceIndex + 1).toDouble();
+    int sp1 = s.indexOf(' ');
+    int sp2 = s.indexOf(' ', sp1 + 1);
+    if (sp1 != -1 && sp2 != -1) {
+        vel.vx = s.substring(sp1 + 1, sp2).toDouble();
+        vel.va = s.substring(sp2 + 1).toDouble();
+    }
     return vel;
 }
 
@@ -223,7 +227,7 @@ wheels_vel inverse_kinematics(state_vel goal_vel) {
 
 
 
-String produce_response(MotorController ml, MotorController mr, int ticks_l, int ticks_r, float dist[4], float loop_time) {
+String produce_response(MotorController ml, MotorController mr, int ticks_l, int ticks_r, float dist[4], double loop_time) {
     String left = "LEFT " + String(ml.goal_rpm) + " " + String(ml.actual_rpm) + " " + String(ml.power) + " " + String(ticks_l) + "; ";
     String right = "RIGHT " + String(mr.goal_rpm) + " " + String(mr.actual_rpm) + " " + String(mr.power) + " " + String(ticks_r) + "; ";
     String time = "TIME " + String(loop_time) + "; ";

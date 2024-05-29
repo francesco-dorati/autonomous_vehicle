@@ -32,8 +32,8 @@ class SerialClient:
             
 
     def send(self, lin_vel, ang_vel):
-        data = f"{lin_vel} {ang_vel}\n"
-        print(f"[SERIAL] Sending: {data.strip()}")
+        data = f"V {lin_vel} {ang_vel}\n"
+        print(f"\n[SERIAL] Sending: {data.strip()}")
         self.serial.write(data.encode())
 
     def read(self):
