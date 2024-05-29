@@ -28,7 +28,7 @@ class SerialClient:
         while data != "OK":
             time.sleep(.01)
             data = self.serial.readline().decode().strip()
-        print("[SERIAL] Controller started.\n")
+        print("[SERIAL] Controller stopped.\n")
             
 
     def send(self, lin_vel, ang_vel):

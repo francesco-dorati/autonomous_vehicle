@@ -1,0 +1,13 @@
+
+TODO
+    RASPBERRY
+        - mandare dati di velocità attuale e posizione stimata al dev
+            - odometry che fa una media della velocità ricevuta e quella calcolata al momento
+    DEV MACHINE
+        - implementare boost di velocità (con shift) [mando lettere maiuscole per il boost]
+        - visualizzare dati ricevuti da rpi
+    ARDUINO
+        - pensare a nuovi adattamenti visto velocità
+
+
+

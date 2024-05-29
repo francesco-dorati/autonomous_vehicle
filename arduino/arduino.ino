@@ -15,17 +15,7 @@
 #define WHEEL_DISTANCE_FROM_CENTER 12 // cm
 #define CONTROLLER_FREQ 100 // Hz
 #define CONTROLLER_UPDATE_TIME (1000/CONTROLLER_FREQ)
-#define SERIAL_RATE 50  // Hz
-#define SERIAL_UPDATE_TIME (1000/SERIAL_RATE)
 
-/*
-TODO
-- [arduino] create idle state, handshake with serial frequency
-- [rpi] stop running of a server if the other control is on
-- [console] add settings with all constants
-
-
-*/
 #include "Arduino.h"
 #include "MotorController.h"
 
@@ -142,6 +132,15 @@ wheels_vel inverse_kinematics(state_vel goal_vel) {
     return w;
 }
 
+String produce_response(MotorController ml, MotorController mr, int ticks_l, int ticks_r, float dist[4], double loop_time) {
+    String left = "LEFT " + String(ml.goal_rpm) + " " + String(ml.actual_rpm) + " " + String(ml.power) + " " + String(ticks_l) + "; ";
+    String right = "RIGHT " + String(mr.goal_rpm) + " " + String(mr.actual_rpm) + " " + String(mr.power) + " " + String(ticks_r) + "; ";
+    String time = "TIME " + String(loop_time) + "; ";
+    String data_res = left + right + time;
+    return data_res;
+}
+
+
 // void idle_loop() {
 //     if (Serial.available() > 0) {
 //         read_serial();
@@ -227,13 +226,6 @@ wheels_vel inverse_kinematics(state_vel goal_vel) {
 
 
 
-String produce_response(MotorController ml, MotorController mr, int ticks_l, int ticks_r, float dist[4], double loop_time) {
-    String left = "LEFT " + String(ml.goal_rpm) + " " + String(ml.actual_rpm) + " " + String(ml.power) + " " + String(ticks_l) + "; ";
-    String right = "RIGHT " + String(mr.goal_rpm) + " " + String(mr.actual_rpm) + " " + String(mr.power) + " " + String(ticks_r) + "; ";
-    String time = "TIME " + String(loop_time) + "; ";
-    String data_res = left + right + time;
-    return data_res;
-}
 
 // String produce_debugger(wheels_vel goal, double actual_l, double actual_r, int ticks_l, int ticks_r) {
 //     String s = String(goal.left) +  " " + String(actual_l) + " " + String(goal.right) + " " + String(actual_r);

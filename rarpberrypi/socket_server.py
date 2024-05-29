@@ -63,7 +63,9 @@ class TCPServer(threading.Thread):
         if self.connected:
             raise Exception("Cannot block socket while it is still connected.")
         self.running = False
-
+        
+    def resume(self):
+        self.running = True
 
     def stop_server(self):
         self.running = False
