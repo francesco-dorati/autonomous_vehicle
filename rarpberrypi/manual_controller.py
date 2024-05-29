@@ -3,8 +3,8 @@ import time
 MANUAL_LOOP_FREQ = 50 # Hz
 MANUAL_TAO = (1/MANUAL_LOOP_FREQ) # s
 
-MANUAL_LIN_VEL = 18 # cm/s
-MANUAL_ANG_VEL = 40 # deg/s
+MANUAL_LIN_VEL = 20 # cm/s
+MANUAL_ANG_VEL = 50 # deg/s
 
 
 class ManualController:
@@ -24,7 +24,6 @@ class ManualController:
                 skip = 0
                 lin_vel, ang_vel = (0, 0)
                 keyboard_buffer = self.socket.queue.get()
-                print(keyboard_buffer)
 
                 if "f" in keyboard_buffer:
                     lin_vel = MANUAL_LIN_VEL
@@ -40,7 +39,7 @@ class ManualController:
 
             else:
                 skip += 1
-                if skip > MANUAL_LOOP_FREQ*1:
+                if skip > MANUAL_LOOP_FREQ*1: # 1 second
                     lin_vel, ang_vel = (0, 0)
                     skip = 0
 
@@ -52,7 +51,6 @@ class ManualController:
             print(f"[MANUAL] Loop time: {(dt*1000):.3f} ms instead of {(MANUAL_TAO*1000)} ms")
             if dt < MANUAL_TAO:
                 time.sleep(MANUAL_TAO - dt)
+        
 
 
-    def end_connection(self):
-        self.socket.end_connection()

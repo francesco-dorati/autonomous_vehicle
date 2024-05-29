@@ -69,6 +69,7 @@ void setup() {
 
 void loop() {
     // read serial data
+    unsigned long t_start = micros();
     String d = read_serial();
 
     if (controller_mode == IDLE) {
@@ -79,7 +80,6 @@ void loop() {
         } else delay(100);
 
     } else if (controller_mode == RUNNING) {
-        unsigned long t_start = millis();
         received_serial = false;
 
         if (d == "E") {
@@ -102,11 +102,11 @@ void loop() {
             prev_ticks_l += d_ticks_l;
             prev_ticks_r += d_ticks_r;
 
-            String res = produce_response(motor_left, motor_right, d_ticks_l, d_ticks_r, dist, millis() - t_start);
+            String res = produce_response(motor_left, motor_right, d_ticks_l, d_ticks_r, dist, (micros() - t_start));
             Serial.println(res);
         }
 
-        unsigned long dt = millis() - t_start;
+        unsigned long dt = (micros() - t_start)/1000;
         if (dt < CONTROLLER_UPDATE_TIME)
             delay(CONTROLLER_UPDATE_TIME - dt);
 

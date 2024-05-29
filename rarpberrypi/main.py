@@ -31,30 +31,40 @@ def main():
     mode = Mode.WAIT_CONNECTION
     while True:
         if mode == Mode.WAIT_CONNECTION:
+            # Check connections
             if auto_socket.connected and manual_socket.connected:
                 auto_socket.end_connection()
                 manual_socket.end_connection()
 
             elif auto_socket.connected:
                 mode = Mode.AUTO
+                manual_socket.block()
+
             elif manual_socket.connected:
                 mode = Mode.MANUAL
+                auto_socket.block()
 
         elif mode == Mode.AUTO:
             auto_controller = AutonomousController(auto_socket, ser)
             auto_controller.loop()
             auto_socket.end_connection()
+            ser.stop()
+
             mode = Mode.WAIT_CONNECTION
+            manual_socket.resume()
             continue
 
         elif mode == Mode.MANUAL:
             manual_controller = ManualController(manual_socket, ser)
             manual_controller.loop()
             manual_socket.end_connection()
+            ser.stop()
+
             mode = Mode.WAIT_CONNECTION
+            auto_socket.resume()
             continue
 
-        time.sleep(0.1)
+        time.sleep(0.5)
 
     
 if __name__ == "__main__":
