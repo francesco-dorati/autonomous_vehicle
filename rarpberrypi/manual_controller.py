@@ -19,12 +19,12 @@ class ManualController:
         lin_vel, ang_vel = (0, 0)
         while self.socket.connected:
             t_start = time.time()
-            self.serial.read()
 
             if not self.socket.queue.empty():
                 skip = 0
                 lin_vel, ang_vel = (0, 0)
                 keyboard_buffer = self.socket.queue.get()
+                print(keyboard_buffer)
 
                 if "f" in keyboard_buffer:
                     lin_vel = MANUAL_LIN_VEL
@@ -45,12 +45,14 @@ class ManualController:
                     skip = 0
 
             self.serial.send(lin_vel, ang_vel)
-
-
             dt = time.time() - t_start
-            print(f"[MANUAL] Loop time: {(dt/1000):.1f} ms")
+
+            self.serial.read()
+
+            print(f"[MANUAL] Loop time: {(dt*1000):.4f} ms instead of {(MANUAL_TAO*1000):.4f} ms")
             if dt < MANUAL_TAO:
                 time.sleep(MANUAL_TAO - dt)
+
 
     def end_connection(self):
         self.socket.end_connection()

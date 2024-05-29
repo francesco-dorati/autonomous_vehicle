@@ -13,7 +13,7 @@ class SerialClient:
             print("[SERIAL] Successfully connected.\n")
     
     def start(self):
-        self.serial.write("START\n".encode())
+        self.serial.write("S".encode())
         print("[SERIAL] Starting controller...")
         data = self.serial.readline().decode().strip()
         while data != "OK":
@@ -22,7 +22,7 @@ class SerialClient:
         print("[SERIAL] Controller started.\n")
 
     def stop(self):
-        self.serial.write("STOP\n".encode())
+        self.serial.write("E".encode())
         print("[SERIAL] Stopping controller...")
         data = self.serial.readline().decode().strip()
         while data != "OK":
@@ -38,7 +38,7 @@ class SerialClient:
 
     def read(self):
         data = self.serial.readline().decode().strip()
-        while data != "":
+        while data == "":
             data = self.serial.readline().decode().strip()
         print(f"[SERIAL] Received: {data}")
         return data

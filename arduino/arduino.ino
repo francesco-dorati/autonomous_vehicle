@@ -70,20 +70,14 @@ void setup() {
 void loop() {
     if (controller_mode == IDLE) {
         idle_loop();
-    } else {
+    } else if (controller_mode == RUNNING) {
         running_loop();
     }
 }
  
 void idle_loop() {
     if (Serial.available() > 0) {
-        String s = Serial.readStringUntil("\n");
-        
-        if (s == "START\n"){
-            controller_mode = RUNNING;
-            Serial.println("OK");
-        }
-        
+        read_serial();
     } else delay(100);
     
     return;
@@ -94,7 +88,7 @@ void running_loop() {
     received_serial = false;
 
     if (Serial.available() > 0) {
-        String s = Serial.readStringUntil("\n");
+        String s = Serial.read("\n");
         if (s == "STOP\n") {
             Serial.println("OK");
             controller_mode = IDLE;
@@ -115,7 +109,7 @@ void running_loop() {
         prev_ticks_l += d_ticks_l;
         prev_ticks_r += d_ticks_r;
 
-        String res = produce_response(motor_left, motor_right, d_ticks_l, d_ticks_r, dist);
+        String res = produce_response(motor_left, motor_right, d_ticks_l, d_ticks_r, dist, millis() - t_start);
         Serial.println(res);
     }
 
@@ -161,15 +155,48 @@ void running_loop() {
     //     delay(CONTROLLER_UPDATE_TIME - dt);
 }
 
-state_vel read_data(String s) {
-    state_vel vel;  
-    int spaceIndex = s.indexOf(' ');
+state_vel read_serial() {
+    char command = Serial.read();
 
-    vel.vx = s.substring(0, spaceIndex).toDouble();
-    vel.va = s.substring(spaceIndex + 1).toDouble();
+    if (command == 'S') {           // START
+        controller_mode = RUNNING;
+        Serial.println("OK");
 
-    return vel;
+    } else if (command == 'E') {    // END
+        controller_mode = IDLE;
+        Serial.println("OK");
+
+    } else if (command == 'V') {    // VELOCITY
+        String n1 = "", n2 = "";
+        bool n1_done = false;
+        char c = Serial.read();
+        while (true) {
+            c = Serial.read();
+            if (c == ' ' || c == '\n') {
+                if (n1_done) break;
+                else n1_done = true;
+            } else {
+                if (n1_done) n2 += c;
+                else n1 += c;
+            }
+        }
+
+        state_vel v(n1.toDouble(), n2.toDouble());
+        return v;
+
+    }
+
+
 }
+// state_vel read_data(String s) {
+//     state_vel vel;  
+//     int spaceIndex = s.indexOf(' ');
+
+//     vel.vx = s.substring(0, spaceIndex).toDouble();
+//     vel.va = s.substring(spaceIndex + 1).toDouble();
+
+//     return vel;
+// }
 
 wheels_vel inverse_kinematics(state_vel goal_vel) {
     wheels_vel w;
@@ -180,11 +207,11 @@ wheels_vel inverse_kinematics(state_vel goal_vel) {
 }
 
 
-String produce_response(MotorController ml, MotorController mr, int ticks_l, int ticks_r, float dist[4]) {
+String produce_response(MotorController ml, MotorController mr, int ticks_l, int ticks_r, float dist[4], float loop_time) {
     String left = "LEFT " + String(ml.goal_rpm) + " " + String(ml.actual_rpm) + " " + String(ml.power) + " " + String(ticks_l) + "; ";
     String right = "RIGHT " + String(mr.goal_rpm) + " " + String(mr.actual_rpm) + " " + String(mr.power) + " " + String(ticks_r) + "; ";
-
-    String data_res = left + right;
+    String time = "TIME " + String(loop_time) + "; ";
+    String data_res = left + right + time;
     return data_res;
 }
 
