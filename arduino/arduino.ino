@@ -55,7 +55,7 @@ MotorController motor_right(PWM_MR, IN1_MR, IN2_MR, ENCA_MR, ENCB_MR, COUNTS_PER
 mode controller_mode = IDLE;
 
 state_vel goal_velocity;
-wheels_vel goal_w_vel;
+wheels_vel goal_velocity_wheels;
 bool received_serial = false;
 
 long prev_ticks_l = 0;
@@ -68,54 +68,117 @@ void setup() {
 }
 
 void loop() {
+    // read serial data
+    String d = read_serial();
+
     if (controller_mode == IDLE) {
-        idle_loop();
+        if (d == "S") {
+            controller_mode = RUNNING;
+            Serial.println("OK");
+            return;
+        } else delay(100);
+
     } else if (controller_mode == RUNNING) {
-        running_loop();
+        unsigned long t_start = millis();
+        received_serial = false;
+
+        if (d == "E") {
+            controller_mode = IDLE;
+            Serial.println("OK");
+            return;
+        } else if (d.startsWith("V")) {
+            goal_velocity = process_data(d);
+            goal_velocity_wheels = inverse_kinematics(goal_velocity);
+            received_serial = true;
+        } 
+
+        motor_left.update(goal_velocity_wheels.left);
+        motor_right.update(goal_velocity_wheels.right);
+
+        if (received_serial) {
+            int d_ticks_l = motor_left.ticks() - prev_ticks_l;
+            int d_ticks_r = motor_right.ticks() - prev_ticks_r;
+            prev_ticks_l += d_ticks_l;
+            prev_ticks_r += d_ticks_r;
+
+            String res = produce_response(motor_left, motor_right, d_ticks_l, d_ticks_r, dist, millis() - t_start);
+            Serial.println(res);
+        }
+
+        unsigned long dt = millis() - t_start;
+        if (dt < CONTROLLER_UPDATE_TIME)
+            delay(CONTROLLER_UPDATE_TIME - dt);
+
     }
 }
  
-void idle_loop() {
-    if (Serial.available() > 0) {
-        read_serial();
-    } else delay(100);
-    
-    return;
+String read_serial() {
+    String s = "";
+    while (Serial.available()) {
+        char c = Serial.read();
+        if (c == '\n') break;
+        s += c;
+    };
+    return s;
 }
 
-void running_loop() {
-    unsigned long t_start = millis();
-    received_serial = false;
+state_vel process_data(String s) {
+    state_vel vel;  
+    int spaceIndex = s.indexOf(' ');
+    vel.vx = s.substring(0, spaceIndex).toDouble();
+    vel.va = s.substring(spaceIndex + 1).toDouble();
+    return vel;
+}
 
-    if (Serial.available() > 0) {
-        String s = Serial.read("\n");
-        if (s == "STOP\n") {
-            Serial.println("OK");
-            controller_mode = IDLE;
-            return;
-        }
-        received_serial = true;
+wheels_vel inverse_kinematics(state_vel goal_vel) {
+    wheels_vel w;
+    w.left = (goal_vel.vx * 60) / (2*PI*WHEEL_RADIUS) - (goal_vel.va * WHEEL_DISTANCE_FROM_CENTER) / (6*WHEEL_RADIUS);
+    w.right = (goal_vel.vx * 60) / (2*PI*WHEEL_RADIUS) + (goal_vel.va * WHEEL_DISTANCE_FROM_CENTER) / (6*WHEEL_RADIUS);
 
-        goal_velocity = read_data(s);
-        goal_w_vel = inverse_kinematics(goal_velocity);
-    }
+    return w;
+}
 
-    motor_left.update(goal_w_vel.left);
-    motor_right.update(goal_w_vel.right);
+// void idle_loop() {
+//     if (Serial.available() > 0) {
+//         read_serial();
+//     } else delay(100);
+    
+//     return;
+// }
 
-    if (received_serial) {
-        int d_ticks_l = motor_left.ticks() - prev_ticks_l;
-        int d_ticks_r = motor_right.ticks() - prev_ticks_r;
-        prev_ticks_l += d_ticks_l;
-        prev_ticks_r += d_ticks_r;
+// void running_loop() {
+//     unsigned long t_start = millis();
+//     received_serial = false;
 
-        String res = produce_response(motor_left, motor_right, d_ticks_l, d_ticks_r, dist, millis() - t_start);
-        Serial.println(res);
-    }
+//     if (Serial.available() > 0) {
+//         String s = Serial.read("\n");
+//         if (s == "STOP\n") {
+//             Serial.println("OK");
+//             controller_mode = IDLE;
+//             return;
+//         }
+//         received_serial = true;
 
-    unsigned long dt = millis() - t_start;
-    if (dt < CONTROLLER_UPDATE_TIME)
-        delay(CONTROLLER_UPDATE_TIME - dt);
+//         goal_velocity = read_data(s);
+//         goal_w_vel = inverse_kinematics(goal_velocity);
+//     }
+
+//     motor_left.update(goal_w_vel.left);
+//     motor_right.update(goal_w_vel.right);
+
+//     if (received_serial) {
+//         int d_ticks_l = motor_left.ticks() - prev_ticks_l;
+//         int d_ticks_r = motor_right.ticks() - prev_ticks_r;
+//         prev_ticks_l += d_ticks_l;
+//         prev_ticks_r += d_ticks_r;
+
+//         String res = produce_response(motor_left, motor_right, d_ticks_l, d_ticks_r, dist, millis() - t_start);
+//         Serial.println(res);
+//     }
+
+//     unsigned long dt = millis() - t_start;
+//     if (dt < CONTROLLER_UPDATE_TIME)
+//         delay(CONTROLLER_UPDATE_TIME - dt);
 
 
 
@@ -153,58 +216,11 @@ void running_loop() {
     // unsigned long dt = millis() - t_start;
     // if (dt < CONTROLLER_UPDATE_TIME)
     //     delay(CONTROLLER_UPDATE_TIME - dt);
-}
-
-state_vel read_serial() {
-    char command = Serial.read();
-
-    if (command == 'S') {           // START
-        controller_mode = RUNNING;
-        Serial.println("OK");
-
-    } else if (command == 'E') {    // END
-        controller_mode = IDLE;
-        Serial.println("OK");
-
-    } else if (command == 'V') {    // VELOCITY
-        String n1 = "", n2 = "";
-        bool n1_done = false;
-        char c = Serial.read();
-        while (true) {
-            c = Serial.read();
-            if (c == ' ' || c == '\n') {
-                if (n1_done) break;
-                else n1_done = true;
-            } else {
-                if (n1_done) n2 += c;
-                else n1 += c;
-            }
-        }
-
-        state_vel v(n1.toDouble(), n2.toDouble());
-        return v;
-
-    }
-
-
-}
-// state_vel read_data(String s) {
-//     state_vel vel;  
-//     int spaceIndex = s.indexOf(' ');
-
-//     vel.vx = s.substring(0, spaceIndex).toDouble();
-//     vel.va = s.substring(spaceIndex + 1).toDouble();
-
-//     return vel;
 // }
 
-wheels_vel inverse_kinematics(state_vel goal_vel) {
-    wheels_vel w;
-    w.left = (goal_vel.vx * 60) / (2*PI*WHEEL_RADIUS) - (goal_vel.va * WHEEL_DISTANCE_FROM_CENTER) / (6*WHEEL_RADIUS);
-    w.right = (goal_vel.vx * 60) / (2*PI*WHEEL_RADIUS) + (goal_vel.va * WHEEL_DISTANCE_FROM_CENTER) / (6*WHEEL_RADIUS);
 
-    return w;
-}
+
+
 
 
 String produce_response(MotorController ml, MotorController mr, int ticks_l, int ticks_r, float dist[4], float loop_time) {
