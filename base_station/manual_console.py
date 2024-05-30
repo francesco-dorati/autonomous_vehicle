@@ -67,7 +67,7 @@ class ManualConsole:
                     input_buffer.remove("l")
                     input_buffer.remove("r")
                 
-                if not self.in_buffer.is_empty():
+                if not self.in_buffer.empty():
                     data = self.in_buffer.get()
                     self._print_direction(input_buffer, data)
 
@@ -87,9 +87,9 @@ class ManualConsole:
         receiver.stop()
 
     def receive_data():
-        data = self.socket.recv(1024).decode()
+        data, _ = self.socket.recvfrom(1024)
         if data:
-            data = json.loads(data)
+            data = json.loads(data.decode())
             self.in_buffer.put(data)
 
 

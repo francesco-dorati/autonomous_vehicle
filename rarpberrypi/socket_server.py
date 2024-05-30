@@ -115,6 +115,7 @@ class UDPServer(threading.Thread):
                 time.sleep(1)
 
     def send(self, data):
+        print(f"[UDP SERVER] Received: {data}")
         self.send_queue.put(data)
 
     def end_connection(self):
