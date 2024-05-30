@@ -79,6 +79,13 @@ class ManualConsole:
                 if "l" in input_buffer and "r" in input_buffer:
                     input_buffer.remove("l")
                     input_buffer.remove("r")
+
+                if "F" in input_buffer and "B" in input_buffer:
+                    input_buffer.remove("F")
+                    input_buffer.remove("B")
+                if "L" in input_buffer and "R" in input_buffer:
+                    input_buffer.remove("L")
+                    input_buffer.remove("R")
                 
                 if not self.in_buffer.empty():
                     data = self.in_buffer.get()
