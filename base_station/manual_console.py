@@ -74,8 +74,6 @@ class ManualConsole:
                 # send buffer
                 self.socket.sendto(''.join(input_buffer).encode('utf-8'), (self.hostname, self.port))
 
-
-
                 # wait until next iteration
                 dt = time.time() - start_time
                 if dt < MANUAL_TAO:
@@ -86,7 +84,7 @@ class ManualConsole:
 
         receiver.stop()
 
-    def receive_data():
+    def receive_data(self):
         data, _ = self.socket.recvfrom(1024)
         if data:
             data = json.loads(data.decode())
