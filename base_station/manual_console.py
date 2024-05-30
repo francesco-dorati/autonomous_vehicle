@@ -109,6 +109,8 @@ class ManualConsole:
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
 
             print(f'     {arrow_up}')
             print(f'    {arrow_left}{arrow_down}{arrow_right}\n\n')
@@ -116,5 +118,5 @@ class ManualConsole:
             print(f"Wheels:     {data['actual_vel_wheels'][0]} [rpm]       {data['actual_vel_wheels'][1]} [rpm]")
             print("Position: ")
             print(f"    X: {data['position'][0]} [cm]       Y: {data['position'][1]} [cm]       θ: {data['position'][2]} [deg]\n\n")
-            print(f"Loop time:  arduino {data['time_arduino_us']*1000}[ms]    rpi {data['time_rpi_ms']} [ms]")
+            print(f"Loop time:  arduino {data['time_arduino_us']/1000}[ms]    rpi {data['time_rpi_ms']} [ms]")
             print("\n\n")
