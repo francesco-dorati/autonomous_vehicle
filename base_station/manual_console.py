@@ -113,6 +113,7 @@ class ManualConsole:
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
 
             print(f'     {arrow_up}')
             print(f'    {arrow_left}{arrow_down}{arrow_right}\n\n')
