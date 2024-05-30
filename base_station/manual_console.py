@@ -65,7 +65,7 @@ class ManualConsole:
                     input_buffer.remove("l")
                     input_buffer.remove("r")
                 
-                if not self.in_buffer.is_empty()
+                if not self.in_buffer.is_empty():
                     data = self.in_buffer.get()
                     self._print_direction(input_buffer, data)
 
