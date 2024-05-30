@@ -87,7 +87,6 @@ class ManualConsole:
     def receive_data(self):
         while True:
             data, _ = self.socket.recvfrom(1024)
-            print(f"Received: {data}")
             if data:
                 data = json.loads(data.decode())
                 self.in_buffer.put(data)
