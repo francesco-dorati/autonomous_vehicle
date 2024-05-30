@@ -33,7 +33,7 @@ class ManualConsole:
         print("         W: Forward")
         print("A: Left  S: Backward  D: Right\n")
         print("(esc) or (space) to exit.")
-        print("\n\n\n\n\n\n\n\n\n\n\n\n\n")
+        print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
 
     def run(self):
         receiver = threading.Thread(target=self.receive_data, daemon=True)
@@ -115,8 +115,8 @@ class ManualConsole:
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
 
-            print(f'     {arrow_up}')
-            print(f'    {arrow_left}{arrow_down}{arrow_right}\n\n')
+            print(f'         {arrow_up}')
+            print(f'        {arrow_left}{arrow_down}{arrow_right}\n\n')
             print(f"Velocity:    {data['actual_vel'][0]:.3f} [cm/s]       {data['actual_vel'][0]:.3f} [deg/s]")
             print(f"Wheels:     {data['actual_vel_wheels'][0]:.3f} [rpm]       {data['actual_vel_wheels'][1]:.3f} [rpm]")
             print("Position: ")
