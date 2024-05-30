@@ -85,11 +85,12 @@ class ManualConsole:
         receiver.stop()
 
     def receive_data(self):
-        data, _ = self.socket.recvfrom(1024)
-        print(f"Received: {data}")
-        if data:
-            data = json.loads(data.decode())
-            self.in_buffer.put(data)
+        while True:
+            data, _ = self.socket.recvfrom(1024)
+            print(f"Received: {data}")
+            if data:
+                data = json.loads(data.decode())
+                self.in_buffer.put(data)
 
 
     def _print_direction(self, input_buffer, data):

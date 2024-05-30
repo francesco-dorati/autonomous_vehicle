@@ -105,6 +105,7 @@ class UDPServer(threading.Thread):
                     
                     if not self.send_queue.empty():
                         data = self.send_queue.get()
+                        print(f"[UDP SERVER] Sending: {data} to {addr}")
                         self.socket.sendto(data.encode(), addr)
 
                 except socket.error:
@@ -115,7 +116,6 @@ class UDPServer(threading.Thread):
                 time.sleep(1)
 
     def send(self, data):
-        print(f"[UDP SERVER] Sending: {data}")
         self.send_queue.put(data)
 
     def end_connection(self):
