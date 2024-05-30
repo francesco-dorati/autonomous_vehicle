@@ -51,13 +51,26 @@ class ManualConsole:
                 
                 # read keypresses
                 if keyboard.is_pressed('w'):
-                    input_buffer.append("f") # forward
+                    if keyboard.is_pressed('shift'):
+                        input_buffer.append("F") # forward
+                    else:
+                        input_buffer.append("f") # forward
                 if keyboard.is_pressed("s"):
-                    input_buffer.append("b") # backward
+                    if keyboard.is_pressed('shift'):
+                        input_buffer.append("B") # backward
+                    else:
+                        input_buffer.append("b") # backward
+
                 if keyboard.is_pressed("a"):
-                    input_buffer.append("l") # left
+                    if keyboard.is_pressed('shift'):
+                        input_buffer.append("L") # left
+                    else:
+                        input_buffer.append("l") # left
                 if keyboard.is_pressed("d"):
-                    input_buffer.append("r") # right
+                    if keyboard.is_pressed('shift'):
+                        input_buffer.append("R") # right
+                    else:    
+                        input_buffer.append("r") # right
                 
                 # buffer processing
                 if "f" in input_buffer and "b" in input_buffer:
