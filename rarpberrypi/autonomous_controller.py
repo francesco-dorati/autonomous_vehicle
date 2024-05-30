@@ -32,7 +32,7 @@ class AutonomousController:
         while True:
             t_start = time.time()
             goal_reached = False
-
+            
             # read command from socket
             if not self.socket.queue.empty():
                 command = self.socket.queue.get()

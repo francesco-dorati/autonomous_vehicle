@@ -10,7 +10,7 @@
 #define ENCA_ML 2    // GREEN (D2)
 #define ENCB_ML 18   // YELLOW (A4)
 
-#define COUNTS_PER_REV 1500
+#define COUNTS_PER_REV 1495
 #define WHEEL_RADIUS 3.4 // cm
 #define WHEEL_DISTANCE_FROM_CENTER 12 // cm
 #define CONTROLLER_FREQ 100 // Hz

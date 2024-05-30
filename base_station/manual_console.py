@@ -28,7 +28,7 @@ class ManualConsole:
         print("         W: Forward")
         print("A: Left  S: Backward  D: Right\n")
         print("(esc) or (space) to exit.")
-        print("\n\n\n\n")
+        print("\n\n\n\n\n\n\n\n\n\n")
 
     def run(self):
         try:
@@ -59,11 +59,15 @@ class ManualConsole:
                     input_buffer.remove("l")
                     input_buffer.remove("r")
                 
-                self._print_direction(input_buffer)
 
                 # send buffer
                 self.socket.sendto(''.join(input_buffer).encode('utf-8'), (self.hostname, self.port))
 
+                data = self.socker.recv(1024).decode()
+                data = json.loads(data)
+
+
+                self._print_direction(input_buffer, data)
                 # wait until next iteration
                 dt = time.time() - start_time
                 if dt < MANUAL_TAO:
@@ -72,9 +76,10 @@ class ManualConsole:
             self.socket.close()
             return
 
-    def _print_direction(self, input_buffer):
-            arrow_up = '\u2191' if "f" in input_buffer else ''
-            arrow_down = '\u2193' if "b" in input_buffer else ''
+    def _print_direction(self, input_buffer, data):
+
+            arrow_up = '\u2191' if "f" in input_buffer else ' '
+            arrow_down = '\u2193' if "b" in input_buffer else ' '
             arrow_left = '\u2190' if "l" in input_buffer else ' '
             arrow_right = '\u2192' if "r" in input_buffer else ' '
 
@@ -82,4 +87,18 @@ class ManualConsole:
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
-            print(f'    {arrow_left}{arrow_up}{arrow_down}{arrow_right}\n\n')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+
+            print(f'     {arrow_up}')
+            print(f'    {arrow_left}{arrow_down}{arrow_right}\n\n')
+            print(f"Velocity:    {data['actual_vel'][0]} [cm/s]       {data['actual_vel'][0]} [deg/s]")
+            print(f"Wheels:     {data['actual_vel_wheels'][0]} [rpm]       {data['actual_vel_wheels'][1]} [rpm]")
+            print("Position: ")
+            print(f"    X: {data['position'][0]} [cm]       Y: {data['position'][1]} [cm]       θ: {data['position'][2]} [deg]\n\n")
+            print(f"Loop time:  arduino {data['time_arduino_us']*1000}[ms]    rpi {data['time_rpi_ms']} [ms]")
+            print("\n\n")
