@@ -10,6 +10,8 @@ class ManualConsole:
     def __init__(self, hostname, port):
         self.hostname = hostname
         self.port = port
+        self.in_buffer = queue.Queue()
+
         print("\n[MANUAL] Starting manual controller...")
         print(f"[MANUAL] Connecting to {self.hostname}:{self.port}...")
         try:
@@ -20,6 +22,7 @@ class ManualConsole:
                 print("[MANUAL] Connection established.")
             else:
                 raise Exception(f"[MANUAL] Connection failed. Received '{ack}'.")
+            threading.Thread()
             
         except socket.error:
             raise Exception("[MANUAL] Connection failed.")
@@ -31,6 +34,9 @@ class ManualConsole:
         print("\n\n\n\n\n\n\n\n\n\n")
 
     def run(self):
+        receiver = threading.Thread(target=self.receive_data, daemon=True)
+        receiver.start()
+
         try:
             while True:
                 start_time = time.time()
@@ -59,15 +65,15 @@ class ManualConsole:
                     input_buffer.remove("l")
                     input_buffer.remove("r")
                 
+                if not self.in_buffer.is_empty()
+                    data = self.in_buffer.get()
+                    self._print_direction(input_buffer, data)
 
                 # send buffer
                 self.socket.sendto(''.join(input_buffer).encode('utf-8'), (self.hostname, self.port))
 
-                data = self.socker.recv(1024).decode()
-                data = json.loads(data)
 
 
-                self._print_direction(input_buffer, data)
                 # wait until next iteration
                 dt = time.time() - start_time
                 if dt < MANUAL_TAO:
@@ -75,6 +81,15 @@ class ManualConsole:
         except:
             self.socket.close()
             return
+
+        receiver.stop()
+
+    def receive_data():
+        data = self.socket.recv(1024).decode()
+        if data:
+            data = json.loads(data)
+            self.in_buffer.put(data)
+
 
     def _print_direction(self, input_buffer, data):
 

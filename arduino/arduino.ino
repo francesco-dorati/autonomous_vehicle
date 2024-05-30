@@ -133,9 +133,9 @@ wheels_vel inverse_kinematics(state_vel goal_vel) {
 }
 
 String produce_response(MotorController ml, MotorController mr, int ticks_l, int ticks_r, float dist[4], double loop_time) {
-    String left = "LEFT " + String(ml.goal_rpm) + " " + String(ml.actual_rpm) + " " + String(ml.power) + " " + String(ticks_l) + "; ";
-    String right = "RIGHT " + String(mr.goal_rpm) + " " + String(mr.actual_rpm) + " " + String(mr.power) + " " + String(ticks_r) + "; ";
-    String time = "TIME " + String(loop_time) + "; ";
+    String left = "LEFT " + String(ml.goal_rpm) + " " + String(ml.actual_rpm) + " " + String(ml.power) + " " + String(ticks_l) + ";";
+    String right = "RIGHT " + String(mr.goal_rpm) + " " + String(mr.actual_rpm) + " " + String(mr.power) + " " + String(ticks_r) + ";";
+    String time = "TIME " + String(loop_time) + ";";
     String data_res = left + right + time;
     return data_res;
 }

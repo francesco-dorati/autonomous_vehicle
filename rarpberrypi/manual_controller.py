@@ -15,12 +15,13 @@ TICKS_PER_REV = 1495
 
 class ManualController:
     def __init__(self, socket, serial):
+        self.current_state = [.0, .0, .0]
+
         self.socket = socket
         self.serial = serial
 
         self.serial.start()
 
-        self.current_state = (.0, .0, .0)
 
 
 
@@ -57,12 +58,6 @@ class ManualController:
                 elif "R" in keyboard_buffer:
                     ang_vel = -MANUAL_ANG_VEL*1.5
             
-
-            else:
-                skip += 1
-                if skip > MANUAL_LOOP_FREQ*1: # 1 second
-                    return
-
             self.serial.send(lin_vel, ang_vel)
             s = self.serial.read()
 
@@ -76,10 +71,13 @@ class ManualController:
                 time.sleep(MANUAL_TAO - dt)
 
     def process_data(self, data_string, t_start, lin_vel, ang_vel):
-        left, right, time = data_string.split("; ")
+        
+        left, right, t, _ = data_string.split(";")
         left = left.split(" ")
         right = right.split(" ")
-        time = time.split(" ")
+        t = t.split(" ")
+
+        print(left, right, t)
 
         data = {}
         data["goal_vel_wheels"] = [float(left[1]), float(right[1])]
@@ -91,14 +89,14 @@ class ManualController:
         data["actual_vel"] = self._kinematics(data["actual_vel_wheels"])
         data["position"] = self._calculate_odometry(data["encoder_ticks"])
 
-        data["time_arduino_us"] = float(time[1])
+        data["time_arduino_us"] = float(t[1])
         data["time_rpi_ms"] = (time.time() - t_start)*1000
         return data
     
     def _kinematics(self, w_vel):
         # calcola velocità delle ruote
-        vx = (w_vel.left + w_vel.right)*math.pi*WHEEL_RADIUS / 30
-        va = (w_vel.right - w_vel.left)*3*WHEEL_RADIUS / DIST_FROM_CENTER
+        vx = (w_vel[0] + w_vel[1])*math.pi*WHEEL_RADIUS / 30
+        va = (w_vel[1] - w_vel[0])*3*WHEEL_RADIUS / DIST_FROM_CENTER
         return [vx, va]
 
     def  _calculate_odometry(self, ticks):
