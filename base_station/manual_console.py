@@ -3,6 +3,7 @@ import keyboard
 import json
 import socket
 import queue
+import threading
 
 MANUAL_FREQ = 10 # Hz
 MANUAL_TAO = (1/MANUAL_FREQ) # s
