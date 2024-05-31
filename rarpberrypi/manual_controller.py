@@ -1,6 +1,8 @@
 import time
 import math
 import json
+import threading
+import socket
 
 MANUAL_LOOP_FREQ = 50 # Hz
 MANUAL_TAO = (1/MANUAL_LOOP_FREQ) # s
@@ -13,55 +15,64 @@ DIST_FROM_CENTER = 12
 TICKS_PER_REV = 1495
 
 
-class ManualController:
-    def __init__(self, socket, serial):
-        self.current_state = [.0, .0, .0]
+class ManualController(threading.Thread):
+    def __init__(self, hostname, port, state, serial):
+        super().__init__(daemon=True)
 
-        self.socket = socket
+        self.hostname = hostname
+        self.port = port
+        self.state = state
         self.serial = serial
+
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind((self.hostname, self.port))
+        print(f"[MANUAL SERVER] Listening on {self.hostname}:{self.port}")
+
+        self.connected = False
 
         self.serial.start()
 
 
+    def run(self):
+        while True:
+            data, _ = self.socket.recvfrom(1024)
+            keyboard_buffer = data.decode()
+            lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)
+            self.serial.send(lin_vel, ang_vel)
+
+        
 
 
-    def loop(self):
 
         # receive data from socket
         # calculate velocity
         # send to serial
-        # await response
-        # process response
-        # send to socket
 
-        data, addr = self.socket.recvfrom(1024)
-        if 
+        # skip = 0
+        # lin_vel, ang_vel = (0, 0)
+        # while self.socket.connected:
+        #     t_start = time.time()
+        #     received = False
 
-        skip = 0
-        lin_vel, ang_vel = (0, 0)
-        while self.socket.connected:
-            t_start = time.time()
-            received = False
+        #     if not self.socket.queue.empty():
+        #         skip = 0
 
-            if not self.socket.queue.empty():
-                skip = 0
+        #         keyboard_buffer = self.socket.queue.get()
+        #         received = True
 
-                keyboard_buffer = self.socket.queue.get()
-                received = True
-
-                lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)
+        #         lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)
             
-            self.serial.send(lin_vel, ang_vel)
-            s = self.serial.read()
+        #     self.serial.send(lin_vel, ang_vel)
+        #     s = self.serial.read()
 
-            if received:
-                data = self.process_data(s, t_start, lin_vel, ang_vel)
-                self.socket.send(json.dumps(data))
+        #     if received:
+        #         data = self.process_data(s, t_start, lin_vel, ang_vel)
+        #         self.socket.send(json.dumps(data))
 
-            dt = time.time() - t_start
-            print(f"[MANUAL] Loop time: {(dt*1000):.3f} ms instead of {(MANUAL_TAO*1000)} ms")
-            if dt < MANUAL_TAO:
-                time.sleep(MANUAL_TAO - dt)
+        #     dt = time.time() - t_start
+        #     print(f"[MANUAL] Loop time: {(dt*1000):.3f} ms instead of {(MANUAL_TAO*1000)} ms")
+        #     if dt < MANUAL_TAO:
+        #         time.sleep(MANUAL_TAO - dt)
 
     def _calculate_speed(self, keyboard_buffer):
         lin_vel, ang_vel = (0, 0)

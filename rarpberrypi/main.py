@@ -19,7 +19,6 @@ class Mode(Enum):
     CONNECTED = 1                # settings, and servers handling
 
 
-class 
 
 import queue
 import socket
@@ -30,12 +29,10 @@ class State:
         self.pos = [.0, .0, .0]
         self.dist = [100, 100, 100, 100]
 
-    def update(self, vx, va, dx, dy, dt, d1, d2, d3, d4):
-        self.vel = [vx, va]
-        self.pos[0] += dx
-        self.pos[1] += dy
-        self.pos[2] += dt
-        self.dist = [d1, d2, d3, d4]
+    def update(self, vel, pos, dist):
+        self.vel = vel
+        self.pos = pos
+        self.dist = dist
 
 class MainController():
     def __init__(self, hostname, port):
@@ -116,11 +113,11 @@ class MainController():
                 raise Exception("[MAIN SERVER] Invalid command.")
             
             if command[1] == "START":
-                self.state_publisher = StateUpdater(HOSTNAME, MANUAL_SOCKET_PORT)
+                self.state_publisher = StateUpdater(HOSTNAME, STATE_SOCKET_PORT, self.state)
                 self.state_publisher.start()
                 return f"OK {self.manual_thread.port}"
                 
-            elif command[1] == "STOP"
+            elif command[1] == "STOP":
                 if self.state_publisher is not None:
                     self.state_publisher.stop()
                     self.state_publisher = None
