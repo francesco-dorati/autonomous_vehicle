@@ -1,12 +1,15 @@
 
 TODO
     RASPBERRY
-        - mandare dati di velocità attuale e posizione stimata al dev
-            - odometry che fa una media della velocità ricevuta e quella calcolata al momento
+        - completare state updater e manual controller
+        - aggiungere camera e sensori
+
     DEV MACHINE
-        - implementare boost di velocità (con shift) [mando lettere maiuscole per il boost]
-        - visualizzare dati ricevuti da rpi
+        - riconciliarsi con rpi
+        - implementare boost di velocità (con shift o spazio)
+        
     ARDUINO
+        - aggiungerer kinematics e spece diff
         - pensare a nuovi adattamenti visto velocità
 
 

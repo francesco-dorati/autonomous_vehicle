@@ -26,6 +26,17 @@ class ManualController:
 
 
     def loop(self):
+
+        # receive data from socket
+        # calculate velocity
+        # send to serial
+        # await response
+        # process response
+        # send to socket
+
+        data, addr = self.socket.recvfrom(1024)
+        if 
+
         skip = 0
         lin_vel, ang_vel = (0, 0)
         while self.socket.connected:
@@ -34,29 +45,11 @@ class ManualController:
 
             if not self.socket.queue.empty():
                 skip = 0
-                lin_vel, ang_vel = (0, 0)
+
                 keyboard_buffer = self.socket.queue.get()
                 received = True
 
-                if "f" in keyboard_buffer:
-                    lin_vel = MANUAL_LIN_VEL
-                elif "F" in keyboard_buffer:
-                    lin_vel = MANUAL_LIN_VEL*1.5
-
-                if "b" in keyboard_buffer:
-                    lin_vel = -MANUAL_LIN_VEL
-                elif "B" in keyboard_buffer:
-                    lin_vel = -MANUAL_LIN_VEL*1.5
-
-                if "l" in keyboard_buffer:
-                    ang_vel = MANUAL_ANG_VEL
-                elif "L" in keyboard_buffer:
-                    ang_vel = MANUAL_ANG_VEL*1.5
-
-                if "r" in keyboard_buffer:
-                    ang_vel = -MANUAL_ANG_VEL
-                elif "R" in keyboard_buffer:
-                    ang_vel = -MANUAL_ANG_VEL*1.5
+                lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)
             
             self.serial.send(lin_vel, ang_vel)
             s = self.serial.read()
@@ -69,6 +62,31 @@ class ManualController:
             print(f"[MANUAL] Loop time: {(dt*1000):.3f} ms instead of {(MANUAL_TAO*1000)} ms")
             if dt < MANUAL_TAO:
                 time.sleep(MANUAL_TAO - dt)
+
+    def _calculate_speed(self, keyboard_buffer):
+        lin_vel, ang_vel = (0, 0)
+
+        if "f" in keyboard_buffer:
+            lin_vel = MANUAL_LIN_VEL
+        elif "F" in keyboard_buffer:
+            lin_vel = MANUAL_LIN_VEL*1.5
+
+        if "b" in keyboard_buffer:
+            lin_vel = -MANUAL_LIN_VEL
+        elif "B" in keyboard_buffer:
+            lin_vel = -MANUAL_LIN_VEL*1.5
+
+        if "l" in keyboard_buffer:
+            ang_vel = MANUAL_ANG_VEL
+        elif "L" in keyboard_buffer:
+            ang_vel = MANUAL_ANG_VEL*1.5
+
+        if "r" in keyboard_buffer:
+            ang_vel = -MANUAL_ANG_VEL
+        elif "R" in keyboard_buffer:
+            ang_vel = -MANUAL_ANG_VEL*1.5
+
+        return lin_vel, ang_vel
 
     def process_data(self, data_string, t_start, lin_vel, ang_vel):
         

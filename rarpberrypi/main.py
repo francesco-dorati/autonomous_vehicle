@@ -1,8 +1,7 @@
 import time
-import socket
 from enum import Enum
 
-from socket_server import TCPServer, UDPServer
+from socket_server import TCPServer, ManualServer
 from serial_client import SerialClient
 from autonomous_controller import AutonomousController
 from manual_controller import ManualController
@@ -11,19 +10,175 @@ SERIAL_PORT = '/dev/ttyUSB0'
 SERIAL_RATE = 115200
 
 HOSTNAME = '172.20.10.7'
-AUTO_SOCKET_PORT = 5500
+MAIN_SOCKET_PORT = 5500
 MANUAL_SOCKET_PORT = 5501
+AUTO_SOCKET_PORT = 5502
 
 class Mode(Enum):
-    WAIT_CONNECTION = 0
-    AUTO = 1
-    MANUAL = 2
+    WAIT_CONNECTION = 0     # wait for developer console to connect
+    CONNECTED = 1                # settings, and servers handling
+
+
+class 
+
+import queue
+import socket
+import threading 
+class State:
+    def __init__(self):
+        self.vel = [.0, .0]
+        self.pos = [.0, .0, .0]
+        self.dist = [100, 100, 100, 100]
+
+    def update(self, vx, va, dx, dy, dt, d1, d2, d3, d4):
+        self.vel = [vx, va]
+        self.pos[0] += dx
+        self.pos[1] += dy
+        self.pos[2] += dt
+        self.dist = [d1, d2, d3, d4]
+
+class MainController():
+    def __init__(self, hostname, port):
+        self.hostname = hostname
+        self.port = port
+
+        # START MAIN SOCKET
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind((self.hostname, self.port))
+        print(f"[MAIN SERVER] Listening on {self.hostname}:{self.port}")
+
+        self.connection = None
+        self.connection_addr = None
+
+        self.mode = Mode.WAIT_CONNECTION
+        self.state = State()
+
+        self.manual_thread = None
+        self.autonomous_thread = None
+        self.state_updater_thread = None
+        self.camera_controller = None
+
+    
+    def run(self):
+        while True:
+            if self.mode == Mode.WAIT_CONNECTION:
+                self.connection, self.connection_addr = self.socket.accept()
+                self.mode = Mode.CONNECTED
+
+            elif self.mode == Mode.CONNECTED:
+                try:
+                    data = self.connection.recv(1024)
+                    if not data:
+                        continue
+
+                    if data.decode().strip() == "EXIT":
+                        self.end_connection()
+                        print(f"[MAIN SERVER] Connection closed by client.")
+                        continue
+
+                    response = self.process_command(data.decode())
+                    self.connection.send(response.encode())
+
+                except socket.error:
+                    self.end_connection()
+                    print(f"[MAIN SERVER] Connection closed by client.")
+                    continue
+                
+    def end_connection(self):
+        self.mode = Mode.WAIT_CONNECTION
+        if self.connection is not None:
+            self.connection.close()
+        self.connection = None
+    
+    def process_command(self, command):
+        command = command.strip().split()
+        if command[0] == "MANUAL":
+            if len(command) != 2:
+                raise Exception("[MAIN SERVER] Invalid command.")
+            
+            if command[1] == "START":
+                if self.autonomous_controller is not None:
+                    return "KO Autonomous Controller is on."
+                
+                self.manual_thread = ManualController(HOSTNAME, MANUAL_SOCKET_PORT, self.state)
+                self.manual_thread.start()
+                return f"OK {self.manual_thread.port}"
+
+            elif command[1] == "STOP":
+                if self.manual_thread is not None:
+                    self.manual_thread.stop()
+                    self.manual_thread = None
+                return "OK"
+
+                
+        elif command[0] == "STATE":
+            if len(command) != 2:
+                raise Exception("[MAIN SERVER] Invalid command.")
+            
+            if command[1] == "START":
+                self.state_publisher = StateUpdater(HOSTNAME, MANUAL_SOCKET_PORT)
+                self.state_publisher.start()
+                return f"OK {self.manual_thread.port}"
+                
+            elif command[1] == "STOP"
+                if self.state_publisher is not None:
+                    self.state_publisher.stop()
+                    self.state_publisher = None
+                return "OK"
+        
+        elif command[0] == "CAMERA":
+            if len(command) != 2:
+                raise Exception("[MAIN SERVER] Invalid command.")
+            
+            if command[1] == "START":
+                pass
+            elif command[1] == "STATUS":
+                pass
+            elif command[1] == "STOP":
+                pass
+        
+        elif command[0] == "SETTINGS":
+            pass
+
 
 def main():
-    # Start Sockets
+    # Start Serial and Main Socket
     ser = SerialClient(SERIAL_PORT, SERIAL_RATE)
+
+    main_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    main_socket.bind((HOSTNAME, MAIN_SOCKET_PORT))
+    main_connection = None
+
+    mode = Mode.WAIT_CONNECTION
+    while True:
+        if mode == Mode.WAIT_CONNECTION:
+            main_connection, addr = main_socket.accept()
+            mode = Mode.MAIN
+
+        elif mode == Mode.MAIN and main_connection is not None:
+            try:
+                data = main_connection.recv(1024)
+                if not data:
+                    continue
+                
+                if data.decode().strip() == "EXIT":
+                    self.end_connection()
+                    print(f"[TCP SERVER] Connection closed by client.")
+                    break
+
+                self.queue.put(data.decode())
+
+            except socket.error:
+                self.end_connection()
+                raise Exception(f"[TCP SERVER] Connection closed by error.")
+
+        data, addr = main_socket.recvfrom(1024)
+        print(f"[MAIN] Received: {data.decode().strip()}")
+        if data.decode().strip() == "START":
+            break
+
     auto_socket = TCPServer(HOSTNAME, AUTO_SOCKET_PORT)
-    manual_socket = UDPServer(HOSTNAME, MANUAL_SOCKET_PORT)
+    manual_socket = ManualServer(HOSTNAME, MANUAL_SOCKET_PORT)
 
     auto_socket.start()
     manual_socket.start()
@@ -31,6 +186,9 @@ def main():
     mode = Mode.WAIT_CONNECTION
     while True:
         if mode == Mode.WAIT_CONNECTION:
+            # Check connection to main
+
+
             # Check connections
             if auto_socket.connected and manual_socket.connected:
                 auto_socket.end_connection()
@@ -55,8 +213,8 @@ def main():
             continue
 
         elif mode == Mode.MANUAL:
-            manual_controller = ManualController(manual_socket, ser)
-            manual_controller.loop()
+            manual_thread = ManualController(manual_socket, ser)
+            manual_thread.loop()
             manual_socket.end_connection()
             ser.stop()
 

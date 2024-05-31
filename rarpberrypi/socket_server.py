@@ -3,6 +3,31 @@ import socket
 import queue
 import time
 
+
+class MainServer(threading.Thread):
+    def __init__(self, hostname, port):
+        super().__init__(daemon=True)
+        self.hostname = hostname
+        self.port = port
+
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind((self.hostname, self.port))
+        print(f"[MAIN SERVER] Listening on {self.hostname}:{self.port}")
+
+        self.in_queue = queue.Queue()
+        self.out_queue = queue.Queue()
+
+    def run(self):
+        while True:
+            data, addr = self.socket.recvfrom(1024)
+            self.in_queue.put(data.decode())
+
+    def send(self, data):
+        self.socket.sendto(data.encode(), (self.hostname, self.port))
+
+    def stop_server(self):
+        self.socket.close()
+        
 class TCPServer(threading.Thread):
     def __init__(self, hostname, port):
         super().__init__(daemon=True)
@@ -72,16 +97,20 @@ class TCPServer(threading.Thread):
         self.socket.close()
 
 
-class UDPServer(threading.Thread):
+class ManualServer(threading.Thread):
     def __init__(self, hostname, port):
         super().__init__(daemon=True)
         self.hostname = hostname
         self.port = port
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.queue = queue.Queue()
-        self.send_queue = queue.Queue()
+
+        self.in_queue = queue.Queue()
+        self.out_queue = queue.Queue()
+
         self.running = True
         self.connected = False
+        self.connection_addr = None
+
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.hostname, self.port))
         print(f"[UDP SERVER] Listening on {self.hostname}:{self.port}")
     
@@ -91,22 +120,21 @@ class UDPServer(threading.Thread):
                 try:
                     data, addr = self.socket.recvfrom(1024)
 
+                    # SYN-ACK
                     if not self.connected and data.decode().strip() == "SYN":
                         self.socket.sendto("ACK".encode(), addr)
                         print(f"[UDP SERVER] Connected with {addr}")
                         self.connected = True
+                        self.connection_addr = addr
 
+                    # EXIT
                     elif self.connected and data.decode().strip() == "EXIT":
                         self.end_connection()
                         print("[UDP SERVER] Connection closed by client.\n")
 
+                    # DATA
                     elif self.connected:
                         self.queue.put(data.decode())
-                    
-                    if not self.send_queue.empty():
-                        data = self.send_queue.get()
-                        print(f"[UDP SERVER] Sending: {data} to {addr}")
-                        self.socket.sendto(data.encode(), addr)
 
                 except socket.error:
                     self.connected = False
@@ -116,10 +144,11 @@ class UDPServer(threading.Thread):
                 time.sleep(1)
 
     def send(self, data):
-        self.send_queue.put(data)
+        self.socket.sendto(data.encode(), self.connection_addr)
 
     def end_connection(self):
         self.connected = False
+        self.connection_addr = None
 
     def block(self):
         if self.connected:
