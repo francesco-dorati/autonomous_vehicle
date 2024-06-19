@@ -3,44 +3,69 @@ from enum import Enum
 from manual_console import ManualConsole
 from autonomous_console import AutonomousConsole
 
+import socket
+
 HOSTNAME = "172.20.10.7"
-AUTO_PORT = 5500
+MAIN_PORT = 5500
 MANUAL_PORT = 5501
+AUTO_PORT = 5502
 
 
 class Mode(Enum):
     NULL = 0
-    AUTO = 1
-    MANUAL = 2
+    MANUAL = 1
+    AUTO = 2
 
 class RemoteConsole:
-    def __init__(self, hostname, port_auto, port_manual):
+    def __init__(self, hostname, main_port, port_auto, port_manual):
         self.hostname = hostname
+        self.main_port = main_port
         self.port_auto = port_auto
         self.port_manual = port_manual
 
+        self.main_socket = None
         self.mode = Mode.NULL
 
     def start(self):
+        # try connection with main server
+        print(f"Connecting to main server ({self.hostname}:{self.main_port})...")
+        try:
+            self.main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.main_socket.connect((self.hostname, self.main_port))
+            print("Connection established.")
+
+        except socket.error:
+            raise Exception("Socket error.")
+
         while True:
             if self.mode == Mode.NULL:
+
                 self.mode = self._mode_menu()
+                if self.mode == Mode.NULL:
+                    self.main_socket.send("EXIT".encode())
+                    self.main_socket.close()
+                    return
                 continue
 
-            elif self.mode == Mode.AUTO:
-                a = AutonomousConsole(self.hostname, self.port_auto)
-                a.run()
-                self.mode = Mode.NULL
-                continue
+            # elif self.mode == Mode.AUTO:
+            #     a = AutonomousConsole(self.hostname, self.port_auto)
+            #     a.run()
+            #     self.mode = Mode.NULL
+            #     continue
 
             elif self.mode == Mode.MANUAL:
+                self.main_socket.send("MANUAL".encode())
+                data = self.main_socket.recv(1024)
+                if data.decode().strip()[0] != "OK":
+                    print("Connection failed.")
+                    continue
                 m = ManualConsole(self.hostname, self.port_manual)
                 m.run()
                 self.mode = Mode.NULL
                 continue
     
     def _mode_menu(self):
-        print("\n\nROBOT CONTROLLER\n")
+        print("\n\n\nROBOT CONTROLLER\n")
         print("Select a mode: ")
         for m in Mode:
             if m.value == 0:
@@ -52,8 +77,6 @@ class RemoteConsole:
         while True:
             try:
                 self.mode = Mode(int(input("> ")))
-                if self.mode == Mode.NULL:
-                    exit(0)
                 return self.mode
             
             except ValueError:

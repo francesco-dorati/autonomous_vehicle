@@ -39,38 +39,38 @@ class ManualConsole:
         receiver = threading.Thread(target=self.receive_data, daemon=True)
         receiver.start()
 
+        speed_level = 2
         try:
             while True:
                 start_time = time.time()
                 input_buffer = []
+
 
                 if keyboard.is_pressed('esc') or keyboard.is_pressed("space"):
                     self.socket.sendto("EXIT".encode(), (self.hostname, self.port))
                     self.socket.close()
                     return
                 
+                # power levels
+                if keyboard.is_pressed('1'): # SLOW
+                    speed_level = 1
+                elif keyboard.is_pressed('2'): # MEDIUM
+                    speed_level = 2
+                elif keyboard.is_pressed('3'): # FAST
+                    speed_level = 3
+                elif keyboard.is_pressed('4'): # SUPER FAST
+                    speed_level = 4
+                input_buffer.append(str(speed_level))
+
                 # read keypresses
                 if keyboard.is_pressed('w'):
-                    if keyboard.is_pressed('shift'):
-                        input_buffer.append("F") # forward
-                    else:
-                        input_buffer.append("f") # forward
+                    input_buffer.append("f") # forward
                 if keyboard.is_pressed("s"):
-                    if keyboard.is_pressed('shift'):
-                        input_buffer.append("B") # backward
-                    else:
-                        input_buffer.append("b") # backward
-
+                    input_buffer.append("b") # backward
                 if keyboard.is_pressed("a"):
-                    if keyboard.is_pressed('shift'):
-                        input_buffer.append("L") # left
-                    else:
-                        input_buffer.append("l") # left
+                    input_buffer.append("l") # left
                 if keyboard.is_pressed("d"):
-                    if keyboard.is_pressed('shift'):
-                        input_buffer.append("R") # right
-                    else:    
-                        input_buffer.append("r") # right
+                    input_buffer.append("r") # right
                 
                 # buffer processing
                 if "f" in input_buffer and "b" in input_buffer:
@@ -80,12 +80,12 @@ class ManualConsole:
                     input_buffer.remove("l")
                     input_buffer.remove("r")
 
-                if "F" in input_buffer and "B" in input_buffer:
-                    input_buffer.remove("F")
-                    input_buffer.remove("B")
-                if "L" in input_buffer and "R" in input_buffer:
-                    input_buffer.remove("L")
-                    input_buffer.remove("R")
+                # if "F" in input_buffer and "B" in input_buffer:
+                #     input_buffer.remove("F")
+                #     input_buffer.remove("B")
+                # if "L" in input_buffer and "R" in input_buffer:
+                #     input_buffer.remove("L")
+                #     input_buffer.remove("R")
                 
                 if not self.in_buffer.empty():
                     data = self.in_buffer.get()
@@ -137,9 +137,9 @@ class ManualConsole:
 
             print(f'         {arrow_up}')
             print(f'        {arrow_left}{arrow_down}{arrow_right}\n\n')
-            print(f"Velocity:    {data['actual_vel'][0]:.3f} [cm/s]       {data['actual_vel'][0]:.3f} [deg/s]")
-            print(f"Wheels:     {data['actual_vel_wheels'][0]:.3f} [rpm]       {data['actual_vel_wheels'][1]:.3f} [rpm]")
+            print(f"Velocity:    {data['actual_velocity'][0]:.3f} [cm/s]       {data['actual_velocity'][0]:.3f} [deg/s]")
+            print(f"Wheels:     {data['wheels_velocity'][0]:.3f} [rpm]       {data['wheels_velocity'][1]:.3f} [rpm]")
             print("Position: ")
             print(f"    X: {data['position'][0]:.3f} [cm]       Y: {data['position'][1]:.3f} [cm]       θ: {data['position'][2]:.3f} [deg]\n\n")
-            print(f"Loop time:  arduino {data['time_arduino_us']/1000}[ms]    rpi {data['time_rpi_ms']} [ms]")
+            print(f"Loop time:  arduino {data['time_arduino']}[ms]    rpi {data['time_rpi']} [ms]")
             print("\n\n")
