@@ -52,7 +52,7 @@ void MotorController::update(double goal_rpm) {
 
   // update velocity and space
   long d_ticks = _delta_ticks();
-  unsigned double d_time_s = (unsigned double) (micros() - _encoder_prev_time) / 1000000;
+  double d_time_s = (micros() - _encoder_prev_time) / 1000000;
   // velocity_cms = (d_ticks * 2*PI*_wheel_radius) / (_ticks_per_rev * d_time_s); // (cm / s)
   space_cm = (d_ticks * 2*PI*_wheel_radius) / _ticks_per_rev; // (cm)
   velocity_rpm = (d_ticks * 60) / (_ticks_per_rev*d_time_s); // (rev / min)
