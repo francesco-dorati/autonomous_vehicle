@@ -144,6 +144,7 @@ def main():
     # start main socket
     main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     main_socket.bind((HOSTNAME, MAIN_SOCKET_PORT))
+    main_socket.listen(1)
     main_connection = None
     main_addr = None
 
