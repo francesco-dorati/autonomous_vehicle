@@ -264,7 +264,7 @@ wheels_velocity inverse_kinematics(robot_velocity goal_vel) {
     return wheels_velocity(rpm_left, rpm_right);
 }
 
-position odometry(const position *old_position, double space_left, double space_right) {
+position odometry(position old_position, double space_left, double space_right) {
     double space_x_cm = (space_left + space_right) / 2;
     double space_t_deg = (space_right - space_left) * 180 / (WHEEL_DISTANCE_FROM_CENTER * PI);
     double x = old_position.x + space_x_cm * cos((old_position.theta + space_t_deg/2)*PI/180);
