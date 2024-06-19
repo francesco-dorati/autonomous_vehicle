@@ -105,15 +105,15 @@ struct robot_velocity
 {
     double vx;    // cm/s
     double va;  // degrees/s
-    goal_velocity(): vx(0), va(0) {};
-    goal_velocity(double x, double t): vx(x), va(t) {};
+    robot_velocity(): vx(0), va(0) {};
+    robot_velocity(double x, double t): vx(x), va(t) {};
 };
 
 struct wheels_velocity {
     double left; // rpm
     double right; // rpm
-    goal_velocity_wheels(): left(0), right(0) {};
-    goal_velocity_wheels(double l, double r): left(l), right(r) {};
+    wheels_velocity(): left(0), right(0) {};
+    wheels_velocity(double l, double r): left(l), right(r) {};
 };
 
 mode controller_mode = IDLE;
