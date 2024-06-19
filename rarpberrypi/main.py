@@ -142,7 +142,7 @@ def main():
     ser = SerialClient(SERIAL_PORT, SERIAL_RATE)
 
     # start main socket
-    main_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     main_socket.bind((HOSTNAME, MAIN_SOCKET_PORT))
     main_connection = None
     main_addr = None
