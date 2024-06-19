@@ -172,7 +172,7 @@ void loop() {
         motor_right.update(goal_velocity_wheels.right);
 
         // update position and velocity
-        robot_position = odometry(robot_position, motor_left.space, motor_right.space);
+        robot_position = odometry(robot_position, motor_left.space_cm, motor_right.space_cm);
         actual_velocity_wheels = wheels_velocity(motor_left.velocity_rpm, motor_right.velocity_rpm);
         actual_velocity = forward_kinematics(actual_velocity_wheels);
 
