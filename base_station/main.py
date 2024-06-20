@@ -4,6 +4,7 @@ from manual_console import ManualConsole
 from autonomous_console import AutonomousConsole
 
 import socket
+import time
 
 HOSTNAME = "172.20.10.7"
 MAIN_PORT = 5500
@@ -40,39 +41,64 @@ class RemoteConsole:
         if self._connect():
             self.status = Status.CONNECTED
         
-        action = self._main_menu()
-        if action == Action.MANUAL:
-            pass
-
-        elif action == Action.EXIT:
-            print("\nExiting...")
-            time.sleep(1)
-            exit(0)
-
-        elif action == Action.EXIT_SHUTDOWN:
-            # check connection
-            pass
-
-
-
-
-
-
-
+        # print menu
         while True:
-            if self.status == Mode.NOT_CONNECTED:
-                connected = self._connect_main()
-                if connected:
-                    self.status = Status.CONNECTED
+            action = self._main_menu()
+            if action == Action.MANUAL:
+                if self.status == Status.NOT_CONNECTED:
+                    raise Exception("NOT CONNECTED")
                 
+                self.main_socket.send("MANUAL".encode())
+                data = self.main_socket.recv(1024)
+                try:
+                    data = data.decode().strip().split()
+                    if data[0] == "OK":
+                        manual_port = int(data[1])
+                    else:
+                        continue
+                except:
+                    continue
 
-            elif self.status == Mode.CONNECTED:
-                self.mode = self._mode_menu()
-                if self.mode == Mode.NULL:
+                m = ManualConsole(self.hostname, manual_port)
+                m.run()
+                continue
+            
+            elif action == Action.EXIT:
+                if self.start == Status.CONNECTED:
                     self.main_socket.send("EXIT".encode())
                     self.main_socket.close()
-                    return
-                continue
+
+                print("\nExiting...")
+                time.sleep(1)
+                exit(0)
+
+            elif action == Action.EXIT_SHUTDOWN:
+                # check connection
+                pass
+
+            else:
+                pass
+
+
+
+
+
+
+
+        # while True:
+        #     if self.status == Mode.NOT_CONNECTED:
+        #         connected = self._connect_main()
+        #         if connected:
+        #             self.status = Status.CONNECTED
+                
+
+        #     elif self.status == Mode.CONNECTED:
+        #         self.mode = self._mode_menu()
+        #         if self.mode == Mode.NULL:
+        #             self.main_socket.send("EXIT".encode())
+        #             self.main_socket.close()
+        #             return
+        #         continue
 
             # elif self.mode == Mode.AUTO:
             #     a = AutonomousConsole(self.hostname, self.port_auto)
@@ -80,18 +106,18 @@ class RemoteConsole:
             #     self.mode = Mode.NULL
             #     continue
 
-            elif self.mode == Mode.MANUAL:
-                self.main_socket.send("MANUAL".encode())
-                data = self.main_socket.recv(1024)
-                if data.decode().strip()[0] != "OK":
-                    print("Connection failed.")
-                    continue
-                m = ManualConsole(self.hostname, self.port_manual)
-                m.run()
-                self.mode = Mode.NULL
-                continue
+            # elif self.mode == Mode.MANUAL:
+            #     self.main_socket.send("MANUAL".encode())
+            #     data = self.main_socket.recv(1024)
+            #     if data.decode().strip()[0] != "OK":
+            #         print("Connection failed.")
+            #         continue
+            #     m = ManualConsole(self.hostname, self.port_manual)
+            #     m.run()
+            #     self.mode = Mode.NULL
+            #     continue
     
-    def _connect() -> bool:
+    def _connect(self) -> bool:
         print(f"Connecting to the robot ({self.hostname}:{self.port})...")
         try:
             self.main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -108,11 +134,9 @@ class RemoteConsole:
             self.main_socket = None
             return False
 
-    def _main_menu(self) ->:
-
-
+    def _main_menu(self) -> Action:
         print("\n\n\n\tROBOT CONTROLLER\n")
-        print(f"\tStatus:     {'CONNECTED' if self.status == status.CONNECTED else 'NOT CONNECTED'}\n")
+        print(f"\tStatus:     {'CONNECTED' if self.status == Status.CONNECTED else 'NOT CONNECTED'}\n")
         print(" Select an option: ")
         if self.status == Status.CONNECTED:
             print("  1)  Manual Mode")
@@ -156,7 +180,7 @@ class RemoteConsole:
 
 
 if __name__ == "__main__":
-    r = RemoteConsole(HOSTNAME, AUTO_PORT, MANUAL_PORT)
+    r = RemoteConsole(HOSTNAME, MAIN_PORT)
     r.start()
 
 # commands

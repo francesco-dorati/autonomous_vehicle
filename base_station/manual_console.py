@@ -113,7 +113,7 @@ class ManualConsole:
 
 
     def _print_direction(self, input_buffer, data):
-
+            speed_level = int(input_buffer[0])
             arrow_up = '\u2191' if "f" in input_buffer else ' '
             arrow_down = '\u2193' if "b" in input_buffer else ' '
             arrow_left = '\u2190' if "l" in input_buffer else ' '
@@ -134,12 +134,14 @@ class ManualConsole:
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
             print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
+            print('\x1b[A' + '\r' + ' ' * 80 + '\r', end='')
 
             print(f'         {arrow_up}')
-            print(f'        {arrow_left}{arrow_down}{arrow_right}\n\n')
-            print(f"Velocity:    {data['actual_velocity'][0]:.3f} [cm/s]       {data['actual_velocity'][0]:.3f} [deg/s]")
-            print(f"Wheels:     {data['wheels_velocity'][0]:.3f} [rpm]       {data['wheels_velocity'][1]:.3f} [rpm]")
-            print("Position: ")
-            print(f"    X: {data['position'][0]:.3f} [cm]       Y: {data['position'][1]:.3f} [cm]       θ: {data['position'][2]:.3f} [deg]\n\n")
-            print(f"Loop time:  arduino {data['time_arduino']}[ms]    rpi {data['time_rpi']} [ms]")
+            print(f'        {arrow_left}{arrow_down}{arrow_right}\n')
+            print(f'    Speed level: {speed_level}\n')
+            print(f"    Velocity:    {data['actual_velocity'][0]:.3f} [cm/s]       {data['actual_velocity'][0]:.3f} [deg/s]")
+            print(f"    Wheels:     {data['wheels_velocity'][0]:.3f} [rpm]       {data['wheels_velocity'][1]:.3f} [rpm]")
+            print("     Position: ")
+            print(f"        X: {data['position'][0]:.3f} [cm]       Y: {data['position'][1]:.3f} [cm]       θ: {data['position'][2]:.3f} [deg]\n\n")
+            print(f"    Loop time:  arduino {data['time_arduino']}[ms]    rpi {data['time_rpi']} [ms]")
             print("\n\n")

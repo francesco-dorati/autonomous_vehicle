@@ -162,7 +162,7 @@ def main():
                 command = data.decode().strip().split()
                 print(f"[MAIN SERVER] Received: \"{data.decode().strip()}\"")
                 
-                if command[0] == "DISCONNECT":
+                if command[0] == "EXIT":
                     main_connection.close()
                     print(f"[MAIN SERVER] Client disconnected.")
                     break
