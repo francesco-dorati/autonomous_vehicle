@@ -49,6 +49,7 @@ class RemoteConsole:
                     raise Exception("NOT CONNECTED")
                 
                 self.main_socket.send("MANUAL".encode())
+                print("Waiting for response...")
                 data = self.main_socket.recv(1024)
                 try:
                     data = data.decode().strip().split()
@@ -135,8 +136,8 @@ class RemoteConsole:
             return False
 
     def _main_menu(self) -> Action:
-        print("\n\n\n\tROBOT CONTROLLER\n")
-        print(f"\tStatus:     {'CONNECTED' if self.status == Status.CONNECTED else 'NOT CONNECTED'}\n")
+        print("\n\n\n  ROBOT CONTROLLER\n")
+        print(f" Status:  {'CONNECTED' if self.status == Status.CONNECTED else 'NOT CONNECTED'}\n")
         print(" Select an option: ")
         if self.status == Status.CONNECTED:
             print("  1)  Manual Mode")
@@ -147,6 +148,7 @@ class RemoteConsole:
         else:
             print(" 1)  Retry Connection")
             print(" 0)  Exit")
+        print()
         
 
         while True:
