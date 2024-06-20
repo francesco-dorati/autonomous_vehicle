@@ -122,7 +122,7 @@ class RemoteConsole:
         try:
             self.main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.main_socket.settimeout(10)
-            self.main_socket.connect((self.hostname, self.main_port))
+            self.main_socket.connect((self.hostname, self.port))
             print("Connected succesfully to main server.")
             return True
 
