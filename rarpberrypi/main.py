@@ -148,6 +148,8 @@ def main():
     main_connection = None
     main_addr = None
 
+    print(f"[MAIN SERVER] Ready. Listening on {HOSTNAME}:{MAIN_SOCKET_PORT}...")
+
     # MAIN SERVER LOOP (request - response)
     while True:
         if main_connection is not None:
@@ -158,25 +160,34 @@ def main():
                     continue
 
                 command = data.decode().strip().split()
+                print(f"[MAIN SERVER] Received: \"{data.decode().strip()}\"")
                 
                 if command[0] == "DISCONNECT":
-                    main_connection.end_connection()
+                    main_connection.close()
                     print(f"[MAIN SERVER] Client disconnected.")
                     break
 
                 elif command[0] == "MANUAL":
                     # start manual controller
+                    print(f"[MAIN SERVER] Starting manual controller...")
                     manual_thread = ManualController(HOSTNAME, MANUAL_SOCKET_PORT, ser)
                     manual_thread.start()
-                    main_socket.send(f"OK {MANUAL_SOCKET_PORT}")
+                    main_socket.send(f"OK {MANUAL_SOCKET_PORT}".encode())
 
+            except BrokenPipeError:
+                print(f"[MAIN SERVER] Connection closed by the client: {main_addr}")
+                main_socket.close()
+                main_socket = None
+                main_addr = None
+                mode = mode.WAIT_CONNECTION
 
-            except socket.error:
-                main_socket.end_connection()
-                raise Exception(f"[MAIN SERVER] Connection closed by error.")
+            except socket.error as e:
+                main_socket.close()
+                raise Exception(f"[MAIN SERVER] Connection closed by error {e}.")
         else:
             # accept new connection
             main_connection, main_addr = main_socket.accept() # blocking
+            print(f"[MAIN SERVER] Connected to {main_addr}.")
             mode = Mode.CONNECTED
 
 
