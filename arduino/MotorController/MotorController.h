@@ -9,7 +9,7 @@
 #define MIN_RPM 15
 
 #define PWR_MAX 250
-#define PWR_MIN 50
+#define PWR_MIN 10
 
 /*
 MOTOR CONTROLLER
@@ -35,7 +35,7 @@ class MotorController {
     void update(double goal_rpm);
     
     double goal_rpm = 0, actual_rpm = 0, power = 0;
-    double space_cm = 0, velocity_rpm = 0;
+    double space_cm = 0;
  
   private:
     uint8_t _enable_pin, _in1_pin, _in2_pin;

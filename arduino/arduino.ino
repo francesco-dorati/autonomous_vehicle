@@ -157,6 +157,7 @@ void loop() {
 
         // read serial
         String str = read_serial();
+        Serial.println(str);
         if (str == "E" || str == "EXIT") { // EXIT RUNNING MODE
             controller_mode = IDLE;
             Serial.println("OK");
@@ -173,7 +174,7 @@ void loop() {
 
         // update position and velocity
         robot_position = odometry(robot_position, motor_left.space_cm, motor_right.space_cm);
-        actual_velocity_wheels = wheels_velocity(motor_left.velocity_rpm, motor_right.velocity_rpm);
+        actual_velocity_wheels = wheels_velocity(motor_left.actual_rpm, motor_right.actual_rpm);
         actual_velocity = forward_kinematics(actual_velocity_wheels);
 
         // response

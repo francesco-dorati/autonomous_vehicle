@@ -19,8 +19,9 @@ MotorController::MotorController(
   pinMode(_in1_pin, OUTPUT);
   pinMode(_in2_pin, OUTPUT);
 
+  goal_rpm = 0; actual_rpm = 0; power = 0;
   _motor_pid.SetMode(AUTOMATIC);
-  _motor_pid.SetOutputLimits(-PWR_MAX, PWR_MAX);
+  _motor_pid.SetOutputLimits((-PWR_MAX), PWR_MAX);
 }
 
 // float MotorController::update(float goal_rpm) {
@@ -48,23 +49,25 @@ MotorController::MotorController(
 //   return curent_rpm;
 // }
 
-void MotorController::update(double goal_rpm) {
-
+void MotorController::update(double goal) {
+  // update goal velocity
+  goal_rpm = goal;
+  
   // update velocity and space
   long d_ticks = _delta_ticks();
   double d_time_s = (micros() - _encoder_prev_time) / 1000000;
-  // velocity_cms = (d_ticks * 2*PI*_wheel_radius) / (_ticks_per_rev * d_time_s); // (cm / s)
   space_cm = (d_ticks * 2*PI*_wheel_radius) / _ticks_per_rev; // (cm)
-  velocity_rpm = (d_ticks * 60) / (_ticks_per_rev*d_time_s); // (rev / min)
+  actual_rpm = (d_ticks * 60) / (_ticks_per_rev*d_time_s); // (rev / min)
+  // velocity_cms = (d_ticks * 2*PI*_wheel_radius) / (_ticks_per_rev * d_time_s); // (cm / s)
 
   // Compute PID
   if (abs(goal_rpm) < MIN_RPM) 
     power = 0.0;
   else 
     _motor_pid.Compute();
-
+  
+  Serial.println(power);
   _set_motor_power(power);
-  return actual_rpm;
 }
 
 long MotorController::_delta_ticks() {
