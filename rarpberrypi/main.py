@@ -172,8 +172,8 @@ def main():
                     print(f"[MAIN SERVER] Starting manual controller...")
                     manual_thread = ManualController(HOSTNAME, MANUAL_SOCKET_PORT, ser)
                     manual_thread.start()
-                    print("[MAIN SERVER]")
                     main_socket.send(f"OK {MANUAL_SOCKET_PORT}".encode())
+                    print("[MAIN SERVER] Manual server started succesfully.")
 
             except BrokenPipeError:
                 print(f"[MAIN SERVER] Connection closed by the client: {main_addr}")

@@ -51,6 +51,7 @@ class RemoteConsole:
                 self.main_socket.send("MANUAL".encode())
                 print("Waiting for response...")
                 data = self.main_socket.recv(1024)
+                print(f"Received: {data.decode()}")
                 try:
                     data = data.decode().strip().split()
                     if data[0] == "OK":

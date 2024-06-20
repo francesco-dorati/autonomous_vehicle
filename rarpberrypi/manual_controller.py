@@ -25,16 +25,15 @@ class ManualController(threading.Thread):
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.hostname, self.port))
-        print(f"[MANUAL SERVER] Listening on {self.hostname}:{self.port}")
-
+        print(f"\n[MANUAL SERVER] Listening on port {self.port}")
         self.connected = False
-
         self.serial.start()
 
 
     def run(self):
         while True:
             data, _ = self.socket.recvfrom(1024)
+            print(f"[MANUAL SERVER] Received \"{data}\"")
             t_start = time.time()
             keyboard_buffer = data.decode()
             lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)
