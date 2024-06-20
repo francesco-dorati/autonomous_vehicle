@@ -26,21 +26,29 @@ class ManualController(threading.Thread):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.hostname, self.port))
         print(f"\n[MANUAL SERVER] Listening on port {self.port}")
-        self.connected = False
-        self.serial.start()
+        # self.connected = False
+        # self.serial.start()
 
 
     def run(self):
         while True:
-            data, _ = self.socket.recvfrom(1024)
-            print(f"[MANUAL SERVER] Received \"{data.decode()}\"")
+            data, addr = self.socket.recvfrom(1024)
             t_start = time.time()
+
+            print(f"[MANUAL SERVER] Received \"{data.decode()}\"")
             keyboard_buffer = data.decode()
+            if keyboard_buffer == "E" or keyboard_buffer == "EXIT":
+                self.socket.close()
+                break
+
             lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)
+
             self.serial.send(lin_vel, ang_vel)
+            
             s = self.serial.read()
             data = self.process_data(s, t_start)
-            self.socket.send(json.dumps(data))
+            
+            self.socket.sendto(json.dumps(data).encode(), addr)
 
 
         
@@ -78,30 +86,30 @@ class ManualController(threading.Thread):
         #         time.sleep(MANUAL_TAO - dt)
 
     def _calculate_speed(self, keyboard_buffer):
-        keyboard_buffer = keyboard_buffer.split("")
+        keyboard_buffer = list(keyboard_buffer)
         speed_level = int(keyboard_buffer[0])
         lin_vel, ang_vel = (0, 0)
 
         if "f" in keyboard_buffer:
-            lin_vel = MANUAL_LIN_VEL[speed_level]
+            lin_vel = MANUAL_LIN_VEL[speed_level-1]
 
         if "b" in keyboard_buffer:
-            lin_vel = -MANUAL_LIN_VEL[speed_level]
+            lin_vel = -MANUAL_LIN_VEL[speed_level-1]
 
         if "l" in keyboard_buffer:
-            ang_vel = MANUAL_ANG_VEL[speed_level]
+            ang_vel = MANUAL_ANG_VEL[speed_level-1]
 
         if "r" in keyboard_buffer:
-            ang_vel = -MANUAL_ANG_VEL[speed_level]
+            ang_vel = -MANUAL_ANG_VEL[speed_level-1]
 
         return lin_vel, ang_vel
 
     def process_data(self, data_string, t_start):
-        pos, vel, wvel, time, _ = data_string.split(";")
+        pos, vel, wvel, t, _ = data_string.split(";")
         pos = pos.split(" ")
         vel = vel.split(" ")
         wvel = wvel.split(" ")
-        time = time.split(" ")
+        t = t.split(" ")
 
         # pos, vel, wvel, time ard, time rpi
 
@@ -109,7 +117,7 @@ class ManualController(threading.Thread):
         data["position"] = [float(pos[1]), float(pos[2]), float(pos[3])]
         data["actual_velocity"] = [float(vel[1]), float(vel[2])]
         data["wheels_velocity"] = [float(wvel[1]), float(wvel[1])]
-        data["time_arduino"] = float(time[1])
+        data["time_arduino"] = float(t[1])
         data["time_rpi"] = (time.time() - t_start)*1000
 
         return data

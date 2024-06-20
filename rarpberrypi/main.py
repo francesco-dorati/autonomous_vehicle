@@ -143,6 +143,7 @@ def main():
 
     # start main socket
     main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    main_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     main_socket.bind((HOSTNAME, MAIN_SOCKET_PORT))
     main_socket.listen(1)
     main_connection = None
@@ -185,6 +186,12 @@ def main():
             except socket.error as e:
                 main_socket.close()
                 raise Exception(f"[MAIN SERVER] Connection closed by error {e}.")
+
+            except KeyboardInterrupt:
+                main_socket.close()
+                main_socket = None
+                main_addr = None
+                exit(0)
         else:
             # accept new connection
             main_connection, main_addr = main_socket.accept() # blocking

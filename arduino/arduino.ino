@@ -13,12 +13,12 @@
 #define COUNTS_PER_REV 1495
 #define WHEEL_RADIUS 3.4 // cm
 #define WHEEL_DISTANCE_FROM_CENTER 12 // cm
-// #define KP 12.0
-// #define KI .5
-// #define KD .01
-#define KP 1.0
-#define KI .1
+#define KP 12.0
+#define KI .5
 #define KD .01
+// #define KP 1.0
+// #define KI .1
+// #define KD .01
 
 #define CONTROLLER_FREQ 100 // Hz
 #define CONTROLLER_UPDATE_TIME (1000/CONTROLLER_FREQ)
@@ -288,7 +288,7 @@ String produce_response(position pos, robot_velocity vel, wheels_velocity w_vel,
     String s_pos = "POS " + String(pos.x) + " " + String(pos.y) + " " + String(pos.theta) + ";";
     String s_wvel = "WVEL " + String(w_vel.left) + " " + String(w_vel.right) + ";";
     String s_time = "TIME " + String(loop_time) + ";";
-    String data_res = s_pos + s_vel + s_wvel + s_time;
+    String data_res = s_pos + s_vel + s_wvel + s_time + "\n";
     return data_res;
 }
 
