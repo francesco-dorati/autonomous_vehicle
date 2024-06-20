@@ -33,7 +33,7 @@ class ManualController(threading.Thread):
     def run(self):
         while True:
             data, _ = self.socket.recvfrom(1024)
-            print(f"[MANUAL SERVER] Received \"{data}\"")
+            print(f"[MANUAL SERVER] Received \"{data.decode()}\"")
             t_start = time.time()
             keyboard_buffer = data.decode()
             lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)

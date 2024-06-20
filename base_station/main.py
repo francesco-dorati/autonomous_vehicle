@@ -60,9 +60,11 @@ class RemoteConsole:
                         continue
                 except:
                     continue
+                
+                print("")
 
                 m = ManualConsole(self.hostname, manual_port)
-                m.run()
+                m.loop()
                 continue
             
             elif action == Action.EXIT:

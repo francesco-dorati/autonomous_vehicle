@@ -18,16 +18,20 @@ class ManualConsole:
         print(f"[MANUAL] Connecting to {self.hostname}:{self.port}...")
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.sendto("SYN\n".encode(), (self.hostname, self.port))
-            ack, _ = self.socket.recvfrom(1024)
-            if ack.decode().strip() == "ACK":
-                print("[MANUAL] Connection established.")
-            else:
-                raise Exception(f"[MANUAL] Connection failed. Received '{ack}'.")
-            threading.Thread()
-            
+            # self.socket.sendto("SYN\n".encode(), (self.hostname, self.port))
+            # ack, _ = self.socket.recvfrom(1024)
+            # if ack.decode().strip() == "ACK":
+            #     print("[MANUAL] Connection established.")
+            # else:
+            #     raise Exception(f"[MANUAL] Connection failed. Received '{ack}'.")
+            # threading.Thread()
+        
+        except BrokenPipeError:
+            print("Connection to manual server failed.")
+            return  
         except socket.error:
-            raise Exception("[MANUAL] Connection failed.")
+            print("Connection to manual server failed.")
+            return
         
         print("\nMANUAL CONSOLE\n")
         print("         W: Forward")
@@ -35,10 +39,9 @@ class ManualConsole:
         print("(esc) or (space) to exit.")
         print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
 
-    def run(self):
-        receiver = threading.Thread(target=self.receive_data, daemon=True)
-        receiver.start()
-
+    def loop(self):
+        # receiver = threading.Thread(target=self.receive_data, daemon=True)
+        # receiver.start()
         speed_level = 2
         try:
             while True:
@@ -87,12 +90,14 @@ class ManualConsole:
                 #     input_buffer.remove("L")
                 #     input_buffer.remove("R")
                 
-                if not self.in_buffer.empty():
-                    data = self.in_buffer.get()
-                    self._print_direction(input_buffer, data)
 
                 # send buffer
                 self.socket.sendto(''.join(input_buffer).encode('utf-8'), (self.hostname, self.port))
+
+                data, _ = self.socket.recvfrom(1024)
+                if data:
+                    data = json.loads(data.decode())
+                    self._print_direction(input_buffer, data, time.time() - start_time)
 
                 # wait until next iteration
                 dt = time.time() - start_time
@@ -112,7 +117,7 @@ class ManualConsole:
                 self.in_buffer.put(data)
 
 
-    def _print_direction(self, input_buffer, data):
+    def _print_direction(self, input_buffer, data, time_console):
             speed_level = int(input_buffer[0])
             arrow_up = '\u2191' if "f" in input_buffer else ' '
             arrow_down = '\u2193' if "b" in input_buffer else ' '
@@ -143,5 +148,5 @@ class ManualConsole:
             print(f"    Wheels:     {data['wheels_velocity'][0]:.3f} [rpm]       {data['wheels_velocity'][1]:.3f} [rpm]")
             print("     Position: ")
             print(f"        X: {data['position'][0]:.3f} [cm]       Y: {data['position'][1]:.3f} [cm]       θ: {data['position'][2]:.3f} [deg]\n\n")
-            print(f"    Loop time:  arduino {data['time_arduino']}[ms]    rpi {data['time_rpi']} [ms]")
+            print(f"    Loop time:  arduino {data['time_arduino']:.3f}[ms],    rpi {data['time_rpi']:.3f} [ms],    console: {time_console*1000:.3f} [ms]")
             print("\n\n")
