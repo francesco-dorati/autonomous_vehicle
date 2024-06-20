@@ -34,7 +34,7 @@ class RemoteConsole:
         # self.port_manual = port_manual
 
         self.main_socket = None
-        self.status = Mode.NOT_CONNECTED
+        self.status = Status.NOT_CONNECTED
 
     def start(self):
         # try connection
