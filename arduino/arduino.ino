@@ -13,11 +13,8 @@
 #define COUNTS_PER_REV 1495
 #define WHEEL_RADIUS 3.4 // cm
 #define WHEEL_DISTANCE_FROM_CENTER 12 // cm
-// #define KP 12.0
-// #define KI .5
-// #define KD .01
-#define KP 15.0
-#define KI .1
+#define KP 20.0
+#define KI 0.2
 #define KD .01
 
 #define CONTROLLER_FREQ 100 // Hz
@@ -90,7 +87,8 @@ LOOP
 
 enum mode {
     IDLE = 0,
-    RUNNING = 1
+    RUNNING = 1,
+    PID_DEBUG = 2
 } ;
 
 struct position {
@@ -148,6 +146,10 @@ void loop() {
             controller_mode = RUNNING;
             Serial.println("OK");
             return;
+        } else if (str == "D" || str == "DEBUG") { // START RUNNING MODE
+            controller_mode = PID_DEBUG;
+            Serial.println("OK DEBUG");
+            return;
         } else delay(100);
 
     } else if (controller_mode == RUNNING) {
@@ -159,13 +161,19 @@ void loop() {
         String str = read_serial();
         if (str == "E" || str == "EXIT") { // EXIT RUNNING MODE
             controller_mode = IDLE;
+            motor_left.stop();
+            motor_right.stop();
             Serial.println("OK");
             return;
-        } else if (str.startsWith("V")) { // SET NEW GOAL
-            goal_velocity = process_data(str);
+        } else if (str.startsWith("V")) { // SET NEW GOAL (V cm/s deg/s)
+            goal_velocity = process_vel_data(str);
             goal_velocity_wheels = inverse_kinematics(goal_velocity);
             received_serial = true;
-        } 
+        } else if (str.startsWith("W")) { // SET NEW GOAL (W rpm rpm)
+            goal_velocity_wheels = process_wheels_data(str);
+            goal_velocity = forward_kinematics(goal_velocity_wheels);
+            received_serial = true;
+        }
 
         // update motors
         motor_left.update(goal_velocity_wheels.left);
@@ -182,6 +190,34 @@ void loop() {
             Serial.println(res);
         }
 
+        // delay to keep loop time constant
+        unsigned long dt = (micros() - t_start)/1000;
+        if (dt < CONTROLLER_UPDATE_TIME)
+            delay(CONTROLLER_UPDATE_TIME - dt);
+
+    } else if (controller_mode == PID_DEBUG) {
+        double t_start = micros();
+
+        // read serial
+        String str = read_serial();
+        if (str == "E" || str == "EXIT") { // EXIT RUNNING MODE
+            controller_mode = IDLE;
+            motor_left.stop();
+            motor_right.stop();
+            Serial.println("OK");
+            return;
+        } else if (str.startsWith("W")) { // SET NEW GOAL (W rpm rpm)
+            goal_velocity_wheels = process_wheels_data(str);
+            goal_velocity = forward_kinematics(goal_velocity_wheels);
+        } 
+
+        // update motors
+        motor_left.update(goal_velocity_wheels.left);
+        motor_right.update(goal_velocity_wheels.right);
+
+        String res = pid_debug_response(motor_left, motor_right);
+        Serial.println(res);
+        
         // delay to keep loop time constant
         unsigned long dt = (micros() - t_start)/1000;
         if (dt < CONTROLLER_UPDATE_TIME)
@@ -247,7 +283,7 @@ String read_serial() {
     return s;
 }
 
-robot_velocity process_data(String s) {
+robot_velocity process_vel_data(String s) {
     int sp1 = s.indexOf(' ');
     int sp2 = s.indexOf(' ', sp1 + 1);
     if (sp1 != -1 && sp2 != -1) {
@@ -256,6 +292,17 @@ robot_velocity process_data(String s) {
         return robot_velocity(vx, va);
     } 
     return robot_velocity();
+}
+
+wheels_velocity process_wheels_data(String s) {
+    int sp1 = s.indexOf(' ');
+    int sp2 = s.indexOf(' ', sp1 + 1);
+    if (sp1 != -1 && sp2 != -1) {
+        double left = s.substring(sp1 + 1, sp2).toDouble();
+        double right = s.substring(sp2 + 1).toDouble();
+        return wheels_velocity(left, right);
+    } 
+    return wheels_velocity();
 }
 
 wheels_velocity inverse_kinematics(robot_velocity goal_vel) {
@@ -290,6 +337,11 @@ String produce_response(position pos, robot_velocity vel, wheels_velocity w_vel,
     String s_time = "TIME " + String(loop_time) + ";";
     String data_res = s_pos + s_vel + s_wvel + s_time + "\n";
     return data_res;
+}
+String pid_debug_response(MotorController ml, MotorController mr) {
+    String s = String(ml.goal_rpm) + " " + String(ml.actual_rpm) + " " + String(mr.goal_rpm) + " " + String(mr.actual_rpm) + " 0";
+    String d = "\n# POWER: " + String(ml.power) + " " + String(mr.power);
+    return (s + d);
 }
 
 

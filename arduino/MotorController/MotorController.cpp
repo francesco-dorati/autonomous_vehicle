@@ -20,6 +20,9 @@ MotorController::MotorController(
   pinMode(_in2_pin, OUTPUT);
 
   goal_rpm = 0; actual_rpm = 0; power = 0;
+  _encoder_prev_time = 0;
+  _encoder_prev_counts = 0;
+
   _motor_pid.SetMode(AUTOMATIC);
   _motor_pid.SetOutputLimits((-PWR_MAX), PWR_MAX);
 }
@@ -52,10 +55,13 @@ MotorController::MotorController(
 void MotorController::update(double goal) {
   // update goal velocity
   goal_rpm = goal;
-  
+
   // update velocity and space
   long d_ticks = _delta_ticks();
-  double d_time_s = (micros() - _encoder_prev_time) / 1000000;
+  // Serial.println(d_ticks);
+  double d_time_s = ((double)(micros() - _encoder_prev_time))/1000000;
+
+  _encoder_prev_time = micros();
   space_cm = (d_ticks * 2*PI*_wheel_radius) / _ticks_per_rev; // (cm)
   actual_rpm = (d_ticks * 60) / (_ticks_per_rev*d_time_s); // (rev / min)
   // velocity_cms = (d_ticks * 2*PI*_wheel_radius) / (_ticks_per_rev * d_time_s); // (cm / s)
@@ -68,6 +74,10 @@ void MotorController::update(double goal) {
   
   // Serial.println(power);
   _set_motor_power(power);
+}
+
+void MotorController::stop(){
+  _set_motor_power(0);
 }
 
 long MotorController::_delta_ticks() {

@@ -5,11 +5,11 @@
 #include "Encoder.h"
 #include <PID_v1.h>
 
-#define MAX_RPM 130
+#define MAX_RPM 150
 #define MIN_RPM 15
 
 #define PWR_MAX 250
-#define PWR_MIN 10
+#define PWR_MIN 50
 
 /*
 MOTOR CONTROLLER
@@ -33,6 +33,7 @@ class MotorController {
     );
 
     void update(double goal_rpm);
+    void stop();
     
     double goal_rpm = 0, actual_rpm = 0, power = 0;
     double space_cm = 0;
