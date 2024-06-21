@@ -157,7 +157,6 @@ void loop() {
 
         // read serial
         String str = read_serial();
-        Serial.println(str);
         if (str == "E" || str == "EXIT") { // EXIT RUNNING MODE
             controller_mode = IDLE;
             Serial.println("OK");

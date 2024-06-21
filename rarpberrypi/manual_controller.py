@@ -27,7 +27,7 @@ class ManualController(threading.Thread):
         self.socket.bind((self.hostname, self.port))
         print(f"\n[MANUAL SERVER] Listening on port {self.port}")
         # self.connected = False
-        # self.serial.start()
+        self.serial.start()
 
 
     def run(self):

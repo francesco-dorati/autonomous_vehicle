@@ -66,7 +66,7 @@ void MotorController::update(double goal) {
   else 
     _motor_pid.Compute();
   
-  Serial.println(power);
+  // Serial.println(power);
   _set_motor_power(power);
 }
 
