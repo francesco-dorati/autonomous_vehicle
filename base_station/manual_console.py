@@ -18,7 +18,9 @@ class ManualConsole:
         print(f"[MANUAL] Connecting to {self.hostname}:{self.port}...")
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            
+            # self.socket.connect((self.hostname, self.port))
+            self.socket.settimeout(MANUAL_TAO)
+
             # self.socket.sendto("SYN\n".encode(), (self.hostname, self.port))
             # ack, _ = self.socket.recvfrom(1024)
             # if ack.decode().strip() == "ACK":

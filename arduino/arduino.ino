@@ -13,12 +13,12 @@
 #define COUNTS_PER_REV 1495
 #define WHEEL_RADIUS 3.4 // cm
 #define WHEEL_DISTANCE_FROM_CENTER 12 // cm
-#define KP 12.0
-#define KI .5
-#define KD .01
-// #define KP 1.0
-// #define KI .1
+// #define KP 12.0
+// #define KI .5
 // #define KD .01
+#define KP 15.0
+#define KI .1
+#define KD .01
 
 #define CONTROLLER_FREQ 100 // Hz
 #define CONTROLLER_UPDATE_TIME (1000/CONTROLLER_FREQ)

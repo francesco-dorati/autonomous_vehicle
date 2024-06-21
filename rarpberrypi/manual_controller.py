@@ -7,8 +7,8 @@ import socket
 MANUAL_LOOP_FREQ = 50 # Hz
 MANUAL_TAO = (1/MANUAL_LOOP_FREQ) # s
 
-MANUAL_LIN_VEL = [13, 18, 25, 30] # cm/s
-MANUAL_ANG_VEL = [30, 60, 90, 120] # deg/s
+MANUAL_LIN_VEL = [10, 20, 25, 30] # cm/s
+MANUAL_ANG_VEL = [45, 60, 90, 120] # deg/s
 
 WHEEL_RADIUS = 3.4
 DIST_FROM_CENTER = 12
@@ -31,24 +31,34 @@ class ManualController(threading.Thread):
 
 
     def run(self):
+        # wait for conn
+        # main_connection, main_addr = main_socket.accept() # blocking
+        # print(f"[MAIN SERVER] Connected to {main_addr}.\n")
+        # mode = Mode.CONNECTED
         while True:
-            data, addr = self.socket.recvfrom(1024)
-            t_start = time.time()
+            try:
+                data, addr = self.socket.recvfrom(1024)
+                t_start = time.time()
 
-            print(f"[MANUAL SERVER] Received \"{data.decode()}\"")
-            keyboard_buffer = data.decode()
-            if keyboard_buffer == "E" or keyboard_buffer == "EXIT":
+                print(f"[MANUAL SERVER] Received \"{data.decode()}\"")
+                keyboard_buffer = data.decode()
+                if keyboard_buffer == "E" or keyboard_buffer == "EXIT":
+                    self.socket.close()
+                    break
+
+                lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)
+
+                self.serial.send(lin_vel, ang_vel)
+                
+                s = self.serial.read()
+                data = self.process_data(s, t_start)
+                
+                self.socket.sendto(json.dumps(data).encode(), addr)
+            # self.socket.send(json.dumps(data).encode())
+            except BrokenPipeError:
+                print("Broken Pipe, exiting Manual mode...")
                 self.socket.close()
                 break
-
-            lin_vel, ang_vel = self._calculate_speed(keyboard_buffer)
-
-            self.serial.send(lin_vel, ang_vel)
-            
-            s = self.serial.read()
-            data = self.process_data(s, t_start)
-            
-            self.socket.sendto(json.dumps(data).encode(), addr)
 
 
         
