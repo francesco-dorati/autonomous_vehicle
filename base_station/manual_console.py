@@ -19,7 +19,7 @@ class ManualConsole:
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             # self.socket.connect((self.hostname, self.port))
-            self.socket.settimeout(MANUAL_TAO)
+            self.socket.settimeout(0.5)
 
             # self.socket.sendto("SYN\n".encode(), (self.hostname, self.port))
             # ack, _ = self.socket.recvfrom(1024)

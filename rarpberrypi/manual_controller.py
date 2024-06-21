@@ -37,7 +37,9 @@ class ManualController(threading.Thread):
         # mode = Mode.CONNECTED
         while True:
             try:
+                print("\n new loop")
                 data, addr = self.socket.recvfrom(1024)
+                print("data received")
                 t_start = time.time()
 
                 print(f"[MANUAL SERVER] Received \"{data.decode()}\"")
@@ -52,13 +54,22 @@ class ManualController(threading.Thread):
                 
                 s = self.serial.read()
                 data = self.process_data(s, t_start)
+                print("data processed")
                 
                 self.socket.sendto(json.dumps(data).encode(), addr)
+                print("data sent")
             # self.socket.send(json.dumps(data).encode())
             except BrokenPipeError:
                 print("Broken Pipe, exiting Manual mode...")
+                self.serial.stop()
                 self.socket.close()
                 break
+            except socket.error:
+                print("Socket Error, exiting Manual mode...")
+                self.serial.stop()
+                self.socket.close()
+                break
+                
 
 
         

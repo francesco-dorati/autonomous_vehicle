@@ -152,7 +152,7 @@ void loop() {
 
     } else if (controller_mode == RUNNING) {
         // RUNNING LOOP
-        unsigned long t_start = micros();
+        double t_start = micros();
         received_serial = false;
 
         // read serial
@@ -178,7 +178,7 @@ void loop() {
 
         // response
         if (received_serial) {
-            String res = produce_response(robot_position, actual_velocity, actual_velocity_wheels, (micros() - t_start)/1000);
+            String res = produce_response(robot_position, actual_velocity, actual_velocity_wheels, (micros() - t_start)/1000.0);
             Serial.println(res);
         }
 
@@ -283,7 +283,7 @@ robot_velocity forward_kinematics(wheels_velocity vel) {
     return robot_velocity(vx_cms, va_degs);
 }
 
-String produce_response(position pos, robot_velocity vel, wheels_velocity w_vel, unsigned long loop_time) {
+String produce_response(position pos, robot_velocity vel, wheels_velocity w_vel, double loop_time) {
     String s_vel = "VEL " + String(vel.vx) + " " + String(vel.va) + ";";
     String s_pos = "POS " + String(pos.x) + " " + String(pos.y) + " " + String(pos.theta) + ";";
     String s_wvel = "WVEL " + String(w_vel.left) + " " + String(w_vel.right) + ";";
