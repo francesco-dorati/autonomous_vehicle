@@ -19,6 +19,21 @@ class Mode(Enum):
     WAIT_CONNECTION = 0     # wait for developer console to connect
     CONNECTED = 1                # settings, and servers handling
 
+# MAIN SERVER COMMANDS:
+# PING  ->  OK
+# MANUAL START -> OK <port>
+# MANUAL STOP -> OK
+# DATA START -> OK <port>
+# DATA STOP -> OK
+# CAMERA START -> OK <port>
+# CAMERA STOP -> OK
+# SHUT DOWN -> OK
+
+
+
+
+
+
 # import queue
 # import socket
 # import threading 
@@ -146,6 +161,7 @@ def main():
     main_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     main_socket.bind((HOSTNAME, MAIN_SOCKET_PORT))
     main_socket.listen(1)
+
     main_connection = None
     main_addr = None
 
@@ -161,12 +177,14 @@ def main():
                     continue
 
                 command = data.decode().strip().split()
-                print(f"[MAIN SERVER] Received: \"{data.decode().strip()}\"")
                 
                 if command[0] == "EXIT":
                     main_connection.close()
                     print(f"[MAIN SERVER] Client disconnected.")
                     break
+                
+                elif command[0] == "PING":
+                    main_connection.send("OK".encode())
 
                 elif command[0] == "MANUAL":
                     # start manual controller
