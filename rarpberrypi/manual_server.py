@@ -21,7 +21,7 @@ class ManualServer(threading.Thread):
             try:
                 data, addr = self.server.recvfrom(1024)
                 if addr[0] != self.client_hostname:
-                    print(f"[MANUAL SERVER] Received data from unknown client: {addr[0]}")
+                    print(f"[MANUAL SERVER] Received data from unknown client: {addr[0]} vs {self.client_hostname}")
                     continue
                 
                 # if data.decode() == "E" or data.decode() == "EXIT":
