@@ -5,7 +5,7 @@ from enum import Enum
 # from socket_server import TCPServer, ManualServer
 from serial_client import SerialClient
 #from autonomous_controller import AutonomousController
-from manual_controller import ManualController
+# from manual_controller import ManualController
 
 SERIAL_PORT = '/dev/ttyUSB0'
 SERIAL_RATE = 115200
@@ -20,6 +20,10 @@ SERIAL_RATE = 115200
 # CAMERA START -> OK <port>
 # CAMERA STOP -> OK
 # SHUT DOWN -> OK
+
+from manual_server import ManualServer
+from data_server import DataServer
+from camera_server import CameraServer
 
 class MainServer:
     def __init__(self):
@@ -56,6 +60,7 @@ class MainServer:
                         continue
 
                     command = data.decode().strip().split()
+
                     if command[0] == "EXIT":
                         self.main_connection.close()
                         print(f"[MAIN SERVER] Client disconnected.")
@@ -68,7 +73,7 @@ class MainServer:
                         if command[1] == "START":
                             if self.manual_server is None:
                                 print(f"[MAIN SERVER] Starting manual controller...")
-                                self.manual_server = ManualController(self.HOSTNAME, self.MANUAL_PORT, self.serial)
+                                self.manual_server = ManualServer(self.HOSTNAME, self.MANUAL_PORT, self.serial)
                                 self.manual_server.start()
                                 self.main_connection.send(f"OK {self.MANUAL_PORT}".encode())
                                 print("[MAIN SERVER] Manual server started succesfully.\n")

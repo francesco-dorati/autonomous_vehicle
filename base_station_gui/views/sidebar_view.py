@@ -80,6 +80,9 @@ class SidebarView(tk.Frame):
         self.ping_label.grid_forget()
         self.ping.grid_forget()
         self.shutdown_button.pack_forget()
+    
+    def update_ping(self, ping):
+        self.ping.config(text=f"{ping} ms")
 
     def open_config(self):
         self.config_frame.pack(fill='x', side='top', pady=10)

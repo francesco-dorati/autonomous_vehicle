@@ -1,4 +1,5 @@
 import time
+import socket
 
 CONNECTION_TIMEOUT_MS = 3000
 
@@ -34,21 +35,41 @@ class MainController:
         exit(0)
 
     def connect(self):
-        # connect logic
-        self.main_connection = True
+        self.main_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.main_connection.settimeout(3)
+        try:
+            self.main_connection.connect(self.server_address)
+        except (socket.timeout, ConnectionRefusedError):
+            self.main_connection = None
+            return
         self.main_view.connect()
     
     def disconnect(self):
         # disconnect logic
+        if self.main_connection:
+            self.main_connection.close()
         self.main_connection = None
         self.main_view.disconnect()
 
     def check_connection(self):
         if self.main_connection:
+            try:
+                t_start = time.time()
+                self.main_connection.send("PING".encode())
+                response = self.main_connection.recv(1024)
+                dt_ms = (time.time() - t_start)*1000
+                if response.decode() == "OK":
+                    self.main_view.sidebar.update_ping(dt_ms)
+                else:
+                    self.disconnect()
+
+            except (socket.timeout, BrokenPipeError, ConnectionResetError, socket.error):
+                self.disconnect()
+                
             # ping server
             # if receaves response, keep connection
             # else disconnect
-            pass
+            
         self.main_view.after(CONNECTION_TIMEOUT_MS, self.check_connection)
 
     def confirm_config_sidebar(self):
