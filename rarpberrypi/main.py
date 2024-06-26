@@ -74,7 +74,7 @@ class MainServer:
                         if command[1] == "START":
                             if self.manual_server is None:
                                 print(f"[MAIN SERVER] Starting manual controller...")
-                                self.manual_server = ManualServer(self.HOSTNAME, self.MANUAL_PORT, self.serial)
+                                self.manual_server = ManualServer(self.HOSTNAME, self.MANUAL_PORT, self.main_address[0])
                                 self.manual_server.start()
                                 self.main_connection.send(f"OK {self.MANUAL_PORT}".encode())
                                 print("[MAIN SERVER] Manual server started succesfully.\n")
