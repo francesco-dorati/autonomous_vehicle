@@ -18,6 +18,7 @@ class Status(Enum):
 
 class Action(Enum):
     MANUAL = 1
+    CAMERA = 2
     EXIT = 0
     EXIT_SHUTDOWN = -1
     RETRY_CONN = -2

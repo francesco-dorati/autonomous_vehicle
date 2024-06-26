@@ -8,12 +8,11 @@ MANUAL_LOOP_FREQ = 50 # Hz
 MANUAL_TAO = (1/MANUAL_LOOP_FREQ) # s
 
 MANUAL_LIN_VEL = [10, 20, 25, 30] # cm/s
-MANUAL_ANG_VEL = [45, 60, 90, 120] # deg/s
+MANUAL_ANG_VEL = [45, 70, 100, 120] # deg/s
 
 WHEEL_RADIUS = 3.4
 DIST_FROM_CENTER = 12
 TICKS_PER_REV = 1495
-
 
 class ManualController(threading.Thread):
     def __init__(self, hostname, port, serial):
