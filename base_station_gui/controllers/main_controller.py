@@ -91,7 +91,7 @@ class MainController:
             return
         
         self.main_view.show_page('manual')
-        self.start(self.main_connection)
+        self.manual_controller.start(self.main_connection)
 
     
     def exit_manual(self):

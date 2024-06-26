@@ -2,7 +2,7 @@ import socket
 import threading
 
 class ManualServer(threading.Thread):
-    def __init__(self, hostname, port, client_hostname, serial):
+    def __init__(self, hostname, port, client_hostname):
         super().__init__(daemon=True)
 
         self.hostname = hostname

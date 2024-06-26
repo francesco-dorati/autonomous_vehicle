@@ -19,8 +19,9 @@ class ManualController:
     
     def start(self, main_connection):
         self.main_connection = main_connection
-        self.server_hostname = self.main_connection.get_sock_name()[0]
+        self.server_hostname = self.main_connection.getpeername()[0]
         m = self._start_manual_control()
+        print("Manual ok:", m)
             
     def stop(self):
         self._stop_keyboard_control()
