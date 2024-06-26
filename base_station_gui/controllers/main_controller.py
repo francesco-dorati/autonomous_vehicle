@@ -97,7 +97,6 @@ class MainController:
     def exit_manual(self):
         self.manual_controller.stop()
         self.main_view.show_page('main')
-        self.stop_keyboard_control()
 
    
 
