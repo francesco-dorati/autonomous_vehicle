@@ -59,7 +59,7 @@ class ManualController:
                 self.keyboard_buffer.remove('r')
             
             s = "".join(self.keyboard_buffer)
-            print("Sent:", s, " to ", self.server_hostname, ":", self.manual_port)
+            # print("Sent:", s, " to ", self.server_hostname, ":", self.manual_port)
             self.manual_socket.sendto(s.encode(), (self.server_hostname, self.manual_port))
             self.root.after(MANUAL_CONTROL_MS, self._manual_control)
 

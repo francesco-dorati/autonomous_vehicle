@@ -23,10 +23,6 @@ class ManualServer(threading.Thread):
                 if addr[0] != self.client_hostname:
                     print(f"[MANUAL SERVER] Received data from unknown client: {addr[0]} vs {self.client_hostname}")
                     continue
-                
-                # if data.decode() == "E" or data.decode() == "EXIT":
-                #     self.stop()
-                #     break
 
                 print(f"[MANUAL SERVER] Received \"{data.decode()}\"")
                 # lin_vel, ang_vel = self._calculate_speed(data.decode())
@@ -34,6 +30,8 @@ class ManualServer(threading.Thread):
 
             except socket.timeout: # TODO
                 continue
+            except OSError:
+                break
         
     def stop(self):
         self._stop_event.set()
