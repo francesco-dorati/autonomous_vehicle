@@ -63,6 +63,7 @@ class MainServer:
 
                     if command[0] == "EXIT":
                         self.main_connection.close()
+                        self.main_connection = None
                         print(f"[MAIN SERVER] Client disconnected.")
                         break
 

@@ -23,12 +23,13 @@ class ManualServer(threading.Thread):
                 if addr[0] != self.client_hostname:
                     continue
                 
-                if data.decode() == "E" or data.decode() == "EXIT":
-                    self.stop()
-                    break
-                
-                lin_vel, ang_vel = self._calculate_speed(data.decode())
-                self.serial.send(lin_vel, ang_vel)
+                # if data.decode() == "E" or data.decode() == "EXIT":
+                #     self.stop()
+                #     break
+
+                print(f"[MANUAL SERVER] Received \"{data.decode()}\"")
+                # lin_vel, ang_vel = self._calculate_speed(data.decode())
+                # self.serial.send(lin_vel, ang_vel)
 
             except socket.timeout: # TODO
                 continue
