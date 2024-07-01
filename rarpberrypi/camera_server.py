@@ -41,7 +41,7 @@ class CameraServer(threading.Thread):
                 except:
                     continue
             else:
-                ret, frame = self.capture.read()
+                ret, frame = self.camera.read()
                 if not ret:
                     continue
 
