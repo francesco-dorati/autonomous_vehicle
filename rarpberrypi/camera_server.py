@@ -37,7 +37,7 @@ class CameraServer(threading.Thread):
 
                     if data.decode() == "START":
                         self.client_port = int(addr[1])
-                        self.socket.sendto("OK".encode(), (self.client_hostname, self.client_port))
+                        # self.socket.sendto("OK".encode(), (self.client_hostname, self.client_port))
                 except:
                     continue
             else:
