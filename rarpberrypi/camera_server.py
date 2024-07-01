@@ -29,7 +29,6 @@ class CameraServer(threading.Thread):
     def run(self):
         while not self._stop_event.is_set():
             if self.client_port is None:
-                print('OK', self.client_port)
                 try:
                     data, addr = self.socket.recvfrom(1024)
                     if addr[0] != self.client_hostname:
@@ -37,11 +36,8 @@ class CameraServer(threading.Thread):
                         continue
 
                     if data.decode() == "START":
-                        print('RECEIVED START from ', addr[0], ' : ', addr[1])
                         self.client_port = int(addr[1])
-                        print(self.client_port)
                         self.socket.sendto("OK".encode(), (self.client_hostname, self.client_port))
-                    print('RECEIVED', data.decode(), ' from ', addr[0], ' : ', addr[1])
                 except:
                     continue
             else:
@@ -51,13 +47,15 @@ class CameraServer(threading.Thread):
 
                 _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
                 data = pickle.dumps(buffer)
-                print(self.client_port)
+                
                 self.socket.sendto(data, (self.client_hostname, self.client_port))
-                # try:
-                #     self.socket.sendto(data, (self.client_hostname, self.client_port))
-                #     print("[CAMERA SERVER] Frame sent")
-                # except Exception as e:
-                #     print(f"[CAMERA SERVER] Send failed: {e}")
+                try:
+                    self.socket.sendto(data, (self.client_hostname, self.client_port))
+                    print("[CAMERA SERVER] Frame sent")
+                except Exception as e:
+                    print(f"[CAMERA SERVER] Send failed: {e}")
+                    self.client_port = None
+                    self.stop()
                 # self.server_socket.sendto(data, (self.client_hostname, self.client_port))
                 
                 time.sleep(1 / self.fps)

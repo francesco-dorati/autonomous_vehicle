@@ -255,6 +255,7 @@ class CameraReceiver:
                     self.view.update_image(image)
 
             except:
+                print("Error, stopping...")
                 self.stop()
                 return
             self.root.after(10, self._receiver_loop)
