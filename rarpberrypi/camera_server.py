@@ -29,6 +29,7 @@ class CameraServer(threading.Thread):
     def run(self):
         while not self._stop_event.is_set():
             if self.client_port is None:
+                print('OK', self.client_port)
                 try:
                     data, addr = self.socket.recvfrom(1024)
                     if addr[0] != self.client_hostname:
@@ -36,8 +37,10 @@ class CameraServer(threading.Thread):
                         continue
 
                     if data.decode() == "START":
+                        print('RECEIVED START from ', addr[0], ' : ', addr[1])
                         self.client_port = addr[1]
                         self.socket.sendto("OK".encode(), (self.client_hostname, self.client_port))
+                    print('RECEIVED', data.decode(), ' from ', addr[0], ' : ', addr[1])
                 except:
                     continue
             else:
