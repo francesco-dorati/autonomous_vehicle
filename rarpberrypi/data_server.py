@@ -15,7 +15,7 @@ class DataServer(threading.Thread):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server.bind((self.hostname, self.port))
         self.server.settimeout(1)
-        self.rate_s = 500
+        self.rate_ms = 500
         print(f"\n[DATA SERVER] Listening on port {self.port}")
 
     def set_rate(self, rate_ms: int):
