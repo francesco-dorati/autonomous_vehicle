@@ -59,6 +59,6 @@ class CameraServer(threading.Thread):
 
     def stop(self):
         self._stop_event.set()
-        self.server_socket.close()
+        self.socket.close()
         self.client_port = None
         print("[CAMERA SERVER] Server stopped.")
