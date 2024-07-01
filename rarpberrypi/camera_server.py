@@ -38,7 +38,8 @@ class CameraServer(threading.Thread):
 
                     if data.decode() == "START":
                         print('RECEIVED START from ', addr[0], ' : ', addr[1])
-                        self.client_port = addr[1]
+                        self.client_port = int(addr[1])
+                        print(self.client_port)
                         self.socket.sendto("OK".encode(), (self.client_hostname, self.client_port))
                     print('RECEIVED', data.decode(), ' from ', addr[0], ' : ', addr[1])
                 except:
