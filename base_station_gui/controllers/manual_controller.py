@@ -3,6 +3,7 @@ import select
 import pickle
 import cv2
 from PIL import Image
+import numpy as np
 
 MANUAL_CONTROL_FREQ = 10
 MANUAL_CONTROL_MS = int((1/MANUAL_CONTROL_FREQ)*1000)
@@ -16,6 +17,7 @@ class ManualController:
         self.data_receiver = DataReceiver(self.root, self.view.data_frame, main_connection)
         self.camera_receiver = CameraReceiver(self.root, self.view.camera_frame, main_connection)
 
+
         ok = self.controls_sender.start()
         if not ok:
             self.view.controls_frame.disable()
@@ -23,7 +25,8 @@ class ManualController:
         ok = self.data_receiver.start()
         if not ok:
             self.view.data_frame.disable()
-
+    def stop():
+        pass
 
 class ControlsSender:
     def __init__(self, root, view, main_connection):
@@ -81,8 +84,9 @@ class ControlsSender:
             s = "".join(self.keyboard_buffer)
             # print("Sent:", s, " to ", self.server_hostname, ":", self.manual_port)
             try:
-                self.controls_socket.sendto(s.encode(), (self.server_hostname, self.manual_port))
+                self.controls_socket.sendto(s.encode(), (self.server_hostname, self.controls_port))
             except:
+                print("ERROR, stopping")
                 self.stop()
                 return
 
@@ -102,38 +106,38 @@ class ControlsSender:
         if key == 'w': # FORWARD
             if not 'f' in self.keyboard_buffer:
                 self.keyboard_buffer.append('f')
-            self.view.data_frame.forward(True)
+            self.view.forward(True)
         elif key == 's': # BACKWARD
             if not 'b' in self.keyboard_buffer:
                 self.keyboard_buffer.append('b')
-            self.view.data_frame.backward(True)
+            self.view.backward(True)
         elif key == 'a':   # LEFT
             if not 'l' in self.keyboard_buffer:
                 self.keyboard_buffer.append('l')
-            self.view.data_frame.left(True)
+            self.view.left(True)
         elif key == 'd':  # RIGHT
             if not 'r' in self.keyboard_buffer:
                 self.keyboard_buffer.append('r')
-            self.view.data_frame.right(True)
+            self.view.right(True)
 
     def _key_released(self, event):
         key = event.keysym
         if key == 'w':
             if 'f' in self.keyboard_buffer:
                 self.keyboard_buffer.remove('f')
-            self.view.data_frame.forward(False)
+            self.view.forward(False)
         elif key == 's':
             if 'b' in self.keyboard_buffer:
                 self.keyboard_buffer.remove('b')
-            self.view.data_frame.backward(False)
+            self.view.backward(False)
         elif key == 'a':
             if 'l' in self.keyboard_buffer:
                 self.keyboard_buffer.remove('l')
-            self.view.data_frame.left(False)
+            self.view.left(False)
         elif key == 'd':
             if 'r' in self.keyboard_buffer:
                 self.keyboard_buffer.remove('r')
-            self.view.data_frame.right(False)
+            self.view.right(False)
 
 
 
@@ -232,6 +236,7 @@ class CameraReceiver:
             return None
         
         self.is_running = True
+        self.view.start()
         self._receiver_loop()
         return True
 
@@ -242,6 +247,8 @@ class CameraReceiver:
                 if ready[0]:
                     data, _ = self.camera_socket.recvfrom(1024)
                     frame = pickle.loads(data)
+                    np_data = np.frombuffer(frame, np.uint8)
+                    frame = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     image = Image.fromarray(frame)
                     self.view.update_image(image)
@@ -249,11 +256,12 @@ class CameraReceiver:
             except:
                 self.stop()
                 return
-            self.root.after(100, self._receiver_loop)
+            self.root.after(10, self._receiver_loop)
 
     def stop(self):
         self.is_running = False
-        self.camera_socket.close()
+        if self.camera_socket:
+            self.camera_socket.close()
         self.camera_socket = None
         self.main_connection.send("CAMERA STOP".encode())
         self.view.disable()

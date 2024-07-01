@@ -51,3 +51,9 @@ class CameraServer(threading.Thread):
                     self.server_socket.sendto(data, (self.client_hostname, self.client_port))
                     
                 time.sleep(1 / self.frame_rate)
+
+    def stop(self):
+        self._stop_event.set()
+        self.server_socket.close()
+        self.client_port = None
+        print("[CAMERA SERVER] Server stopped.")
