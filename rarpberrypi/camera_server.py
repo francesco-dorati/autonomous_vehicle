@@ -54,7 +54,7 @@ class CameraServer(threading.Thread):
                     print(f"[CAMERA SERVER] Send failed: {e}")
                 # self.server_socket.sendto(data, (self.client_hostname, self.client_port))
                 
-                time.sleep(1 / self.frame_rate)
+                time.sleep(1 / self.fps)
 
     def stop(self):
         self._stop_event.set()
