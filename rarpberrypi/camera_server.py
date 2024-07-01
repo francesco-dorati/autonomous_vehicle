@@ -45,16 +45,15 @@ class CameraServer(threading.Thread):
                 if not ret:
                     continue
 
-                if self.client_addr:
-                    _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
-                    data = pickle.dumps(buffer)
-                    try:
-                        self.socket.sendto(data, (self.client_hostname, self.client_port))
-                        print("[CAMERA SERVER] Frame sent")
-                    except Exception as e:
-                        print(f"[CAMERA SERVER] Send failed: {e}")
-                    # self.server_socket.sendto(data, (self.client_hostname, self.client_port))
-                    
+                _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+                data = pickle.dumps(buffer)
+                try:
+                    self.socket.sendto(data, (self.client_hostname, self.client_port))
+                    print("[CAMERA SERVER] Frame sent")
+                except Exception as e:
+                    print(f"[CAMERA SERVER] Send failed: {e}")
+                # self.server_socket.sendto(data, (self.client_hostname, self.client_port))
+                
                 time.sleep(1 / self.frame_rate)
 
     def stop(self):
