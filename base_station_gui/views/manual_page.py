@@ -162,7 +162,8 @@ class ControlsFrame(tk.Frame):
         self.bwd_label = tk.Label(self.keys_frame, text="S ↓", font=("Arial", self.text_size), bg='lightgray', relief='raised')
         self.right_label = tk.Label(self.keys_frame, text="D →", font=("Arial", self.text_size), bg='lightgray', relief='raised')
         
-        self.control_button = tk.Button(self, text="Pause Control", font=("Arial", self.text_size))
+        self.start_button = tk.Button(self, text="Start Control", font=("Arial", self.text_size))
+        self.stop_button = tk.Button(self, text="Stop Control", font=("Arial", self.text_size))
 
 
         # PACK CONTROLS
@@ -172,7 +173,7 @@ class ControlsFrame(tk.Frame):
         self.left_label.grid(row=1, column=0, padx=8, pady=8)
         self.bwd_label.grid(row=1, column=1, padx=8, pady=8)
         self.right_label.grid(row=1, column=2, padx=8, pady=8)
-        self.control_button.pack(fill='x', side='top', pady=10, padx=10)
+        self.stop_button.pack(fill='x', side='top', pady=10, padx=10)
 
 
         # self.linear_label.pack(fill='x', side='left', pady=10)
@@ -210,12 +211,16 @@ class ControlsFrame(tk.Frame):
             self.right_label.config(bg='lightgray', fg='black', relief='raised')
         
     def disable(self):
+        self.start_button.pack(fill='x', side='top', pady=10, padx=10)
+        self.stop_button.pack_forget()
         self.fwd_label.config(state='disabled')
         self.bwd_label.config(state='disabled')
         self.left_label.config(state='disabled')
         self.right_label.config(state='disabled')
 
     def enable(self):
+        self.stop_button.pack(fill='x', side='top', pady=10, padx=10)
+        self.start_button.pack_forget()
         self.fwd_label.config(state='normal')
         self.bwd_label.config(state='normal')
         self.left_label.config(state='normal')

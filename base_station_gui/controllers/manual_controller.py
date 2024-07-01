@@ -38,6 +38,9 @@ class ControlsSender:
         
         self.keyboard_buffer = []
 
+        self.view.start_button.config(command=self.start)
+        self.view.stop_button.config(command=self.stop)
+
     def start(self):
         self.main_connection.send("MANUAL START".encode())
         response = self.main_connection.recv(1024)
