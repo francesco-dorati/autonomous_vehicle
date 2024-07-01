@@ -245,7 +245,8 @@ class CameraReceiver:
             try:
                 ready = select.select([self.camera_socket], [], [], 0.1)
                 if ready[0]:
-                    data, _ = self.camera_socket.recvfrom(1024)
+                    print("Received frame")
+                    data, _ = self.camera_socket.recvfrom(65536)
                     frame = pickle.loads(data)
                     np_data = np.frombuffer(frame, np.uint8)
                     frame = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
