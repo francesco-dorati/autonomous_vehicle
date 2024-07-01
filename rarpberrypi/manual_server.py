@@ -30,6 +30,7 @@ class ManualServer(threading.Thread):
 
             except socket.timeout: # TODO
                 continue
+            
             except OSError:
                 break
         

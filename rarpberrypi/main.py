@@ -109,13 +109,19 @@ class MainServer:
                             else:
                                 self.main_connection.send("KO".encode)
                                 print(f"[MAIN SERVER] Data server is not running.")
+                        elif command[1] == "RATE":
+                            if self.data_server is not None:
+                                self.data_server.RATE = int(command[2])
+                                self.main_connection.send(data.encode())
+                            else:
+                                self.main_connection.send("KO".encode())
+                                print(f"[MAIN SERVER] Data server is not running.")
 
                     elif command[0] == "CAMERA":
                         if command[1] == "START":
                             if self.camera_server is None:
                                 print(f"[MAIN SERVER] Starting camera server...")
                                 self.camera_server = CameraServer(self.HOSTNAME, self.CAMERA_PORT, 30)
-                                self.camera_server.start()
                                 self.main_connection.send(f"OK {self.CAMERA_PORT}".encode())
                                 print("[MAIN SERVER] Camera server started succesfully.\n")
                             else:

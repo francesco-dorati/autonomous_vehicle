@@ -4,39 +4,50 @@ import pickle
 import threading
 import time
 
-class CameraServer:
-    def __init__(self, hostname, port, fps):
+class CameraServer(threading.Thread):
+    def __init__(self, hostname, port, client_hostname, fps):
+        super().__init__(daemon=True)
         self.hostname = hostname
         self.port = port
+        self.client_hostname = client_hostname
+        self.client_port = None
         self.fps = fps
+
+        self._stop_event = threading.Event()
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.hostname, self.port))
         print(f"[CAMERA SERVER] Listening on {self.hostname}:{self.port}")
 
         self.camera = cv2.VideoCapture(0)
+        if not self.camera.isOpened():
+            print("Error: Could not open video device")
+            return
         self.camera.set(cv2.CAP_PROP_FPS, self.fps)
 
-        self.running = False
 
-    def start(self):
-        self.running = True
-        self.thread = threading.Thread(target=self.stream)
-        self.thread.start()
+    def run(self):
+        while not self._stop_event.is_set():
+            if self.client_port is None:
+                try:
+                    data, addr = self.socket.recvfrom(1024)
+                    if addr[0] != self.client_hostname:
+                        print(f"[CAMERA SERVER] Received data from unknown client: {addr[0]} instead of {self.client_hostname}")
+                        continue
 
-    def stop(self):
-        self.running = False
-        self.thread.join()
+                    if data.decode() == "START":
+                        self.client_port = addr[1]
+                        self.socket.sendto("OK".encode(), (self.client_hostname, self.client_port))
+                except:
+                    continue
+            else:
+                ret, frame = self.capture.read()
+                if not ret:
+                    continue
 
-    def stream(self):
-        while self.running:
-            ret, frame = self.capture.read()
-            if not ret:
-                continue
-
-            if self.client_addr:
-                _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
-                data = pickle.dumps(buffer)
-                self.server_socket.sendto(data, self.client_addr)
-                
-            time.sleep(1 / self.frame_rate)
+                if self.client_addr:
+                    _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+                    data = pickle.dumps(buffer)
+                    self.server_socket.sendto(data, (self.client_hostname, self.client_port))
+                    
+                time.sleep(1 / self.frame_rate)

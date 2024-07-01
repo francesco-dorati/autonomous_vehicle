@@ -11,8 +11,7 @@ class MainController:
         self.server_address = ('172.20.10.7', 5500)
         self.main_connection = None
 
-        self.manual_controller = ManualController(self.main_view, self.main_view.pages['manual'])
-
+        self.manual_controller = None
 
         self.add_commands()
         self.check_connection()
@@ -35,8 +34,10 @@ class MainController:
     def exit(self):
         if self.main_connection:
             self.disconnect()
+
+            if self.main_view.current_page:
             # send exit command to server
-            pass
+                pass
         exit(0)
 
     def connect(self):
@@ -91,7 +92,8 @@ class MainController:
             return
         
         self.main_view.show_page('manual')
-        self.manual_controller.start(self.main_connection)
+        self.manual_controller = ManualController(self.main_view, self.main_view.current_page, self.main_connection)
+        # self.manual_controller.start(self.main_connection)
 
     
     def exit_manual(self):
