@@ -122,6 +122,7 @@ class MainServer:
                             if self.camera_server is None:
                                 print(f"[MAIN SERVER] Starting camera server...")
                                 self.camera_server = CameraServer(self.HOSTNAME, self.CAMERA_PORT, self.main_address[0], 30)
+                                self.camera_server.start()
                                 self.main_connection.send(f"OK {self.CAMERA_PORT}".encode())
                                 print("[MAIN SERVER] Camera server started succesfully.\n")
                             else:
