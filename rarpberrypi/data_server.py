@@ -3,7 +3,7 @@ import socket
 import time
 
 class DataServer(threading.Thread):
-    def __init__(self, hostname, port, client_hostname, serial):
+    def __init__(self, hostname, port, client_hostname):
         super().__init__(daemon=True)
         self.hostname = hostname
         self.port = port

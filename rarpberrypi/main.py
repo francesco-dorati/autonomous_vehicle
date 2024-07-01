@@ -94,7 +94,7 @@ class MainServer:
                         if command[1] == "START":
                             if self.data_server is None:
                                 print(f"[MAIN SERVER] Starting data server...")
-                                self.data_server = DataServer(self.HOSTNAME, self.DATA_PORT, self.serial)
+                                self.data_server = DataServer(self.HOSTNAME, self.DATA_PORT, self.main_address[0])
                                 self.data_server.start()
                                 self.main_connection.send(f"OK {self.DATA_PORT}".encode())
                                 print("[MAIN SERVER] Data server started succesfully.\n")

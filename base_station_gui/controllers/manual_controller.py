@@ -65,7 +65,7 @@ class ControlsSender:
         self._sender_loop()
         return True
     
-    def _sender_rec(self):
+    def _sender_loop(self):
         # refine buffer
         if self.is_running:
             if 'f' in self.keyboard_buffer and 'b' in self.keyboard_buffer:
@@ -83,14 +83,14 @@ class ControlsSender:
                 self.stop()
                 return
 
-            self.root.after(MANUAL_CONTROL_MS, self.sender_rec)
+            self.root.after(MANUAL_CONTROL_MS, self._sender_loop)
     
     def stop(self):
         self.is_running = False
         self.view.unbind("<KeyPress>")
         self.view.unbind("<KeyRelease>")
-        self.manual_socket.close()
-        self.manual_socket = None
+        self.controls_socket.close()
+        self.controls_socket = None
         self.main_connection.send("MANUAL STOP".encode())
         self.view.disable()
   
@@ -169,7 +169,7 @@ class DataReceiver:
         self._receiver_loop()
         return True
     
-    def _receiver_rec(self):
+    def _receiver_loop(self):
         if self.is_running:
             try:
                 ready = select.select([self.data_socket], [], [], 0.1)
@@ -181,7 +181,7 @@ class DataReceiver:
             except:
                 self.stop()
                 return
-            self.root.after(100, self._receiver_rec)
+            self.root.after(100, self._receiver_loop)
 
     def _parse_data(self, data):
         data = data.strip().split()
