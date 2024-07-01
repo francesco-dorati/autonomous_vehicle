@@ -47,6 +47,7 @@ class CameraServer(threading.Thread):
 
                 _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
                 data = pickle.dumps(buffer)
+                print(self.client_port)
                 self.socket.sendto(data, (self.client_hostname, self.client_port))
                 # try:
                 #     self.socket.sendto(data, (self.client_hostname, self.client_port))
