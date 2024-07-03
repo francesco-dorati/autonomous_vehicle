@@ -55,14 +55,21 @@ class CameraFrame(tk.Frame):
     
     def start(self):
         self.start_button.pack_forget()
-        self.stop_button.pack(fill='none', pady=20, expand=True)
         self.image_label.pack()
+        self.stop_button.pack(fill='none', pady=20, expand=True)
 
     def disable(self):
         self.stop_button.pack_forget()
+        self.image_label.pack_forget()
         self.start_button.pack(fill='none', pady=20, expand=True)
 
     def update_image(self, image):
+        label_width = self.image_label.winfo_width()
+        label_height = self.image_label.winfo_height()
+
+        # Resize image to fit within the label, maintaining aspect ratio
+        image.thumbnail((label_width, label_height), Image.ANTIALIAS)
+
         imgtk = ImageTk.PhotoImage(image=image)
         self.image_label.imgtk = imgtk
         self.image_label.configure(image=imgtk)

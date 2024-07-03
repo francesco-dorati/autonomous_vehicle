@@ -25,7 +25,8 @@ class ManualController:
         ok = self.data_receiver.start()
         if not ok:
             self.view.data_frame.disable()
-    def stop():
+
+    def stop(self):
         pass
 
 class ControlsSender:
@@ -245,7 +246,7 @@ class CameraReceiver:
             try:
                 ready = select.select([self.camera_socket], [], [], 0.1)
                 if ready[0]:
-                    print("Received frame")
+                    # print("Received frame")
                     data, _ = self.camera_socket.recvfrom(65536)
                     frame = pickle.loads(data)
                     np_data = np.frombuffer(frame, np.uint8)
@@ -255,7 +256,7 @@ class CameraReceiver:
                     self.view.update_image(image)
 
             except Exception as e:
-                print(e)
+                print(f"Socket error: {e}")
                 self.stop()
                 return
             self.root.after(10, self._receiver_loop)

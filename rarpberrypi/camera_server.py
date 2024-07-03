@@ -4,6 +4,7 @@ import pickle
 import threading
 import time
 
+
 class CameraServer(threading.Thread):
     def __init__(self, hostname, port, client_hostname, fps):
         super().__init__(daemon=True)
@@ -24,6 +25,8 @@ class CameraServer(threading.Thread):
             print("Error: Could not open video device")
             return
         self.camera.set(cv2.CAP_PROP_FPS, self.fps)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
 
     def run(self):
@@ -44,8 +47,9 @@ class CameraServer(threading.Thread):
                 ret, frame = self.camera.read()
                 if not ret:
                     continue
-
-                _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+                
+                frame = cv2.rotate(frame, cv2.ROTATE_180)
+                _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
                 data = pickle.dumps(buffer)
                 
                 self.socket.sendto(data, (self.client_hostname, self.client_port))
