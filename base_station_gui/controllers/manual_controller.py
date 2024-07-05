@@ -4,6 +4,7 @@ import pickle
 import cv2
 from PIL import Image
 import numpy as np
+import struct
 
 MANUAL_CONTROL_FREQ = 10
 MANUAL_CONTROL_MS = int((1/MANUAL_CONTROL_FREQ)*1000)
@@ -248,11 +249,17 @@ class CameraReceiver:
                 if ready[0]:
                     # print("Received frame")
                     data, _ = self.camera_socket.recvfrom(65536)
-                    frame = pickle.loads(data)
+
+                    frame_length = struct.unpack("Q", data[:8])[0]
+                    frame_data = data[8:8 + frame_length]
+
+                    frame = pickle.loads(frame_data)
+
                     np_data = np.frombuffer(frame, np.uint8)
                     frame = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     image = Image.fromarray(frame)
+
                     self.view.update_image(image)
 
             except Exception as e:

@@ -54,16 +54,28 @@ class CameraServer(threading.Thread):
                 frame = cv2.rotate(frame, cv2.ROTATE_180)
                 #_, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
                 data = pickle.dumps(frame)
+
+                packet_size = 1024  # Example packet size
+                packets = [data[i:i + packet_size] for i in range(0, len(data), packet_size)]
+
+                for packet in packets:
+                    try:
+                        # Prepend each packet with its length using struct.pack("Q", len(packet))
+                        packet = struct.pack("Q", len(packet)) + packet
+                        self.socket.sendto(packet, (self.client_hostname, self.port))
+                    except Exception as e:
+                        print(f"[CAMERA SERVER] Send failed: {e}")
+                        break
                 # data = struct.pack("Q",len(data))+data
                 
                 # self.socket.sendto(data, (self.client_hostname, self.client_port))
-                try:
-                    self.socket.sendto(data, (self.client_hostname, self.client_port))
-                    print("[CAMERA SERVER] Frame sent")
-                except Exception as e:
-                    print(f"[CAMERA SERVER] Send failed: {e}")
-                    self.client_port = None
-                    self.stop()
+                # try:
+                #     self.socket.sendto(data, (self.client_hostname, self.client_port))
+                #     print("[CAMERA SERVER] Frame sent")
+                # except Exception as e:
+                #     print(f"[CAMERA SERVER] Send failed: {e}")
+                #     self.client_port = None
+                #     self.stop()
                 # self.server_socket.sendto(data, (self.client_hostname, self.client_port))
                 
                 
