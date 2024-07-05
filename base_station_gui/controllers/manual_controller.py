@@ -36,9 +36,9 @@ class ManualController:
     def start_camera(self):
         if self.camera_receiver.is_running:
             return
-        ok = self.data_receiver.start()
+        ok = self.camera_receiver.start()
         if not ok:
-            self.view.data_frame.disable()
+            self.view.camera_frame.disable()
     def stop_camera(self):
         if not self.camera_receiver.is_running:
             return
