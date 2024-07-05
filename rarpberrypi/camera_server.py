@@ -57,7 +57,7 @@ class CameraServer(threading.Thread):
 
                 packet_size = 1024  # Example packet size
                 packets = [data[i:i + packet_size] for i in range(0, len(data), packet_size)]
-
+                print(f"sending {len(packets)} packets")
                 for packet in packets:
                     try:
                         # Prepend each packet with its length using struct.pack("Q", len(packet))
@@ -66,6 +66,7 @@ class CameraServer(threading.Thread):
                     except Exception as e:
                         print(f"[CAMERA SERVER] Send failed: {e}")
                         break
+
                 # data = struct.pack("Q",len(data))+data
                 
                 # self.socket.sendto(data, (self.client_hostname, self.client_port))
