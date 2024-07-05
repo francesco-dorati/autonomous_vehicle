@@ -126,8 +126,9 @@ class MainServer:
                                     self.main_connection.send("KO".encode())
                                     print(f"[MAIN SERVER] Error: Could not open video device.")
                                     continue
-
+                                print('before start')
                                 self.camera_server.start()
+                                print('after start')
                                 self.main_connection.send(f"OK {self.CAMERA_PORT}".encode())
                                 print("[MAIN SERVER] Camera server started succesfully.\n")
                             else:

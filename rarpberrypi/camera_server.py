@@ -26,6 +26,7 @@ class CameraServer(threading.Thread):
                 print("Error: Could not open video device")
                 return
         except Exception as e:
+            print("Error: Could not open video device")
             self.camera = None
             return
         
@@ -49,7 +50,6 @@ class CameraServer(threading.Thread):
                 except:
                     continue
             else:
-                print('recv')
                 ret, frame = self.camera.read()
                 if not ret:
                     continue
