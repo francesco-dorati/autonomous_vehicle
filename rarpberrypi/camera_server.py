@@ -20,10 +20,15 @@ class CameraServer(threading.Thread):
         self.socket.bind((self.hostname, self.port))
         print(f"[CAMERA SERVER] Listening on {self.hostname}:{self.port}")
 
-        self.camera = cv2.VideoCapture(0)
-        if not self.camera.isOpened():
-            print("Error: Could not open video device")
+        try:
+            self.camera = cv2.VideoCapture(0)
+            if not self.camera.isOpened():
+                print("Error: Could not open video device")
+                return
+        except Exception as e:
+            self.camera = None
             return
+        
         self.camera.set(cv2.CAP_PROP_FPS, self.fps)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         # self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)

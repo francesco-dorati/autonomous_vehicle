@@ -17,17 +17,42 @@ class ManualController:
         self.data_receiver = DataReceiver(self.root, self.view.data_frame, main_connection)
         self.camera_receiver = CameraReceiver(self.root, self.view.camera_frame, main_connection)
 
-
+        self.view.controls_frame.start_button.config(command=self.start_controls)
+        self.view.controls_frame.stop_button.config(command=self.stop_controls)
+        self.view.camera_frame.start_button.config(command=self.start_camera)
+        self.view.camera_frame.stop_button.config(command=self.stop_camera)
+    
+    def start_controls(self):
+        if self.controls_sender.is_running:
+            return
         ok = self.controls_sender.start()
         if not ok:
             self.view.controls_frame.disable()
-        
+    def stop_controls(self):
+        if not self.controls_sender.is_running:
+            return
+        self.controls_sender.stop()
+    
+    def start_camera(self):
+        if self.camera_receiver.is_running:
+            return
         ok = self.data_receiver.start()
         if not ok:
             self.view.data_frame.disable()
+    def stop_camera(self):
+        if not self.camera_receiver.is_running:
+            return
+        self.camera_receiver.stop()
 
-    def stop(self):
+    def start_data(self):
         pass
+    def stop_data(self):
+        pass
+        
+    def stop(self):
+        self.stop_camera()
+        self.stop_controls()
+        self.start_data()
 
 class ControlsSender:
     def __init__(self, root, view, main_connection):
@@ -42,8 +67,6 @@ class ControlsSender:
         
         self.keyboard_buffer = []
 
-        self.view.start_button.config(command=self.start)
-        self.view.stop_button.config(command=self.stop)
 
     def start(self):
         self.main_connection.send("MANUAL START".encode())
@@ -215,9 +238,6 @@ class CameraReceiver:
         self.data_socket = None
         self.is_running = False
 
-        self.view.start_button.config(command=self.start)
-        self.view.stop_button.config(command=self.stop)
-
     def start(self):
         self.main_connection.send("CAMERA START".encode())
         response = self.main_connection.recv(1024)
@@ -233,6 +253,7 @@ class CameraReceiver:
         try:
             self.camera_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.camera_socket.sendto("START".encode(), (self.server_hostname, self.camera_port))
+
         except:
             return None
         

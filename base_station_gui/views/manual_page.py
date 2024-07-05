@@ -69,10 +69,13 @@ class CameraFrame(tk.Frame):
 
         # Resize image to fit within the label, maintaining aspect ratio
         # image = image.resize((label_width, label_height), Image.Resampling.LANCZOS)
-
+        # self.image_label.pack_forget()
         imgtk = ImageTk.PhotoImage(image=image)
         self.image_label.imgtk = imgtk
         self.image_label.configure(image=imgtk)
+        #         # Resize the CameraFrame based on the dimensions of the image
+        # self.update_idletasks()  # Ensure all pending geometry management is done
+        # self.master.geometry(f"{self.image_label.winfo_width()}x{self.image_label.winfo_height()}")
 
 
 class DataFrame(tk.Frame):
@@ -180,7 +183,7 @@ class ControlsFrame(tk.Frame):
         self.left_label.grid(row=1, column=0, padx=8, pady=8)
         self.bwd_label.grid(row=1, column=1, padx=8, pady=8)
         self.right_label.grid(row=1, column=2, padx=8, pady=8)
-        self.stop_button.pack(fill='x', side='top', pady=10, padx=10)
+        self.start_button.pack(fill='x', side='top', pady=10, padx=10)
 
 
         # self.linear_label.pack(fill='x', side='left', pady=10)
