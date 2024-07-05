@@ -26,7 +26,7 @@ class CameraServer(threading.Thread):
             return
         self.camera.set(cv2.CAP_PROP_FPS, self.fps)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        # self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 
     def run(self):
