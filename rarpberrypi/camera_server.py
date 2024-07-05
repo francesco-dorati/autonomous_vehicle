@@ -49,7 +49,7 @@ class CameraServer(threading.Thread):
                     continue
                 
                 frame = cv2.rotate(frame, cv2.ROTATE_180)
-                _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+                _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
                 data = pickle.dumps(buffer)
                 
                 self.socket.sendto(data, (self.client_hostname, self.client_port))
