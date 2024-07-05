@@ -16,9 +16,6 @@ class CameraServer(threading.Thread):
 
         self._stop_event = threading.Event()
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.bind((self.hostname, self.port))
-        print(f"[CAMERA SERVER] Listening on {self.hostname}:{self.port}")
 
         try:
             self.camera = cv2.VideoCapture(0)
@@ -33,6 +30,10 @@ class CameraServer(threading.Thread):
             print("Error: Could not open video device")
             self.camera = None
             return
+        
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind((self.hostname, self.port))
+        print(f"[CAMERA SERVER] Listening on {self.hostname}:{self.port}")
         
         # self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
