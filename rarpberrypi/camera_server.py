@@ -3,6 +3,9 @@ import cv2
 import pickle
 import threading
 import time
+import imutils
+import struct
+
 
 
 class CameraServer(threading.Thread):
@@ -24,9 +27,9 @@ class CameraServer(threading.Thread):
         if not self.camera.isOpened():
             print("Error: Could not open video device")
             return
-        self.camera.set(cv2.CAP_PROP_FPS, self.fps)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        # self.camera.set(cv2.CAP_PROP_FPS, self.fps)
+        # self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        # self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 
     def run(self):
@@ -47,12 +50,13 @@ class CameraServer(threading.Thread):
                 ret, frame = self.camera.read()
                 if not ret:
                     continue
-                
+                # frame = imutils.resize(frame,width=640)
                 frame = cv2.rotate(frame, cv2.ROTATE_180)
-                _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
-                data = pickle.dumps(buffer)
+                #_, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+                data = pickle.dumps(frame)
+                # data = struct.pack("Q",len(data))+data
                 
-                self.socket.sendto(data, (self.client_hostname, self.client_port))
+                # self.socket.sendto(data, (self.client_hostname, self.client_port))
                 try:
                     self.socket.sendto(data, (self.client_hostname, self.client_port))
                     print("[CAMERA SERVER] Frame sent")
@@ -62,7 +66,8 @@ class CameraServer(threading.Thread):
                     self.stop()
                 # self.server_socket.sendto(data, (self.client_hostname, self.client_port))
                 
-                time.sleep(1 / self.fps)
+                
+                
 
     def stop(self):
         self._stop_event.set()
