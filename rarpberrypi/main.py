@@ -122,13 +122,12 @@ class MainServer:
                             if self.camera_server is None:
                                 print(f"[MAIN SERVER] Starting camera server...")
                                 self.camera_server = CameraServer(self.HOSTNAME, self.CAMERA_PORT, self.main_address[0], 30)
+                                print("camera: ", self.camera_server.camera)
                                 if not self.camera_server.camera:
                                     self.main_connection.send("KO".encode())
                                     print(f"[MAIN SERVER] Error: Could not open video device.")
                                     continue
-                                print('before start')
                                 self.camera_server.start()
-                                print('after start')
                                 self.main_connection.send(f"OK {self.CAMERA_PORT}".encode())
                                 print("[MAIN SERVER] Camera server started succesfully.\n")
                             else:
