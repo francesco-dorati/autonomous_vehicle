@@ -24,10 +24,11 @@ class CameraServer(threading.Thread):
             self.camera = cv2.VideoCapture(0)
             if not self.camera.isOpened():
                 print("Error: Could not open video device")
+                self.camera = None
                 return
             self.camera.set(cv2.CAP_PROP_FPS, self.fps)
             self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            
+
         except Exception as e:
             print("Error: Could not open video device")
             self.camera = None
