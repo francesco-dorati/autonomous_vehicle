@@ -64,18 +64,11 @@ class CameraFrame(tk.Frame):
         self.start_button.pack(fill='none', pady=20, expand=True)
 
     def update_image(self, image):
-        # label_width = self.image_label.winfo_width()
-        # label_height = self.image_label.winfo_height()
-
-        # Resize image to fit within the label, maintaining aspect ratio
-        # image = image.resize((label_width, label_height), Image.Resampling.LANCZOS)
-        # self.image_label.pack_forget()
         imgtk = ImageTk.PhotoImage(image=image)
         self.image_label.imgtk = imgtk
         self.image_label.configure(image=imgtk)
         #         # Resize the CameraFrame based on the dimensions of the image
-        # self.update_idletasks()  # Ensure all pending geometry management is done
-        # self.master.geometry(f"{self.image_label.winfo_width()}x{self.image_label.winfo_height()}")
+
 
 
 class DataFrame(tk.Frame):
