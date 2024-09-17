@@ -12,7 +12,7 @@ SERIAL_RATE = 115200
 
 
 # MAIN SERVER COMMANDS:
-# PING  ->  OK
+# PING  ->  OK <data>
 # MANUAL START -> OK <port>
 # MANUAL STOP -> OK
 # DATA START -> OK <port>
@@ -31,7 +31,7 @@ class MainServer:
         self.MAIN_PORT = 5500
         self.MANUAL_PORT = 5501
         self.DATA_PORT = 5502
-        self.CAMERA_PORT = 5502
+        self.CAMERA_PORT = 5503
 
         self.serial = SerialClient(SERIAL_PORT, SERIAL_RATE)
 
