@@ -5,19 +5,65 @@
     - acting (motors, leds)
 
 - arduino manual loop
-    - 
 
-TODO
-    RASPBERRY
-        - completare state updater e manual controller
 
-    DEV MACHINE
-        - riconciliarsi con rpi
         - implementare boost di velocità (con shift o spazio)
         
-    ARDUINO
-        - aggiungerer kinematics e spece diff
-        - pensare a nuovi adattamenti visto velocità
+
+	Sensors & Data (RP2040) ––> Main Controller (RPI) ––> Motor Controller (Nano)
+                                        ^
+                                        |
+                                External Commands
+
+Manual Loop
+	•	Get sensors data
+	    •	distances from obstacles
+	    •	odometry (optional)
+	•	Read signal wireless (manual)
+	•	Calculate speed based on obstacle distance
+	•	Send motor commands
+	•	Update data and other (optional)
+	    •	camera (once every X loops)
+	    •	data
+
+Main RPI Loop on Boot
+	1.	Create WiFi network
+	2.	Wait for people to connect (max 1)
+	•	Wait for main socket connect
+
+Servers
+	•	Main: TCP, req/res
+	•	Data: TCP messenger sender
+	•	Camera: /
+	•	Manual: UDP receiver
+	•	Ping –> OK, battery_lvl
 
 
+Sensor Controller loop:
+	loop:
+	•	update sensors (one side)
+	•	read encoders and process data
+	•	update IMU
+	•	get battery level
+	on request:
+	•	send measured distance
+	•	send velocity, position, orientation
+	•	send battery voltage
+	on receive:
+	•	change status
+	•	disable sensors
+	•	change frequency
+	consts:
+	•	sensor_running
+	•	encoder_running
+	•	battery_high, low, medium
+
+Motor Controller loop:
+
+	loop:
+	•	read serial –> M   (power to each motor) [-255, 255]
+	•	update motors
+	•	check minimal values
+	const:
+	•	MAX_POW, MIN_POW (HP)
 
