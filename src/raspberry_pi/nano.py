@@ -1,3 +1,5 @@
+import serial
+
 class NANO:
     def __init__(self):
         self.ser = serial.Serial('/dev/serial0', 9600)

@@ -1,10 +1,9 @@
 import time
 import socket
-import serial
 import cv2
 import pickle
 import os
-import smbus
+
 
 from rp2040 import RP2040
 from nano import NANO

@@ -1,3 +1,5 @@
+import smbus
+
 class RP2040:
     def __init__(self):
         self.battery_on = False
