@@ -20,7 +20,7 @@
 #define wheel_distance_from_center 24 // cm
 #define counts_per_rev 1495
 
-struct state {
+struct odometry {
     long vx;
     long vt;
     long x;
@@ -29,6 +29,7 @@ struct state {
     state(): vx(0), vt(0), x(0), y(0), theta(0) {};
     state(float vx, float vt, float x, float y, float theta): vx(vx), vt(vt), x(x), y(y), theta(theta) {};
 }
+
 
 
 bool sensors_running = false;
@@ -40,7 +41,7 @@ bool encoders_running = false;
 long prev_ticks_l = 0, prev_ticks_r = 0;
 volatile long ticks_l = 0, ticks_r = 0;
 long prev_time_encoder = 0;
-state encoders_state = state();
+odometry encoders_odometry = odometry();
 
 bool battery_reader_running = false;
 float battery_voltage = 0.0;
@@ -105,9 +106,22 @@ void loop() {
 
 void requestEvent() {
     // send data
+    
 }
 void receiveEvent(int bytes) {
-    // read data
+    while (bytes > 0) {
+        char c = Wire.read();
+        if (c == 'S' || c == 's') {
+            sensors_running = (c == 'S');
+
+        } else if (c == 'E' || c == 'e') {
+            encoders_running = (c == 'E');
+
+        } else if (c == 'B' || c == 'b') {
+            battery_reader_running = (c == 'B');
+        }
+        bytes--;
+    }
 }
 
 void left_tick() { ticks_l++; }

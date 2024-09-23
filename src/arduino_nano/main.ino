@@ -29,7 +29,7 @@ void loop() {
     // read from serial
     if (Serial.available() > 0) {
         char c = Serial.read();
-        if (c == 'M') {
+        if (c == 'P') {
             if (Serial.available() < 2) return;
             pow_l = Serial.parseInt();
             pow_r = Serial.parseInt();
@@ -47,7 +47,7 @@ void loop() {
         analogWrite(ENA, 0);
         digitalWrite(IN1, LOW);
         digitalWrite(IN2, LOW);
-    } else{
+    } else {
         analogWrite(ENA, abs(pow_l));
         digitalWrite(IN1, (pow_l > 0) ? HIGH : LOW);
         digitalWrite(IN2, (pow_l > 0) ? LOW : HIGH);
@@ -63,5 +63,4 @@ void loop() {
     }
 
     delay(1000/UPDATE_FREQ);
-
 }
