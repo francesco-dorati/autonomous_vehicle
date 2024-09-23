@@ -36,6 +36,7 @@ void loop() {
             pow_l = Serial.parseInt();
             pow_r = Serial.parseInt();
         } else return;
+        Serial.println("POW: " + String(pow_l) + " " + String(pow_r) + " " + String(abs(pow_l)));
     }
 
     // check max/min values
