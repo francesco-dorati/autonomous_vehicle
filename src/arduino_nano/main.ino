@@ -25,6 +25,7 @@ void setup() {
     pinMode(IN3, OUTPUT);
     pinMode(IN4, OUTPUT);
 
+    // Stop motors
     analogWrite(ENA, 0);
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, LOW);
@@ -43,12 +44,6 @@ void loop() {
             pow_l = Serial.parseInt();
             pow_r = Serial.parseInt();
         } else return;
-        Serial.print("POW: ");
-        Serial.print(pow_l);
-        Serial.print(" ");
-        Serial.print(pow_r);
-        Serial.print(" ");
-        Serial.println(abs(pow_r));
     }
 
     // check max/min values
@@ -67,8 +62,8 @@ void loop() {
         digitalWrite(IN2, LOW);
     } else {
         analogWrite(ENA, abs(pow_l));
-        digitalWrite(IN1, (pow_l > 0) ? HIGH : LOW);
-        digitalWrite(IN2, (pow_l > 0) ? LOW : HIGH);
+        digitalWrite(IN1, (pow_l > 0) ? LOW : HIGH);
+        digitalWrite(IN2, (pow_l > 0) ? HIGH : LOW);
     }
     // right
     if (pow_r == 0){
@@ -77,8 +72,8 @@ void loop() {
         digitalWrite(IN4, LOW);
     } else{
         analogWrite(ENB, abs(pow_r));
-        digitalWrite(IN3, (pow_r > 0) ? HIGH : LOW);
-        digitalWrite(IN4, (pow_r > 0) ? LOW : HIGH);
+        digitalWrite(IN3, (pow_r > 0) ? LOW : HIGH);
+        digitalWrite(IN4, (pow_r > 0) ? HIGH : LOW);
     }
 
     delay(1000/UPDATE_FREQ);
