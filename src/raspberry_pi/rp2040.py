@@ -1,4 +1,5 @@
 import smbus
+import struct 
 
 class RP2040:
     def __init__(self):
@@ -31,12 +32,42 @@ class RP2040:
 
     def request_data(self):
         # send command to rp2040
-        try:
-            # Request two bytes of data (assuming two sensor values)
-            #sensor_data1 = bus.read_byte(address)  # Read first data point
-            
-            pass
-        except Exception as e:
-            print(f"Error reading data: {e}")
-            return None, None
+        # ti amo cinci
+        raw_data = self.bus.read_i2c_block_data(self.addr, 0, 33)            
+        unpacked_data = struct.unpack('<3c9h3i', raw_data)
+
+        i = 0
+        battery_on = unpacked_data[0] == b'B'
+        distance_on = unpacked_data[2] == b'D'
+        encoder_on = unpacked_data[1] == b'E'
+        i += 3
+
+        self.battery_voltage_v = unpacked_data[i]/1000 if battery_on else None
+        i+=1
+
+        self.obstacle_distance_cm = {
+            'FL': unpacked_data[i]/10,
+            'FR': unpacked_data[i+1]/10,
+            'RL': unpacked_data[i+2]/10,
+            'RR': unpacked_data[i+3]/10 
+        } if distance_on else None
+        i+=4
+
+        self.wheel_velocity_cms = {
+            'L': unpacked_data[i],
+            'R': unpacked_data[i+1]
+        } if encoder_on else None
+        i+=2
+
+        self.robot_state = {
+            'vx_cms': unpacked_data[i]/10,
+            'vy_deg/s': unpacked_data[i+1]*180/(1000*math.pi),
+            'x_cm': unpacked_data[i+2]/10,
+            'y_cm': unpacked_data[i+3]/10,
+            'theta_deg': unpacked_data[i+4]*180/(1000*math.pi)
+        } if encoder_on else None
+        i+=5
+
+
+
 
