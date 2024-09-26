@@ -129,7 +129,7 @@ void requestEvent() {
     index += sizeof(robot_position);
 
     // Send the entire packed data buffer
-    Wire.write(data_buffer, index);
+    Wire.write(data_buffer, 31);
 }
 void receiveEvent(int bytes) {
     while (bytes > 0) {

@@ -33,7 +33,7 @@ class RP2040:
     def request_data(self):
         # send command to rp2040
         # ti amo cinci
-        raw_data = self.bus.read_i2c_block_data(self.addr, 33) 
+        raw_data = self.bus.read_i2c_block_data(self.addr, 31) 
         print("Received: ", len(raw_data), raw_data) 
         return 
         unpacked_data = struct.unpack(b'<B3c9h3i', bytes(raw_data))
