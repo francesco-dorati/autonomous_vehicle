@@ -57,23 +57,23 @@ void loop() {
     // update motors
     // left
     if (pow_l == 0){
-        analogWrite(ENA, 0);
-        digitalWrite(IN1, LOW);
-        digitalWrite(IN2, LOW);
-    } else {
-        analogWrite(ENA, abs(pow_l));
-        digitalWrite(IN1, (pow_l > 0) ? LOW : HIGH);
-        digitalWrite(IN2, (pow_l > 0) ? HIGH : LOW);
-    }
-    // right
-    if (pow_r == 0){
         analogWrite(ENB, 0);
         digitalWrite(IN3, LOW);
         digitalWrite(IN4, LOW);
+    } else {
+        analogWrite(ENB, abs(pow_l));
+        digitalWrite(IN3, (pow_l > 0) ? LOW : HIGH);
+        digitalWrite(IN4, (pow_l > 0) ? HIGH : LOW);
+    }
+    // right
+    if (pow_r == 0){
+        analogWrite(ENA, 0);
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, LOW);
     } else{
-        analogWrite(ENB, abs(pow_r));
-        digitalWrite(IN3, (pow_r > 0) ? LOW : HIGH);
-        digitalWrite(IN4, (pow_r > 0) ? HIGH : LOW);
+        analogWrite(ENA, abs(pow_r));
+        digitalWrite(IN1, (pow_r > 0) ? LOW : HIGH);
+        digitalWrite(IN2, (pow_r > 0) ? HIGH : LOW);
     }
 
     delay(1000/UPDATE_FREQ);
