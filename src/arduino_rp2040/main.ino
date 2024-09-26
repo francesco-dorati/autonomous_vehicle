@@ -104,7 +104,7 @@ void requestEvent() {
     data_buffer[index++] = encoders_running ? 'E' : 'e'; // Encoders
 
     // battery voltage: 2 bytes
-    if (battery_reader_running) memcpy(&data_buffer[index], battery_voltage_mv, sizeof(battery_voltage_mv));
+    if (battery_reader_running) memcpy(&data_buffer[index], &battery_voltage_mv, sizeof(battery_voltage_mv));
     else memset(&data_buffer[index], 0, sizeof(battery_voltage_mv));
     index += sizeof(battery_voltage_mv);
 
@@ -159,6 +159,8 @@ void receiveEvent(int bytes) {
         } else if (c == 'B' || c == 'b') {
             battery_reader_running = (c == 'B');
             battery_voltage_mv = 0;
+        } else {
+            // Invalid command
         }
         bytes--;
     }
