@@ -95,14 +95,14 @@ void loop() {
 }
 
 void requestEvent() {
-    uint8_t data_buffer[33]; // Adjust size based on the data you are sending
+    uint8_t data_buffer[31]; // Adjust size based on the data you are sending
     int index = 0;
 
-    // running data: 3 bytes
-    data_buffer[index++] = battery_reader_running ? 'B' : 'b'; // Battery
-    data_buffer[index++] = sensors_running ? 'S' : 's'; // Sensors
-    data_buffer[index++] = encoders_running ? 'E' : 'e'; // Encoders
-
+    // // running data: 1 byte
+    data_buffer[index++] = (battery_reader_running ? 0b100 : 0) |
+                           (sensors_running ? 0b010 : 0) |
+                           (encoders_running ? 0b001 : 0);
+    
     // battery voltage: 2 bytes
     if (battery_reader_running) memcpy(&data_buffer[index], &battery_voltage_mv, sizeof(battery_voltage_mv));
     else memset(&data_buffer[index], 0, sizeof(battery_voltage_mv));

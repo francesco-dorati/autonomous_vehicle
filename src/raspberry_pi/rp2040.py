@@ -36,13 +36,14 @@ class RP2040:
         raw_data = self.bus.read_i2c_block_data(self.addr, 33) 
         print("Received: ", len(raw_data), raw_data) 
         return 
-        unpacked_data = struct.unpack(b'<3c9h3i', bytes(raw_data))
+        unpacked_data = struct.unpack(b'<B3c9h3i', bytes(raw_data))
 
         i = 0
-        battery_on = unpacked_data[0] == b'B'
-        distance_on = unpacked_data[2] == b'D'
-        encoder_on = unpacked_data[1] == b'E'
-        i += 3
+        status = unpacked_data[i]
+        self.battery_on = (status & 0b100) >> 2
+        self.distance_on = (status & 0b010) >> 1
+        self.encoders_on = (status & 0b001)
+        i += 1
 
         self.battery_voltage_v = unpacked_data[i]/1000 if battery_on else None
         i+=1
