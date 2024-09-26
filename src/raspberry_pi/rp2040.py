@@ -13,28 +13,30 @@ class RP2040:
         # send command to rp2040
         if self.battery_on == on:
             return
-        self.bus.write_byte(self.addr, 'B' if on else 'b')
+        self.bus.write_byte(self.addr, ord('B') if on else ord('b'))
         self.battery_on = on
     
     def set_encoder(self, on):
         # send command to rp2040
         if self.encoder_on == on:
             return
-        self.bus.write_byte(self.addr, 'E' if on else 'e')
+        self.bus.write_byte(self.addr, ord('E') if on else ord('e'))
         self.encoder_on = on
 
     def set_distance(self, on):
         # send command to rp2040
         if self.distance_on == on:
             return
-        self.bus.write_byte(self.addr, 'D' if on else 'd')
+        self.bus.write_byte(self.addr, ord('D') if on else ord('d'))
         self.distance_on = on
 
     def request_data(self):
         # send command to rp2040
         # ti amo cinci
-        raw_data = self.bus.read_i2c_block_data(self.addr, 0, 33)            
-        unpacked_data = struct.unpack('<3c9h3i', raw_data)
+        raw_data = self.bus.read_i2c_block_data(self.addr, 33) 
+        print("Received: ", len(raw_data), raw_data) 
+        return 
+        unpacked_data = struct.unpack(b'<3c9h3i', bytes(raw_data))
 
         i = 0
         battery_on = unpacked_data[0] == b'B'

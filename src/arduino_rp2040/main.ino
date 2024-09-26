@@ -104,7 +104,8 @@ void requestEvent() {
     data_buffer[index++] = encoders_running ? 'E' : 'e'; // Encoders
 
     // battery voltage: 2 bytes
-    data_buffer[index] = battery_reader_running ? battery_voltage_mv : 0;
+    if (battery_reader_running) memcpy(&data_buffer[index], battery_voltage_mv, sizeof(battery_voltage_mv));
+    else memset(&data_buffer[index], 0, sizeof(battery_voltage_mv));
     index += sizeof(battery_voltage_mv);
 
     // sensor distance: 8 bytes
