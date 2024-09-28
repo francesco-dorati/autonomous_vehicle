@@ -36,7 +36,7 @@ bool sensors_running = false;
 bool encoders_running = false;
 
 // sensor
-int side = 0; // left, right
+int sensor_n = 0; // fl, rl, fr, rr
 // encoder
 volatile long ticks_l, ticks_r;
 long prev_ticks_l, prev_ticks_r, prev_time_encoder_us;
@@ -252,27 +252,43 @@ void update_encoders() {
     robot_position[2] /* mrad */ += robot_velocities[1] * d_time_s;
     robot_position[0] /* mm */ += robot_velocities[0] * cos(robot_position[2]/1000) * d_time_s;
     robot_position[1] /* mm */ += robot_velocities[0] * sin(robot_position[2]/1000) * d_time_s;
+
+    Serial.print("Ticks: L ");
+    Serial.print(d_ticks_l);
+    Serial.print(", R");
+    Serial.println(d_ticks_r);
+
+    Serial.print("Time: ");
+    Serial.print(d_time_s*1000);
+    Serial.println("ms");
+
+
 }
 
 void update_battery() {
     // Serial.println("BATTERY START");
-    int pin_voltage_mv = (analogRead(battery_reader) / 4095.0) * 3300;
+    int pin_voltage_mv = (analogRead(battery_reader) / 1023.0) * 3300;
     // Serial.print("PIN mV: ");
     // Serial.println(pin_voltage_mv);
     battery_voltage_mv = pin_voltage_mv * 4;
 }
 
 void update_sensors() {
-    if (side == 0) {
-        // left
+    // fl, rl, fr, rr 
+    if (sensor_n == 0) {
+        // fl
         dist_mm[0] = get_distance_mm(FL_trig, FL_echo);
+    } else if (sensor_n == 1) {
+        // rl
         dist_mm[2] = get_distance_mm(RL_trig, RL_echo);
-    } else if (side == 1) {
-        // right
+    } else if (sensor_n == 2) {
+        // fr
         dist_mm[1] = get_distance_mm(FR_trig, FR_echo);
+    } else if (sensor_n == 3) {
+        // rr
         dist_mm[3] = get_distance_mm(RR_trig, RR_echo);
-    }
-    side = (side + 1) % 2;
+    } 
+    sensor_n = (sensor_n + 1) % 4;
 }
 
 int get_distance_mm(uint8_t trig, uint8_t echo) {
