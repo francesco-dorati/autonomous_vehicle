@@ -5,7 +5,7 @@ import math
 class odometry:
     def __init__(self):
         self.vx: 0.0
-        self.vy: 0.0
+        self.vt: 0.0
         self.x: 0.0
         self.y: 0.0
         self.z: 0.0
