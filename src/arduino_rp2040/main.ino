@@ -20,7 +20,7 @@
 
 #define wheel_radius_mm 34 // mm
 #define wheel_distance_mm 240 // mm
-#define counts_per_rev 1495
+#define counts_per_rev 370
 #define half_sound_speed_mm_us 0.1715 // mm/us
 
 const long wheel_circumference_mm = 2*PI*wheel_radius_mm;
@@ -260,6 +260,8 @@ void update_encoders() {
     robot_position[0] /* um */ += dS_um * cos(robot_position[2]/1000000.0);
     robot_position[1] /* um */ += dS_um * sin(robot_position[2]/1000000.0);
 
+    Serial.print("TICKS TOT ");
+    Serial.println(ticks_r);
     Serial.print("Ticks: L ");
     Serial.print(d_ticks_l);
     Serial.print(", R");
