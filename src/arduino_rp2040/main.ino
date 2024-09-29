@@ -51,7 +51,6 @@ void update_sensors();
 int get_distance_mm(uint8_t trig, uint8_t echo);
 
 void setup() {
-
     Serial.begin(9600);
     Wire.begin(0x08);
     Wire.onRequest(requestEvent);
@@ -238,20 +237,20 @@ void update_encoders() {
 
     // delta time
     long t_us = micros();
-    float d_time_s = (t_us - prev_time_encoder_us) / 1000000;
+    float d_time_us = (t_us - prev_time_encoder_us);
     prev_time_encoder_us = t_us;
 
     // wheel velocities
     // mm/s = (ticks * mm/rev * us/s) / (ticks/rev * us)
-    wheel_velocities[0] = (d_ticks_l * wheel_circumference_mm) / (counts_per_rev * d_time_s); 
-    wheel_velocities[1] = (d_ticks_r * wheel_circumference_mm) / (counts_per_rev * d_time_s);
+    wheel_velocities[0] = (d_ticks_l * wheel_circumference_mm * 1000000) / (counts_per_rev * d_time_us); 
+    wheel_velocities[1] = (d_ticks_r * wheel_circumference_mm * 1000000) / (counts_per_rev * d_time_us);
 
     // update state
     robot_velocities[0] /* mm/s */ = (wheel_velocities[0] + wheel_velocities[1]) / 2; 
     robot_velocities[1] /* mrad/s */ = (wheel_velocities[1] - wheel_velocities[0]) * 1000 / wheel_distance_mm;
-    robot_position[2] /* mrad */ += robot_velocities[1] * d_time_s;
-    robot_position[0] /* mm */ += robot_velocities[0] * cos(robot_position[2]/1000) * d_time_s;
-    robot_position[1] /* mm */ += robot_velocities[0] * sin(robot_position[2]/1000) * d_time_s;
+    robot_position[2] /* mrad */ += robot_velocities[1] * d_time_us / 1000000;
+    robot_position[0] /* mm */ += robot_velocities[0] * cos(robot_position[2]/1000) * d_time_us / 1000000;
+    robot_position[1] /* mm */ += robot_velocities[0] * sin(robot_position[2]/1000) * d_time_us / 1000000;
 
     Serial.print("Ticks: L ");
     Serial.print(d_ticks_l);
@@ -259,7 +258,7 @@ void update_encoders() {
     Serial.println(d_ticks_r);
 
     Serial.print("Time: ");
-    Serial.print(d_time_s*1000);
+    Serial.print(d_time_us/1000);
     Serial.println("ms");
 
 
