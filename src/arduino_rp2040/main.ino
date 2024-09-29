@@ -12,10 +12,10 @@
 #define RL_echo 7
 #define RR_trig 8
 #define RR_echo 9
-#define LA_encoder 13
-#define LB_encoder A1
-#define RA_encoder A2
-#define RB_encoder A3
+#define LA_encoder 10
+#define LB_encoder 11
+#define RA_encoder A1
+#define RB_encoder A2
 #define battery_reader A0
 
 #define wheel_radius_mm 34 // mm
