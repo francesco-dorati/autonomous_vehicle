@@ -64,19 +64,23 @@ class RP2040:
 
         self.battery_voltage = unpacked_data[i]/1000 if self.battery_on else None
         i+=1
-
+         
+         # cm
         self.obstacle_distance[0] = unpacked_data[i]/10
         self.obstacle_distance[1] = unpacked_data[i+1]/10
         self.obstacle_distance[2] = unpacked_data[i+2]/10
         self.obstacle_distance[3] = unpacked_data[i+3]/10
         i += 4
 
+         # cm/s
         self.wheel_velocity[0] = unpacked_data[i]/10
         self.wheel_velocity[1] = unpacked_data[i+1]/10
         i+=2
 
+         # cm/s
         self.encoders_odometry.vx = unpacked_data[i]/10.0
         self.encoders_odometry.vt = (unpacked_data[i+1]*180)/(1000*math.pi)
+        
         self.encoders_odometry.x = unpacked_data[i+2]/10
         self.encoders_odometry.y = unpacked_data[i+3]/10
         self.encoders_odometry.theta = unpacked_data[i+4]*180/(1000*math.pi)
