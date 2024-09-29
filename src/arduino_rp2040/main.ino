@@ -41,7 +41,6 @@ int sensor_n = 0; // fl, rl, fr, rr
 volatile long ticks_l, ticks_r;
 long prev_ticks_l, prev_ticks_r, prev_time_encoder_us;
 
-
 void left_tick();
 void right_tick();
 void update_encoders();
