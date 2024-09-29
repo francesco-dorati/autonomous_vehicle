@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <WiFiNINA.h>
 
-#define CONTROLLER_FREQ 100 // Hz
+#define CONTROLLER_FREQ 50 // Hz
 #define CONTROLLER_UPDATE_TIME_MS (1000/CONTROLLER_FREQ)
 
 #define FL_trig 2
@@ -29,7 +29,7 @@ short battery_voltage_mv = 0; // millivolts
 short dist_mm[4] = {0, 0, 0, 0}; // FL FR RL RR
 short wheel_velocities[2] = {0, 0}; // vl, vr (mm/s)
 short robot_velocities[2] = {0, 0}; // vx (mm/s), vt (mrad/s)
-int robot_position[3] = {0, 0, 0}; // x, y (mm), theta (mrad)
+long robot_position[3] = {0, 0, 0}; // x, y (um), theta (urad)
 
 bool battery_reader_running = true;
 bool sensors_running = false;
@@ -70,8 +70,8 @@ void setup() {
     pinMode(LB_encoder, INPUT);
     pinMode(RA_encoder, INPUT);
     pinMode(RB_encoder, INPUT);
-    attachInterrupt(digitalPinToInterrupt(LA_encoder), left_tick, RISING);
     attachInterrupt(digitalPinToInterrupt(RA_encoder), right_tick, RISING);
+    attachInterrupt(digitalPinToInterrupt(LA_encoder), left_tick, RISING);
 
     // battery reader
     pinMode(battery_reader, INPUT);
@@ -156,11 +156,13 @@ void requestEvent() {
     Serial.println(index);
 
     // robot position: 12 bytes
-    if (encoders_running) memcpy(&data_buffer[index], robot_position, sizeof(robot_position));
-    else memset(&data_buffer[index], 0, sizeof(robot_position));
-    index += sizeof(robot_position);
+    int position[4];
+    for (int i = 0; i < 4; i++) position[i] = (int)(robot_position[i]/1000);
+    if (encoders_running) memcpy(&data_buffer[index], position, sizeof(position));
+    else memset(&data_buffer[index], 0, sizeof(position));
+    index += sizeof(position);
     Serial.print("pos: ");
-    Serial.println(robot_position[0]);
+    Serial.println(position[0]);
     Serial.print("Index: ");
     Serial.println(index);
 
@@ -239,17 +241,24 @@ void update_encoders() {
     float d_time_us = (t_us - prev_time_encoder_us);
     prev_time_encoder_us = t_us;
 
+    long dL_um = (1000 * d_ticks_l * wheel_circumference_mm) / counts_per_rev;
+    long dR_um = (1000 * d_ticks_r * wheel_circumference_mm) / counts_per_rev;
+
+    long dS_um = (dL_um + dR_um) / 2; // mm
+    long dT_urad = (dR_um - dL_um) * 1000 / wheel_distance_mm; // urad
+
     // wheel velocities
     // mm/s = (ticks * mm/rev * us/s) / (ticks/rev * us)
-    wheel_velocities[0] = (d_ticks_l * wheel_circumference_mm * 1000000) / (counts_per_rev * d_time_us); 
-    wheel_velocities[1] = (d_ticks_r * wheel_circumference_mm * 1000000) / (counts_per_rev * d_time_us);
+    wheel_velocities[0] = (dL_um * 1000) / d_time_us; 
+    wheel_velocities[1] = (dR_um * 1000) / d_time_us;
 
     // update state
-    robot_velocities[0] /* mm/s */ = (wheel_velocities[0] + wheel_velocities[1]) / 2; 
-    robot_velocities[1] /* mrad/s */ = (wheel_velocities[1] - wheel_velocities[0]) * 1000 / wheel_distance_mm;
-    robot_position[2] /* mrad */ += robot_velocities[1] * d_time_us / 1000000;
-    robot_position[0] /* mm */ += robot_velocities[0] * cos(robot_position[2]/1000) * d_time_us / 1000000;
-    robot_position[1] /* mm */ += robot_velocities[0] * sin(robot_position[2]/1000) * d_time_us / 1000000;
+    robot_velocities[0] /* mm/s */ =  (dS_um * 1000)/ d_time_us;
+    robot_velocities[1] /* mrad/s */ = (dT_urad * 1000) / d_time_us; 
+
+    robot_position[2] /* urad */ += dT_urad;
+    robot_position[0] /* um */ += dS_um * cos(robot_position[2]/1000000.0);
+    robot_position[1] /* um */ += dS_um * sin(robot_position[2]/1000000.0);
 
     Serial.print("Ticks: L ");
     Serial.print(d_ticks_l);
@@ -259,6 +268,33 @@ void update_encoders() {
     Serial.print("Time: ");
     Serial.print(d_time_us/1000);
     Serial.println("ms");
+
+    Serial.print("dL ");
+    Serial.print(dL_um);
+    Serial.print(", dR ");
+    Serial.println(dR_um);
+
+    Serial.print(" dS ");
+    Serial.print(dS_um);
+    Serial.print(", dT ");
+    Serial.println(dT_urad);
+
+    Serial.print("Wheels (mm/s): L ");
+    Serial.print(wheel_velocities[0]);
+    Serial.print(", R");
+    Serial.println(wheel_velocities[1]);
+
+    Serial.print("Velocity: VX ");
+    Serial.print(robot_velocities[0]);
+    Serial.print(", VTHETA (mrad/s) ");
+    Serial.println(robot_velocities[1]);
+
+    Serial.print("Position (mm): X ");
+    Serial.print(robot_position[0]/1000.0);
+    Serial.print(", Y ");
+    Serial.print(robot_position[1]/1000.0);
+    Serial.print(", TH ");
+    Serial.println(robot_position[2]/1000.0);
 
 
 }
