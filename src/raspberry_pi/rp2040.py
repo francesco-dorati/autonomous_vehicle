@@ -75,10 +75,10 @@ class RP2040:
         self.wheel_velocity[1] = unpacked_data[i+1]/10
         i+=2
 
-        self.encoders_odometry.vx = unpacked_data[i]/10
-        self.encoders_odometry.vt = unpacked_data[i+1]*180/(1000*math.pi),
-        self.encoders_odometry.x = unpacked_data[i+2]/10,
-        self.encoders_odometry.y = unpacked_data[i+3]/10,
+        self.encoders_odometry.vx = unpacked_data[i]/10.0
+        self.encoders_odometry.vt = (unpacked_data[i+1]*180)/(1000*math.pi)
+        self.encoders_odometry.x = unpacked_data[i+2]/10
+        self.encoders_odometry.y = unpacked_data[i+3]/10
         self.encoders_odometry.theta = unpacked_data[i+4]*180/(1000*math.pi)
         i+=5
 
