@@ -6,9 +6,9 @@ class ManualController:
     class Speed(Enum):
         # index, pow, delta_pow
         STOP = 0, 0, 0
-        SLOW = -1, 100, 100
-        NORMAL = 0, 140, 40 
-        FAST = 1, 180, 40
+        SLOW = 1, 100, 100
+        NORMAL = 2, 140, 40 
+        FAST = 3, 180, 40
 
         def __init__(self, index, pow, delta_pow):
             self.index = index

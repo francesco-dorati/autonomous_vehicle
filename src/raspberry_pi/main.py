@@ -64,8 +64,6 @@ class Main:
         
         self.distance_sensing = False
 
-
-
     def loop(self):
         # start battery sensing
         self.rp2040.set_battery(True)

@@ -85,11 +85,11 @@ class RP2040:
         self.updated = False
 
         self.battery_on = False
-        self.battery = Battery()
+        self.battery = self.Battery()
 
         self.encoder_on = False
-        self.wheels = Wheels()
-        self.encoders_odometry = Odometry()
+        self.wheels = self.Wheels()
+        self.encoders_odometry = self.Odometry()
 
         self.distance_on = False
         self.obstacle_distance = SensorDistance()
