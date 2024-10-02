@@ -82,7 +82,7 @@ class Main:
                 self.rp2040.request_data()
                 print(f"Battery Check <{'on' if self.rp2040.battery_on else 'off'}>: {self.rp2040.battery.voltage} V")
                 if self.rp2040.battery_on and self.rp2040.battery.is_critical():
-                    self.shutdown()
+                    pass # self.shutdown()
 
             # 2 MAIN CONNECTION HANDLING
             if (time.time() - self.last_main_server_check) >= self.MAIN_SERVER_INTERVAL:
