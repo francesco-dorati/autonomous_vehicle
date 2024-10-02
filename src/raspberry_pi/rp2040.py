@@ -11,18 +11,22 @@ class RP2040:
         CRITICAL_V = 9.8
 
         class Level(Enum):
+            NULL = -1
             CRITICAL = 0
             LOW = 1
             MEDIUM = 2
             HIGH = 3    
 
         def __init__(self):
-            self.voltage = 0.0
+            self.voltage = None
 
         def reset(self):
-            self.voltage = 0.0
+            self.voltage = None
         
         def level(self):
+            if not self.voltage:
+                return self.Level.NULL
+                
             if (self.voltage > 11.3):
                 return self.Level.HIGH
             elif (self.voltage > 10.5):
