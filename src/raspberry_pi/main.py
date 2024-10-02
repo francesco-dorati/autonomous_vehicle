@@ -50,7 +50,7 @@ class Main:
     def __init__(self):
         self.mode = self.Mode.NOT_CONNECTED
 
-        self.main_server = MainServer() # handles main connection to the user
+        self.main_server = MainServer(HOST, MAIN_PORT) # handles main connection to the user
 
         self.rp2040 = RP2040() # handles communication with the rp2040 (SENSOR DATA)
         self.nano = NANO() # handles communication with the nano (ACTION EXECUTION)
@@ -200,9 +200,9 @@ class Main:
         os.system("echo password | sudo -S shutdown now")
 
 class MainServer:
-    def __init__(self):
+    def __init__(self, host, main_port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((HOST, MAIN_PORT))
+        self.socket.bind((host, main_port))
         self.socket.listen(1)
         self.socket.setblocking(False)
 
