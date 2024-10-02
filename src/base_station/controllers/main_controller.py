@@ -8,7 +8,7 @@ PING_INTERVAL_MS = 3000
 class MainController:
     def __init__(self, main_view):
         self.main_view = main_view
-        self.server_address = ('172.20.10.7', 5500)
+        self.server_address = ('172.20.10.3', 5500)
         self.main_connection = None
 
         self.manual_controller = None

@@ -14,7 +14,7 @@ from camera import CameraTransmitter
 class Main:
     # CONST
     # host
-    HOST = ''
+    HOST = '172.20.10.3'
     MAIN_PORT = 5500
     M_RECEIVER_PORT = 5501
     M_TRANSMITTER_PORT = 5502
