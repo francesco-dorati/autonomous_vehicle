@@ -1,8 +1,9 @@
+from enum import Enum
 
 class ManualController:
     TRANSMITTER_DELAY = 0.2 # s
 
-    class Speed(enum):
+    class Speed(Enum):
         # index, pow, delta_pow
         STOP = 0, 0, 0
         SLOW = -1, 100, 100
