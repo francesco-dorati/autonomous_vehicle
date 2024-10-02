@@ -71,7 +71,7 @@ class RP2040:
             self.fr = fr
             self.bl = bl
             self.br = br
-         def reset(self):
+        def reset(self):
             self.set(0.0, 0.0, 0.0, 0.0)
         def front_min(self):
             return min(self.fl, self.fr)
