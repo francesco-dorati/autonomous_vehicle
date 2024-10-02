@@ -194,6 +194,7 @@ class Main:
         self.rp2040.set_distance(False)
         
     def shutdown(self):
+        print(f"Shutting down, battery: {self.rp2040.battery.voltage}V")
         self.close_all()
         os.system("echo password | sudo -S shutdown now")
 
