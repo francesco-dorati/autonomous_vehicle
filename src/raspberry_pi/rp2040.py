@@ -98,7 +98,7 @@ class RP2040:
         # send command to rp2040
         self.bus.write_byte(self.addr, ord('B') if on else ord('b'))
         self.battery_on = on
-        self.battery.voltage.reset()
+        self.battery.reset()
     
     def set_encoder(self, on):
         # send command to rp2040
