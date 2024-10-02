@@ -43,9 +43,9 @@ class Main:
     MANUAL_SLOW_POW = 50
 
     class Mode(Enum):
-        NOT_CONNECTED: -1
-        IDLE: 0
-        MANUAL: 1
+        NOT_CONNECTED = -1
+        IDLE = 0
+        MANUAL = 1
     
     def __init__(self):
         self.mode = self.Mode.NOT_CONNECTED
