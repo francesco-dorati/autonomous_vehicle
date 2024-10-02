@@ -184,12 +184,10 @@ class Main:
                 self.main_server.send(b'OK')
 
         elif d[0] == 'E': # STOP
-            self.main_server.send(b'OK')
             self.close_all()
             self.mode = self.Mode.NOT_CONNECTED
 
         elif d[0] == 'S': # SHUTDOWN
-            self.main_server.send(b'OK')
             self.shutdown()
         
     def close_all(self):
