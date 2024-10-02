@@ -130,7 +130,7 @@ class Main:
         d = data.decode().split(' ')
 
         if d[0] == 'P': # PING
-            self.update_rp2040()
+            self.rp2040.request_data()
             self.main_server.send('P ' + str(self.rp2040.battery.voltage))
 
         elif d[0] == 'M': # MANUAL
