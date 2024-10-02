@@ -92,7 +92,7 @@ class RP2040:
         self.encoders_odometry = self.Odometry()
 
         self.distance_on = False
-        self.obstacle_distance = SensorDistance()
+        self.obstacle_distance = self.SensorDistance()
     
     def set_battery(self, on):
         # send command to rp2040
