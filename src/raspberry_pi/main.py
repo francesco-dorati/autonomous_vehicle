@@ -77,11 +77,11 @@ class Main:
             self.rp2040.updated = False
 
             #1 BATTERY CHECK
-            if (time.time() - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
+            if self.rp2040.battery_on and (time.time() - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
                 self.last_battery_check = time.time()
                 self.rp2040.request_data()
-                print(f"Battery Check: {self.rp2040.battery.voltage} V")
-                if (self.rp2040.battery.is_critical()):
+                print(f"Battery Check <{'on' if self.rp2040.battery_on else 'off'}>: {self.rp2040.battery.voltage} V")
+                if self.rp2040.battery_on and self.rp2040.battery.is_critical():
                     self.shutdown()
 
             # 2 MAIN CONNECTION HANDLING
