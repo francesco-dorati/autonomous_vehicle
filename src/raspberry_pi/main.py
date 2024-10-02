@@ -95,7 +95,7 @@ class Main:
                 
                 try: # receive request
                     req = self.main_server.get_request()
-                    if d != None:
+                    if req != None:
                         self.handle_request(req)
 
                 except ConnectionResetError:
@@ -199,7 +199,7 @@ class Main:
         self.rp2040.set_distance(False)
         
     def shutdown(self):
-        print(f"Shutting down, battery: {self.rp2040.battery.voltage}V")
+        print(f"Shutting down.\n\n")
         self.close_all()
         os.system("echo password | sudo -S shutdown now")
 
