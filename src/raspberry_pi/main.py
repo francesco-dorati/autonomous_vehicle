@@ -73,14 +73,14 @@ class Main:
             self.rp2040.updated = False
 
             #1 BATTERY CHECK
-            if (time.time() - self.last_battery_check) >= BATTERY_CHECK_INTERVAL: 
+            if (time.time() - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
                 self.last_battery_check = time.time()
                 self.rp2040.request_data()
                 if (self.rp2040.battery.is_critical()):
                     self.shutdown()
 
             # 2 MAIN CONNECTION HANDLING
-            if (time.time() - self.last_main_server_check) >= MAIN_SERVER_INTERVAL:
+            if (time.time() - self.last_main_server_check) >= self.MAIN_SERVER_INTERVAL:
                 self.last_main_server_check = time.time()
                 if self.mode == self.Mode.NOT_CONNECTED: # not connected
                     ok = self.main_server.check_connection()
@@ -104,16 +104,16 @@ class Main:
                 self.manual_controller.compute()
 
             # 4 update camera
-            if self.camera_transmitter != None and (time.time() - self.last_camera_transmitted) >= CAMERA_TRANSMITTER_DELAY:
+            if self.camera_transmitter != None and (time.time() - self.last_camera_transmitted) >= self.CAMERA_TRANSMITTER_DELAY:
                 self.last_camera_transmitted = time.time()
                 camera_transmitter.send_frame()
 
             # 5 set delay
             dt = time.time() - t_start
-            if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE) and dt < MAIN_SERVER_INTERVAL:
-                time.sleep(MAIN_SERVER_INTERVAL-dt)
-            elif self.mode == self.Mode.MANUAL and dt < MANUAL_DELAY:
-                time.sleep(MANUAL_DELAY - dt)
+            if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE) and dt < self.MAIN_SERVER_INTERVAL:
+                time.sleep(self.MAIN_SERVER_INTERVAL-dt)
+            elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_DELAY:
+                time.sleep(self.MANUAL_DELAY - dt)
 
 
     
