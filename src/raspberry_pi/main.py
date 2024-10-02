@@ -64,7 +64,11 @@ class Main:
         
         self.distance_sensing = False
 
+        print("Main Server started.")
+
     def loop(self):
+        print("Start Loop")
+
         # start battery sensing
         self.rp2040.set_battery(True)
 
@@ -76,6 +80,7 @@ class Main:
             if (time.time() - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
                 self.last_battery_check = time.time()
                 self.rp2040.request_data()
+                print(f"Battery Check: {self.rp2040.battery.voltage} V")
                 if (self.rp2040.battery.is_critical()):
                     self.shutdown()
 
