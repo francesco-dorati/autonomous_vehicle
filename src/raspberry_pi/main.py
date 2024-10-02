@@ -48,7 +48,7 @@ class Main:
         MANUAL: 1
     
     def __init__(self):
-        self.mode = mode.NOT_CONNECTED
+        self.mode = Mode.NOT_CONNECTED
 
         self.main_server = MainServer() # handles main connection to the user
 
