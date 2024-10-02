@@ -3,6 +3,7 @@ import socket
 import cv2
 import pickle
 import os
+from enum import Enum
 
 
 from rp2040 import RP2040
@@ -41,7 +42,7 @@ class Main:
     MANUAL_BOOST_POW = 150
     MANUAL_SLOW_POW = 50
 
-    class mode(enumerate):
+    class mode(Enum):
         NOT_CONNECTED: -1
         IDLE: 0
         MANUAL: 1

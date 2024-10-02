@@ -1,7 +1,7 @@
 import smbus
 import struct 
 import math
-
+from enum import Enum
 
 
 class RP2040:
@@ -10,7 +10,7 @@ class RP2040:
         LOW_V = 10.5
         CRITICAL_V = 9.8
 
-        class Level(enum):
+        class Level(Enum):
             CRITICAL = 0
             LOW = 1
             MEDIUM = 2
