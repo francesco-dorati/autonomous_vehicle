@@ -42,13 +42,13 @@ class Main:
     MANUAL_BOOST_POW = 150
     MANUAL_SLOW_POW = 50
 
-    class mode(Enum):
+    class Mode(Enum):
         NOT_CONNECTED: -1
         IDLE: 0
         MANUAL: 1
     
     def __init__(self):
-        self.mode = Mode.NOT_CONNECTED
+        self.mode = self.Mode.NOT_CONNECTED
 
         self.main_server = MainServer() # handles main connection to the user
 
@@ -102,7 +102,7 @@ class Main:
 
 
             # 3 CONTROL
-            if self.mode == Mode.MANUAL:
+            if self.mode == self.Mode.MANUAL:
                 self.manual_controller.compute()
 
             # 4 update camera
@@ -112,9 +112,9 @@ class Main:
 
             # 5 set delay
             dt = time.time() - t_start
-            if (self.mode == Mode.NOT_CONNECTED or self.mode == Mode.IDLE) and dt < MAIN_SERVER_INTERVAL:
+            if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE) and dt < MAIN_SERVER_INTERVAL:
                 time.sleep(MAIN_SERVER_INTERVAL-dt)
-            elif self.mode == Mode.MANUAL and dt < MANUAL_DELAY:
+            elif self.mode == self.Mode.MANUAL and dt < MANUAL_DELAY:
                 time.sleep(MANUAL_DELAY - dt)
 
 
@@ -129,24 +129,24 @@ class Main:
 
         elif d[0] == 'M': # MANUAL
             if d[1] == '1': # start manual mode
-                if self.mode != Mode.IDLE:
+                if self.mode != self.Mode.IDLE:
                     self.main_server.send(b'KO')
                     return
                 self.manual_controller = ManualController(rp2040, nano)
-                self.mode = Mode.MANUAL
+                self.mode = self.Mode.MANUAL
                 self.main_server.send(f'OK {M_RECEIVER_PORT} {M_TRANSMITTER_PORT}'.encode())
 
             elif d[1] == b'0': # stop manual mode
-                if self.mode != Mode.MANUAL:
+                if self.mode != self.Mode.MANUAL:
                     self.main_server.send(b'KO')
                     return
                 self.manual_controller.stop()
                 self.manual_controller = None
-                self.mode = Mode.IDLE
+                self.mode = self.Mode.IDLE
                 self.main_server.send(b'OK')
             
             elif d[1] == b'S': 
-                if self.mode != Mode.MANUAL:
+                if self.mode != self.Mode.MANUAL:
                     self.main_server.send(b'KO')
                     return
 
@@ -177,7 +177,7 @@ class Main:
         elif d[0] == 'E': # STOP
             self.main_server.send(b'OK')
             self.close_all()
-            self.mode = Mode.NOT_CONNECTED
+            self.mode = self.Mode.NOT_CONNECTED
 
         elif d[0] == 'S': # SHUTDOWN
             self.main_server.send(b'OK')
@@ -187,7 +187,7 @@ class Main:
         self.nano.send_power(0, 0)
         if self.camera_transmitter != None:
             self.camera_transmitter.close()
-        if self.mode == Mode.MANUAL:
+        if self.mode == self.Mode.MANUAL:
             self.manual_controller.stop()
             self.manual_controller = None
         self.main_server.close_connection()
