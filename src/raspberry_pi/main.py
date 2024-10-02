@@ -50,7 +50,7 @@ class Main:
     def __init__(self):
         self.mode = self.Mode.NOT_CONNECTED
 
-        self.main_server = MainServer(HOST, MAIN_PORT) # handles main connection to the user
+        self.main_server = MainServer(self.HOST, self.MAIN_PORT) # handles main connection to the user
 
         self.rp2040 = RP2040() # handles communication with the rp2040 (SENSOR DATA)
         self.nano = NANO() # handles communication with the nano (ACTION EXECUTION)
