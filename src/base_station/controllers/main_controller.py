@@ -3,7 +3,7 @@ import socket
 
 from controllers.manual_controller import ManualController
 
-PING_INTERVAL_MS = 3000
+PING_INTERVAL_MS = 8000
 
 class MainController:
     def __init__(self, main_view):
@@ -53,7 +53,7 @@ class MainController:
     def disconnect(self):
         # disconnect logic
         if self.main_connection:
-            self.main_connection.send("EXIT".encode())
+            self.main_connection.send(b"E")
             self.main_connection.close()
         self.main_connection = None
         self.main_view.disconnect()

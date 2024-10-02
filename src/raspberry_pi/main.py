@@ -125,6 +125,9 @@ class Main:
     
         
     def handle_request(self, data):
+        if data == b'':
+            return
+
         print("Main Request", data)
 
         d = data.decode().split(' ')
@@ -197,7 +200,6 @@ class Main:
             self.manual_controller.stop()
             self.manual_controller = None
         self.main_server.close_connection()
-        self.rp2040.set_battery(False)
         self.rp2040.set_encoder(False)
         self.rp2040.set_distance(False)
         

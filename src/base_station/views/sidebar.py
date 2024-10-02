@@ -69,6 +69,8 @@ class Sidebar(tk.Frame):
         self.disconnect_button.pack(fill='x', side='top', pady=10)
         self.ping_label.grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
         self.ping.grid(row=1, column=1, padx=10, pady=5)
+        self.battery_label.grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+        self.battery.grid(row=2, column=1, padx=10, pady=5)
         self.shutdown_button.pack(fill='x', side='bottom', pady=10)
     
     def connecting(self):
@@ -82,6 +84,8 @@ class Sidebar(tk.Frame):
         self.config_button.pack(fill='x', side='top', pady=3, padx=10)
         self.ping_label.grid_forget()
         self.ping.grid_forget()
+        self.battery_label.grid_forget()
+        self.battery.grid_forget()
         self.shutdown_button.pack_forget()
     
     def update_ping(self, ping, battery):
