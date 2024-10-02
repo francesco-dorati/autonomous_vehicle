@@ -21,7 +21,7 @@ class Main:
     CAMERA_PORT = 5503
 
     # delays
-    BATTERY_CHECK_INTERVAL = 3 # s
+    BATTERY_CHECK_INTERVAL = 5 # s
     MAIN_SERVER_INTERVAL = 0.4 # s
     MANUAL_LOOP_DELAY = 1/50 # s
 
@@ -80,9 +80,9 @@ class Main:
             if self.rp2040.battery_on and (time.time() - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
                 self.last_battery_check = time.time()
                 self.rp2040.request_data()
-                print(f"Battery Check <{'on' if self.rp2040.battery_on else 'off'}>: {self.rp2040.battery.voltage} V")
+                print(f"Battery Check <{'on' if self.rp2040.battery_on else 'off'}>: {self.rp2040.battery.voltage} V ({self.rp2040.battery.level().name})")
                 if self.rp2040.battery_on and self.rp2040.battery.is_critical():
-                    pass # self.shutdown()
+                    self.shutdown()
 
             # 2 MAIN CONNECTION HANDLING
             if (time.time() - self.last_main_server_check) >= self.MAIN_SERVER_INTERVAL:
