@@ -99,6 +99,7 @@ class ManualController:
     def __obstacle_sensing(self, speed: Speed, direction: Direction) -> (Speed, Direction):
         if speed == None or direction == None:
             # only check distance if speed and direction are not None
+            pass
 
         if direction.x > 0: # forward
             if self.rp2040.obstacle_distance.front_min() <= 30 and speed == self.Speed.FAST:
