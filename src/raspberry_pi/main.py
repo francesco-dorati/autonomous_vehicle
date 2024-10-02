@@ -91,6 +91,7 @@ class Main:
                     ok = self.main_server.check_connection()
                     if ok:
                         self.mode = self.Mode.IDLE
+                        print("Connection established.")
                     continue
                 
                 try: # receive request
@@ -124,6 +125,8 @@ class Main:
     
         
     def handle_request(self, data):
+        print("Main Request", data)
+
         d = data.decode().split(' ')
 
         if d[0] == 'P': # PING
