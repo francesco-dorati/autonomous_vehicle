@@ -135,7 +135,7 @@ class RP2040:
         self.battery.voltage = (unpacked_data[i]/1000) if self.battery_on else None
         i+=1
 
-        self.obstacle_distance.set(updata_data[i]/10, unpacked_data[i+1]/10, unpacked_data[i+2]/10, unpacked_data[i+3]/10)
+        self.obstacle_distance.set(unpacked_data[i]/10, unpacked_data[i+1]/10, unpacked_data[i+2]/10, unpacked_data[i+3]/10)
         i += 4
 
         self.wheels.set(unpacked_data[i]/10, unpacked_data[i+1]/10)
