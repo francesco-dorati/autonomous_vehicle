@@ -9,7 +9,7 @@ class RobotApp(Tk):
         self.title("Robot Control Panel")
         self.geometry("1200x750")
 
-        self.main_view = MainView(self)
+        self.main_view = View(self)
         self.main_view.pack()
         self.main_controller = MainController(self.main_view)
 

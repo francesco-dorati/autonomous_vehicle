@@ -3,7 +3,7 @@ import socket
 
 from controllers.manual_controller import ManualController
 
-CONNECTION_TIMEOUT_MS = 3000
+PING_INTERVAL_MS = 3000
 
 class MainController:
     def __init__(self, main_view):
@@ -62,11 +62,13 @@ class MainController:
         if self.main_connection:
             try:
                 t_start = time.time()
-                self.main_connection.send("PING".encode())
-                response = self.main_connection.recv(1024)
+                self.main_connection.send(b'P')
+                response = self.main_connection.recv(32)
                 dt_ms = (time.time() - t_start)*1000
-                if response.decode() == "OK":
-                    self.main_view.sidebar.update_ping(dt_ms)
+                response = response.decode().strip().split(' ')
+                if response[0] == "P":
+                    battery_voltage = float(response[1])
+                    self.main_view.sidebar.update_ping(dt_ms, battery_voltage)
                 else:
                     self.disconnect()
 
@@ -77,7 +79,7 @@ class MainController:
             # if receaves response, keep connection
             # else disconnect
             
-        self.main_view.after(CONNECTION_TIMEOUT_MS, self.check_connection)
+        self.main_view.after(PING_INTERVAL_MS, self.check_connection)
 
     def confirm_config_sidebar(self):
         if self.main_connection:

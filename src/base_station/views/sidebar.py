@@ -13,14 +13,17 @@ class Sidebar(tk.Frame):
         self.status_frame = tk.Frame(self.connection_frame)
         self.status_label = tk.Label(self.status_frame, text="Status: ", font=("Arial", 16))
         self.status = tk.Label(self.status_frame, text="✕ Not Connected", font=("Arial", 16))  
+        # PING
         self.ping_label = tk.Label(self.status_frame, text="Ping: ", font=("Arial", 16))
         self.ping = tk.Label(self.status_frame, text="-", font=("Arial", 16))
+        self.battery_label = tk.Label(self.status_frame, text="Battery: ", font=("Arial", 16))
+        self.battery = tk.Label(self.status_frame, text="-", font=("Arial", 16))
         
         self.connect_button = tk.Button(self.connection_frame, text="Connect", font=("Arial", 16))
         self.disconnect_button = tk.Button(self.connection_frame, text="Disconnect", font=("Arial", 16))
         
         # CONFIG
-        self.config_button = tk.Button(self.connection_frame, text="Connection Config", font=("Arial", 16), command=self.open_config)
+        self.config_button = tk.Button(self.connection_frame, text="Settings", font=("Arial", 16), command=self.open_config)
         self.config_frame = tk.Frame(self.connection_frame)
         self.hostname_label = ttk.Label(self.config_frame, text="Hostname: ")
         self.hostname = ttk.Entry(self.config_frame)
@@ -81,8 +84,9 @@ class Sidebar(tk.Frame):
         self.ping.grid_forget()
         self.shutdown_button.pack_forget()
     
-    def update_ping(self, ping):
+    def update_ping(self, ping, battery):
         self.ping.config(text=f"{ping:.2f} ms")
+        self.battery.config(text=f"{battery:.1f} V")
 
     def open_config(self):
         self.config_frame.pack(fill='x', side='top', pady=10)
