@@ -227,9 +227,9 @@ class MainServer:
         self.connection.send(data.encode())
     
     def close_connection(self):
+        self.connection.close()
         self.connection = None
         self.connection_addr = None
-        self.connection.close()
 
 
 # class ManualReceiver:
