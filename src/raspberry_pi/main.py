@@ -140,7 +140,7 @@ class Main:
                 if self.mode != self.Mode.IDLE:
                     self.main_server.send(b'KO')
                     return
-                self.manual_controller = ManualController(self.rp2040, self.nano, HOST, MANUAL_PORT)
+                self.manual_controller = ManualController(self.rp2040, self.nano, self.HOST, self.MANUAL_PORT)
                 self.mode = self.Mode.MANUAL
                 self.main_server.send(f'OK {MANUAL_PORT}'.encode())
 
