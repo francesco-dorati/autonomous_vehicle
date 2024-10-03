@@ -142,7 +142,7 @@ class Main:
                     return
                 self.manual_controller = ManualController(self.rp2040, self.nano, self.HOST, self.MANUAL_PORT)
                 self.mode = self.Mode.MANUAL
-                self.main_server.send(f'OK {MANUAL_PORT}'.encode())
+                self.main_server.send(f'OK {self.MANUAL_PORT}'.encode())
 
             elif d[1] == b'0': # stop manual mode
                 if self.mode != self.Mode.MANUAL:
