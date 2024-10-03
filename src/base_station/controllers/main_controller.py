@@ -50,6 +50,7 @@ class MainController:
             self.main_connection = None
             return
         self.main_view.connect()
+        
     
     def disconnect(self):
         # disconnect logic
