@@ -16,8 +16,7 @@ class Main:
     # host
     HOST = '172.20.10.3'
     MAIN_PORT = 5500
-    M_RECEIVER_PORT = 5501
-    M_TRANSMITTER_PORT = 5502
+    MANUAL_PORT = 5501
     CAMERA_PORT = 5503
 
     # delays
@@ -143,7 +142,7 @@ class Main:
                     return
                 self.manual_controller = ManualController(rp2040, nano)
                 self.mode = self.Mode.MANUAL
-                self.main_server.send(f'OK {M_RECEIVER_PORT} {M_TRANSMITTER_PORT}'.encode())
+                self.main_server.send(f'OK {MANUAL_PORT}'.encode())
 
             elif d[1] == b'0': # stop manual mode
                 if self.mode != self.Mode.MANUAL:

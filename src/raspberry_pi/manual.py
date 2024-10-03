@@ -31,14 +31,11 @@ class ManualController:
                     self.y -= 1
 
     def __init__(self, rp2040, nano):
-        self.receiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.receiver.bind((HOST, M_RECEIVER_PORT))
-        self.receiver.setblocking(False)
-
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.server.bind((HOST, MANUAL_PORT))
+        self.server.setblocking(False)
         self.client_addr = None
-        self.transmitter = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.transmitter.bind((HOST, M_TRANSMITTER_PORT))
-        self.transmitter.setblocking(False)
+        self.last_received = 0
         self.last_transmitted = 0
 
         self.rp2040 = rp2040
@@ -77,7 +74,7 @@ class ManualController:
 
     def __receive(self) -> (int, str):
         try:
-            data, addr = self.receiver.recvfrom(32)
+            data, addr = self.server.recvfrom(32)
             if data and self.client_addr == None:
                 self.client_addr = addr
             # parse data
@@ -94,7 +91,7 @@ class ManualController:
             return
         message = f'P {self.rp2040.encoder_odometry.vx} {self.rp2040.encoder_odometry.vt} {self.rp2040.encoder_odometry.x} {self.rp2040.encoder_odometry.y} {self.rp2040.encoder_odometry.t}'
         message += f' D {self.rp2040.obstacle_distance.fl} {self.rp2040.obstacle_distance.fr} {self.rp2040.obstacle_distance.rl} {self.rp2040.obstacle_distance.rr}'
-        self.transmitter.sendto(message.encode(), self.client_addr)
+        self.server.sendto(message.encode(), self.client_addr)
         last_transmitted = time.time()
 
     def __obstacle_sensing(self, speed: Speed, direction: Direction) -> (Speed, Direction):

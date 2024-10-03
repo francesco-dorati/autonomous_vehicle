@@ -61,6 +61,17 @@ class ManualPage(tk.Frame):
         # # self.control_frame.grid_rowconfigure(0, weight=5)
         # self.exit_button.pack(side='bottom', pady=20)
 
+    def start(self):  
+        self.start_button.pack_forget()
+        self.stop_button.pack(side='right', pady=20, padx=20)
+        self.controls_frame.enable()
+        self.odometry_frame.enable()
+    
+    def stop(self):
+        self.stop_button.pack_forget()
+        self.start_button.pack(side='right', pady=20, padx=20)
+        self.controls_frame.disable()
+        self.odometry_frame.disable()
     
 
     def show(self):

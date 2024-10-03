@@ -7,25 +7,136 @@ import numpy as np
 
 from .camera_controller import CameraReceiver
 
-MANUAL_CONTROL_FREQ = 10
-MANUAL_CONTROL_MS = int((1/MANUAL_CONTROL_FREQ)*1000)
+
 
 class ManualController:
+    SENDER_DELAY = 0.1
     def __init__(self, root, view, main_connection):
         self.root = root
         self.view = view
+        self.main_connection = main_connection
+        self.keyboard_buffer = []
+        self.running = False
+        self.server_hostname = self.main_connection.getpeername()[0]
+
+        self.commands_socket = None
+        self.data_socket = None
 
         # self.controls_sender = ControlsSender(self.root, self.view.controls_frame, main_connection)
         # self.data_receiver = DataReceiver(self.root, self.view.data_frame, main_connection)
         # self.camera_receiver = CameraReceiver(self.root, self.view.camera_frame, main_connection)
 
         self.view.start_button.config(command=self.start)
+        self.view.stop_button.config(command=self.stop)
 
         self.view.camera_frame.start_button.config(command=self.start_camera)
         self.view.camera_frame.stop_button.config(command=self.stop_camera)
 
+
     def start(self):
         # start receiver and sender
+        self.main_connection.send("M 1".encode())
+        res = self.main_connection.recv(32)
+        res = res.decode().strip().split(' ')
+        if res[0] == "OK":
+            self.manual_port = int(res[1])
+        else:
+            return
+
+        # start servers
+        self.manual_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # set key bindings
+        self.view.focus_set()
+        self.view.bind("<KeyPress>", self._key_event)
+        self.view.bind("<KeyRelease>", self._key_event)
+
+        # start view
+        self.view.start()
+        runnning = True
+
+        # start loops
+        self._sender_loop()
+        self._receiver_loop()
+
+    def stop(self):
+        self.running = False
+        self.view.unbind("<KeyPress>")
+        self.view.unbind("<KeyRelease>")
+        self.manual_socket.close()
+        self.manual_socket = None
+        self.main_connection.send("M 0".encode())
+        self.view.stop()
+
+    def _key_event(self, event):
+        key = event.keysym
+        if key == 'w': # FORWARD
+            if event.type == "2":
+                if not 'f' in self.keyboard_buffer:
+                    self.keyboard_buffer.append('f')
+                self.view.forward(True)
+            elif event.type == "3":
+                if 'f' in self.keyboard_buffer:
+                    self.keyboard_buffer.remove('f')
+                self.view.forward(False)
+
+        elif key == 's': # BACKWARD
+            if event.type == "2":
+                if not 'b' in self.keyboard_buffer:
+                    self.keyboard_buffer.append('b')
+                self.view.backward(True)
+            elif event.type == "3":
+                if 'b' in self.keyboard_buffer:
+                    self.keyboard_buffer.remove('b')
+                self.view.backward(False)
+
+        elif key == 'a':   # LEFT
+            if event.type == "2":
+                if not 'l' in self.keyboard_buffer:
+                    self.keyboard_buffer.append('l')
+                self.view.left(True)
+            elif event.type == "3":
+                if 'l' in self.keyboard_buffer:
+                    self.keyboard_buffer.remove('l')
+                self.view.left(False)
+                
+        elif key == 'd':  # RIGHT
+            if event.type == "2":
+                if not 'r' in self.keyboard_buffer:
+                    self.keyboard_buffer.append('r')
+                self.view.right(True)
+            elif event.type == "3":
+                if 'r' in self.keyboard_buffer:
+                    self.keyboard_buffer.remove('r')
+                self.view.right(False)
+
+    def _sender_loop(self):
+        if self.running:
+            if 'f' in self.keyboard_buffer and 'b' in self.keyboard_buffer:
+                self.keyboard_buffer.remove('f')
+                self.keyboard_buffer.remove('b')
+            if 'l' in self.keyboard_buffer and 'r' in self.keyboard_buffer:
+                self.keyboard_buffer.remove('l')
+                self.keyboard_buffer.remove('r')
+            
+            s = "".join(self.keyboard_buffer)
+            # print("Sent:", s, " to ", self.server_hostname, ":", self.manual_port)
+            try:
+                self.controls_socket.sendto(s.encode(), (self.server_hostname, self.controls_port))
+            except:
+                print("ERROR, stopping")
+                self.stop()
+                return
+
+            self.root.after(self.SENDER_DELAY, self._sender_loop)
+    def _receiver_loop(self):
+
+    
+
+
+
+
+
         pass
     
     def start_controls(self):
@@ -131,27 +242,7 @@ class ControlsSender:
         self.main_connection.send("MANUAL STOP".encode())
         self.view.disable()
   
-    def _key_event(self, event):
-        # event.type == "2":  # KeyPress event
-        # 3 - KeyRelease event
 
-        key = event.keysym
-        if key == 'w': # FORWARD
-            if not 'f' in self.keyboard_buffer:
-                self.keyboard_buffer.append('f')
-            self.view.forward(True)
-        elif key == 's': # BACKWARD
-            if not 'b' in self.keyboard_buffer:
-                self.keyboard_buffer.append('b')
-            self.view.backward(True)
-        elif key == 'a':   # LEFT
-            if not 'l' in self.keyboard_buffer:
-                self.keyboard_buffer.append('l')
-            self.view.left(True)
-        elif key == 'd':  # RIGHT
-            if not 'r' in self.keyboard_buffer:
-                self.keyboard_buffer.append('r')
-            self.view.right(True)
 
     # def _key_released(self, event):
     #     key = event.keysym

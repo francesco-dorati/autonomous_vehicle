@@ -69,6 +69,7 @@ class MainController:
                 response = response.decode().strip().split(' ')
                 if response[0] == "P":
                     battery_voltage = float(response[1])
+                    battery_level = response[2]
                     self.main_view.sidebar.update_ping(dt_ms, battery_voltage, battery_level)
                 else:
                     self.disconnect()
