@@ -1,4 +1,5 @@
 from enum import Enum
+import socket
 
 class ManualController:
     TRANSMITTER_DELAY = 0.2 # s
