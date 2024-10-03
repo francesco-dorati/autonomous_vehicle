@@ -88,9 +88,9 @@ class Sidebar(tk.Frame):
         self.battery.grid_forget()
         self.shutdown_button.pack_forget()
     
-    def update_ping(self, ping, battery):
-        self.ping.config(text=f"{ping:.2f} ms")
-        self.battery.config(text=f"{battery:.1f} V")
+    def update_ping(self, ping, battery, level):
+        self.ping.config(text=f"{int(ping)} ms")
+        self.battery.config(text=f"{battery:.1f} V  ({level})")
 
     def open_config(self):
         self.config_frame.pack(fill='x', side='top', pady=10)

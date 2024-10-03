@@ -2,6 +2,7 @@ import time
 import socket
 
 from controllers.manual_controller import ManualController
+from controllers.camera_controller import CameraReceiver
 
 PING_INTERVAL_MS = 8000
 
@@ -29,7 +30,7 @@ class MainController:
         self.main_view.pages['main'].manual_button.config(command=self.start_manual)
 
         # # MANUAL PAGE
-        self.main_view.pages['manual'].exit_button.config(command=self.exit_manual)
+        # self.main_view.pages['manual'].exit_button.config(command=self.exit_manual)
 
     def exit(self):
         if self.main_connection:
@@ -68,7 +69,7 @@ class MainController:
                 response = response.decode().strip().split(' ')
                 if response[0] == "P":
                     battery_voltage = float(response[1])
-                    self.main_view.sidebar.update_ping(dt_ms, battery_voltage)
+                    self.main_view.sidebar.update_ping(dt_ms, battery_voltage, battery_level)
                 else:
                     self.disconnect()
 

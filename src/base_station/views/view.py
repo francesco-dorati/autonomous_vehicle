@@ -32,10 +32,8 @@ class View(tk.Frame):
     def connect(self):
         self.sidebar.connect()
         self.show_page('main')
-        self.current_page.connect()
     
     def disconnect(self):
         self.sidebar.disconnect()
         self.show_page('not_connected')
-        self.current_page.disconnect()
     

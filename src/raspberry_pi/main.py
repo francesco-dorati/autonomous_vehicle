@@ -134,7 +134,7 @@ class Main:
 
         if d[0] == 'P': # PING
             self.rp2040.request_data()
-            self.main_server.send('P ' + str(self.rp2040.battery.voltage))
+            self.main_server.send('P ' + str(self.rp2040.battery.voltage) + ' ' + self.rp2040.bettery.level().name)
 
         elif d[0] == 'M': # MANUAL
             if d[1] == '1': # start manual mode
