@@ -231,8 +231,8 @@ class MainServer:
         except BlockingIOError:
             return None
         
-    def send(self, data: str):
-        self.connection.send(data.encode())
+    def send(self, data: bytes):
+        self.connection.send(data)
     
     def close_connection(self):
         if self.connection:
