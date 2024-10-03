@@ -31,16 +31,20 @@ class ManualController:
                 elif d == 'R':
                     self.y -= 1
 
-    def __init__(self, rp2040, nano):
+    def __init__(self, rp2040, nano, host, port):
+        self.rp2040 = rp2040
+        self.nano = nano
+        self.host = host
+        self.port = port
+
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.server.bind((HOST, MANUAL_PORT))
+        self.server.bind((self.host, self.port))
         self.server.setblocking(False)
+        
         self.client_addr = None
         self.last_received = 0
         self.last_transmitted = 0
 
-        self.rp2040 = rp2040
-        self.nano = nano
 
         self.obstacle_sensing = False
         # setup sensors and encoders
