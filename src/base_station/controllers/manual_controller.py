@@ -151,12 +151,12 @@ class ManualController:
             print(f"Keyboard buffer: ", self.vel_buffer, self.x_buffer, self.y_buffer)
             print(f"Sent: <{command}> to ", self.manual_hostname, ":", self.manual_port)
             
-            # try:
-            #     self.socket.sendto(command.encode(), (self.manual_hostname, self.manual_port))
-            # except:
-            #     print("ERROR, stopping")
-            #     self.stop()
-            #     return
+            try:
+                self.socket.sendto(command.encode(), (self.manual_hostname, self.manual_port))
+            except:
+                print("ERROR, stopping")
+                self.stop()
+                return
 
             self.root.after(self.SENDER_DELAY, self._sender_loop)
 
