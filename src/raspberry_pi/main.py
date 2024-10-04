@@ -62,6 +62,9 @@ class Main:
         self.camera_transmitter = None
         
         self.distance_sensing = False
+        self.rp2040.set_battery(True)
+        # self.rp2040.set_encoders(False)
+        # self.rp2040.set_encoders(False)
 
         print("Main Server started.")
 
@@ -69,7 +72,6 @@ class Main:
         print("Start Loop")
 
         # start battery sensing
-        self.rp2040.set_battery(True)
 
         while True:
             t_start = time.time()

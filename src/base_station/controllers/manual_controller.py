@@ -78,61 +78,61 @@ class ManualController:
             if event.type == "2":
                 if not 'f' in self.keyboard_buffer:
                     self.keyboard_buffer.append('f')
-                self.view.set('fwd', True)
+                self.view.controls_frame.set('fwd', True)
             elif event.type == "3":
                 if 'f' in self.keyboard_buffer:
                     self.keyboard_buffer.remove('f')
-                self.view.set('fwd', False)
+                self.view.controls_frame.set('fwd', False)
 
         elif key == 's': # BACKWARD
             if event.type == "2":
                 if not 'b' in self.keyboard_buffer:
                     self.keyboard_buffer.append('b')
-                self.view.set('bwd', True)
+                self.view.controls_frame.set('bwd', True)
             elif event.type == "3":
                 if 'b' in self.keyboard_buffer:
                     self.keyboard_buffer.remove('b')
-                self.view.set('bwd', False)
+                self.view.controls_frame.set('bwd', False)
 
         elif key == 'a':   # LEFT
             if event.type == "2":
                 if not 'l' in self.keyboard_buffer:
                     self.keyboard_buffer.append('l')
-                self.view.set('left', True)
+                self.view.controls_frame.set('left', True)
             elif event.type == "3":
                 if 'l' in self.keyboard_buffer:
                     self.keyboard_buffer.remove('l')
-                self.view.set('left', False)
+                self.view.controls_frame.set('left', False)
                 
         elif key == 'd':  # RIGHT
             if event.type == "2":
                 if not 'r' in self.keyboard_buffer:
                     self.keyboard_buffer.append('r')
-                self.view.set('right', True)
+                self.view.controls_frame.set('right', True)
             elif event.type == "3":
                 if 'r' in self.keyboard_buffer:
                     self.keyboard_buffer.remove('r')
-                self.view.set('right', False)
+                self.view.controls_frame.set('right', False)
         
         elif key == 'shift':
             if event.type == "2":
                 if not 's' in self.boost_buffer:
                     self.boost_buffer.append('s')
-                self.view.set('slow', True)
+                self.view.controls_frame.set('slow', True)
             elif event.type == "3":
                 if 's' in self.boost_buffer:
                     self.boost_buffer.remove('s')
-                self.view.set('slow', False)
+                self.view.controls_frame.set('slow', False)
         
         elif key == 'space':
             if event.type == "2":
                 if not 'b' in self.boost_buffer:
                     self.boost_buffer.append('b')
-                self.view.set('fast', True)
+                self.view.controls_frame.set('fast', True)
             elif event.type == "3":
                 if 'b' in self.boost_buffer:
                     self.boost_buffer.remove('b')
-                self.view.set('fast', False)
+                self.view.controls_frame.set('fast', False)
 
     def _sender_loop(self):
         if self.running:

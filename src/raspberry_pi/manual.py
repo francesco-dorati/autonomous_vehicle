@@ -72,10 +72,8 @@ class ManualController:
         self.nano.send_power(0, 0)
         self.rp2040.set_encoder(False)
         self.rp2040.set_distance(False)
-        self.receiver.close()
-        self.transmitter.close()
-        self.receiver = None
-        self.transmitter = None
+        self.server.close()
+        self.server = None
 
  
 
