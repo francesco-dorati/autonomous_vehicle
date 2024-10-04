@@ -1,4 +1,5 @@
 import socket
+import time
 import select
 import pickle
 import cv2
@@ -10,19 +11,21 @@ from .camera_controller import CameraReceiver
 
 
 class ManualController:
-    SENDER_DELAY = 0.1
-    RECEIVER_DELAY = 0.2
+    SENDER_DELAY = 100 # ms
+    RECEIVER_DELAY = 200 # ms
     def __init__(self, root, view, main_connection):
         self.root = root
         self.view = view
         self.main_connection = main_connection
         self.running = False
-        self.server_hostname = self.main_connection.getpeername()[0]
-        self.boost_buffer = 0
-        self.keyboard_buffer = []
+        self.manual_hostname = self.main_connection.getpeername()[0]
+        self.manual_port = None
 
-        self.commands_socket = None
-        self.data_socket = None
+        
+        self.socket = None
+        self.vel_buffer = []
+        self.x_buffer = []
+        self.y_buffer = []
 
         # self.controls_sender = ControlsSender(self.root, self.view.controls_frame, main_connection)
         # self.data_receiver = DataReceiver(self.root, self.view.data_frame, main_connection)
@@ -30,9 +33,6 @@ class ManualController:
 
         self.view.start_button.config(command=self.start)
         self.view.stop_button.config(command=self.stop)
-
-        self.view.camera_frame.start_button.config(command=self.start_camera)
-        self.view.camera_frame.stop_button.config(command=self.stop_camera)
 
 
     def start(self):
@@ -46,18 +46,21 @@ class ManualController:
         else:
             return
 
+        self.running = True
         # start servers
-        self.manual_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.manual_socket.setblocking(False)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.setblocking(False)
 
         # set key bindings
         self.view.focus_set()
         self.view.bind("<KeyPress>", self._key_event)
         self.view.bind("<KeyRelease>", self._key_event)
+        self.vel_buffer = []
+        self.x_buffer = []
+        self.y_buffer = []
 
         # start view
         self.view.start()
-        runnning = True
 
         # start loops
         self._sender_loop()
@@ -67,96 +70,93 @@ class ManualController:
         self.running = False
         self.view.unbind("<KeyPress>")
         self.view.unbind("<KeyRelease>")
-        self.manual_socket.close()
-        self.manual_socket = None
+        self.vel_buffer = []
+        self.x_buffer = []
+        self.y_buffer = []
+        self.socket.close()
+        self.socket = None
         self.main_connection.send("M 0".encode())
         self.view.stop()
 
     def _key_event(self, event):
         key = event.keysym
-        if key == 'w': # FORWARD
+        if key.lower() == 'w': # FORWARD
             if event.type == "2":
-                if not 'f' in self.keyboard_buffer:
-                    self.keyboard_buffer.append('f')
+                if not 'f' in self.x_buffer:
+                    self.x_buffer.append('f')
                 self.view.controls_frame.set('fwd', True)
             elif event.type == "3":
-                if 'f' in self.keyboard_buffer:
-                    self.keyboard_buffer.remove('f')
+                if 'f' in self.x_buffer:
+                    self.x_buffer.remove('f')
                 self.view.controls_frame.set('fwd', False)
 
-        elif key == 's': # BACKWARD
+        elif key.lower() == 's': # BACKWARD
             if event.type == "2":
-                if not 'b' in self.keyboard_buffer:
-                    self.keyboard_buffer.append('b')
+                if not 'b' in self.x_buffer:
+                    self.x_buffer.append('b')
                 self.view.controls_frame.set('bwd', True)
             elif event.type == "3":
-                if 'b' in self.keyboard_buffer:
-                    self.keyboard_buffer.remove('b')
+                if 'b' in self.x_buffer:
+                    self.x_buffer.remove('b')
                 self.view.controls_frame.set('bwd', False)
 
-        elif key == 'a':   # LEFT
+        elif key.lower() == 'a':   # LEFT
             if event.type == "2":
-                if not 'l' in self.keyboard_buffer:
-                    self.keyboard_buffer.append('l')
+                if not 'l' in self.y_buffer:
+                    self.y_buffer.append('l')
                 self.view.controls_frame.set('left', True)
             elif event.type == "3":
-                if 'l' in self.keyboard_buffer:
-                    self.keyboard_buffer.remove('l')
+                if 'l' in self.y_buffer:
+                    self.y_buffer.remove('l')
                 self.view.controls_frame.set('left', False)
                 
-        elif key == 'd':  # RIGHT
+        elif key.lower() == 'd':  # RIGHT
             if event.type == "2":
-                if not 'r' in self.keyboard_buffer:
-                    self.keyboard_buffer.append('r')
+                if not 'r' in self.y_buffer:
+                    self.y_buffer.append('r')
                 self.view.controls_frame.set('right', True)
             elif event.type == "3":
-                if 'r' in self.keyboard_buffer:
-                    self.keyboard_buffer.remove('r')
+                if 'r' in self.y_buffer:
+                    self.y_buffer.remove('r')
                 self.view.controls_frame.set('right', False)
         
-        elif key == 'shift':
+        elif key == 'Shift_L':
             if event.type == "2":
-                if not 's' in self.boost_buffer:
-                    self.boost_buffer.append('s')
+                if not 's' in self.vel_buffer:
+                    self.vel_buffer.append('s')
                 self.view.controls_frame.set('slow', True)
             elif event.type == "3":
-                if 's' in self.boost_buffer:
-                    self.boost_buffer.remove('s')
+                if 's' in self.vel_buffer:
+                    self.vel_buffer.remove('s')
                 self.view.controls_frame.set('slow', False)
         
         elif key == 'space':
             if event.type == "2":
-                if not 'b' in self.boost_buffer:
-                    self.boost_buffer.append('b')
+                if not 'b' in self.vel_buffer:
+                    self.vel_buffer.append('b')
                 self.view.controls_frame.set('fast', True)
             elif event.type == "3":
-                if 'b' in self.boost_buffer:
-                    self.boost_buffer.remove('b')
+                if 'b' in self.vel_buffer:
+                    self.vel_buffer.remove('b')
                 self.view.controls_frame.set('fast', False)
 
+        # print(key, self.boost_buffer, self.keyboard_buffer)
+
     def _sender_loop(self):
+        print(f"loop: {self.running}")
         if self.running:
-            if 'f' in self.keyboard_buffer and 'b' in self.keyboard_buffer:
-                self.keyboard_buffer.remove('f')
-                self.keyboard_buffer.remove('b')
-            if 'l' in self.keyboard_buffer and 'r' in self.keyboard_buffer:
-                self.keyboard_buffer.remove('l')
-                self.keyboard_buffer.remove('r')
-            if 'b' in self.boost_buffer and 's' in self.boost_buffer:
-                self.boost_buffer.remove('b')
-                self.boost_buffer.remove('s')
+            vel, x, y = self._transform_buffers()
 
-            b = 0 if (len(self.boost_buffer) == 0) else (1 if self.boost_buffer[0] == 'b' else -1)
-            s = "".join(self.keyboard_buffer)
-
-            command = f"{b} {s}"
-            print(f"Sent: <{command}> to ", self.server_hostname, ":", self.manual_port)
-            try:
-                self.controls_socket.sendto(command.encode(), (self.server_hostname, self.controls_port))
-            except:
-                print("ERROR, stopping")
-                self.stop()
-                return
+            command = f"{vel} {x} {y}"
+            print(f"Keyboard buffer: ", self.vel_buffer, self.x_buffer, self.y_buffer)
+            print(f"Sent: <{command}> to ", self.manual_hostname, ":", self.manual_port)
+            
+            # try:
+            #     self.socket.sendto(command.encode(), (self.manual_hostname, self.manual_port))
+            # except:
+            #     print("ERROR, stopping")
+            #     self.stop()
+            #     return
 
             self.root.after(self.SENDER_DELAY, self._sender_loop)
 
@@ -172,39 +172,41 @@ class ManualController:
             #     return
             # self.root.after(100, self._receiver_loop)
 
+    def _transform_buffers(self) -> (int, int, int):
+        if 'f' in self.x_buffer and 'b' in self.x_buffer:
+            self.x_buffer.remove('f')
+            self.x_buffer.remove('b')
+        if 'l' in self.y_buffer and 'r' in self.y_buffer:
+            self.y_buffer.remove('l')
+            self.y_buffer.remove('r')
+        if 'b' in self.vel_buffer and 's' in self.vel_buffer:
+            self.vel_buffer.remove('b')
+            self.vel_buffer.remove('s')
 
-    
-    def start_controls(self):
-        if self.controls_sender.is_running:
-            return
-        ok = self.controls_sender.start()
-        if not ok:
-            self.view.controls_frame.disable()
-    def stop_controls(self):
-        if not self.controls_sender.is_running:
-            return
-        self.controls_sender.stop()
-    
-    def start_camera(self):
-        if self.camera_receiver.is_running:
-            return
-        ok = self.camera_receiver.start()
-        if not ok:
-            self.view.camera_frame.disable()
-    def stop_camera(self):
-        if not self.camera_receiver.is_running:
-            return
-        self.camera_receiver.stop()
+        x = 0
+        for c in self.x_buffer:
+            if c == 'f':
+                x += 1
+            elif c== 'b':
+                x += -1
 
-    def start_data(self):
-        pass
-    def stop_data(self):
-        pass
+        y = 0
+        for c in self.y_buffer:
+            if c == 'l':
+                y += 1
+            elif c== 'r':
+                y += -1
         
-    def stop(self):
-        self.stop_camera()
-        self.stop_controls()
-        self.start_data()
+        vel = 0
+        for c in self.vel_buffer:
+            if c == 'b':
+                vel += 1
+            elif c== 's':
+                vel += -1
+
+        return vel, x, y
+
+
 
 class ControlsSender:
     def __init__(self, root, view, main_connection):

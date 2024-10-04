@@ -27,7 +27,7 @@ class MainController:
         self.main_view.sidebar.exit_button.config(command=self.exit)
 
         # MAIN PAGE
-        self.main_view.pages['main'].manual_button.config(command=self.start_manual)
+        self.main_view.pages['main'].manual_button.config(command=self.open_manual)
 
         # # MANUAL PAGE
         # self.main_view.pages['manual'].exit_button.config(command=self.exit_manual)
@@ -50,10 +50,14 @@ class MainController:
             self.main_connection = None
             return
         self.main_view.connect()
-        
+
     
     def disconnect(self):
         # disconnect logic
+        if self.manual_controller and self.manual_controller.running:
+            self.manual_controller.stop()
+            self.manual_controller = None
+            time.wait(0.1)
         if self.main_connection:
             self.main_connection.send(b"E")
             self.main_connection.close()
@@ -92,13 +96,13 @@ class MainController:
         self.main_view.sidebar.close_config()
 
 
-    def start_manual(self):
+    def open_manual(self):
         if not self.main_connection:
             return
         
         self.main_view.show_page('manual')
         self.manual_controller = ManualController(self.main_view, self.main_view.current_page, self.main_connection)
-        # self.manual_controller.start(self.main_connection)
+        
 
     
     def exit_manual(self):
