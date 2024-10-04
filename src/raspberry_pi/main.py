@@ -94,6 +94,7 @@ class Main:
 
             # 3 CONTROL
             if self.mode == self.Mode.MANUAL:
+                print(self.mode.name)
                 self.manual_controller.compute()
 
             # 4 update camera
@@ -131,6 +132,7 @@ class Main:
                 self.manual_controller = ManualController(self.rp2040, self.nano, self.HOST, self.MANUAL_PORT)
                 self.mode = self.Mode.MANUAL
                 self.main_server.send(f'OK {self.MANUAL_PORT}')
+                print("MANUAL START")
 
             elif d[1] == b'0': # stop manual mode
                 if self.mode != self.Mode.MANUAL:
@@ -140,6 +142,7 @@ class Main:
                 self.manual_controller = None
                 self.mode = self.Mode.IDLE
                 self.main_server.send('OK')
+                print("MANUAL STOP")
             
             elif d[1] == b'S': 
                 if self.mode != self.Mode.MANUAL:
