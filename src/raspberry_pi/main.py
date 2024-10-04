@@ -94,7 +94,6 @@ class Main:
 
             # 3 CONTROL
             if self.mode == self.Mode.MANUAL:
-                print(self.mode.name)
                 self.manual_controller.compute()
 
             # 4 update camera
@@ -104,13 +103,15 @@ class Main:
 
             # 5 set delay
             dt = time.time() - t_start
-            print("dt: ", dt*1000, " ms, ", end='')
+            print(f"dt: {(dt*1000):.1f} ms,    ", end='')
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE) and dt < self.MAIN_SERVER_INTERVAL:
                 print("delay: ", self.MAIN_SERVER_INTERVAL)
                 time.sleep(self.MAIN_SERVER_INTERVAL-dt)
             elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_LOOP_INTERVAL:
-                print("delay: ", self.MANUAL_LOOP_INTERVAL)
+                print(f"delay: {(self.MANUAL_LOOP_INTERVAL*1000):.1f} ms")
                 time.sleep(self.MANUAL_LOOP_INTERVAL - dt)
+            else:
+                print("ELSE ", self.mode.name)
 
 
     
