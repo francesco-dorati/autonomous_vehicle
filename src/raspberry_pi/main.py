@@ -64,14 +64,17 @@ class Main:
             self.rp2040.updated = False
 
             #1 BATTERY CHECK
+            t_battery = time.time()
             if self.rp2040.battery_on and (t_start - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
                 self.last_battery_check = t_start
                 self.rp2040.request_data()
                 print(f"Battery Check <{'on' if self.rp2040.battery_on else 'off'}>: {self.rp2040.battery.voltage} V ({self.rp2040.battery.level().name})")
                 if self.rp2040.battery_on and self.rp2040.battery.is_critical():
                     self.shutdown()
+            dt_battery = time.time() - t_battery
 
             # 2 MAIN CONNECTION HANDLING
+            t_main = time.time()
             if (t_start - self.last_main_server_check) >= self.MAIN_SERVER_INTERVAL:
                 self.last_main_server_check = t_start
                 if self.mode == self.Mode.NOT_CONNECTED: # not connected
@@ -90,30 +93,40 @@ class Main:
                     self.main_server.close()
                     self.mode = self.Mode.NOT_CONNECTED
                     continue
+            dt_main = time.time() - t_main
 
 
             # 3 CONTROL
+            t_control = time.time()
             if self.mode == self.Mode.MANUAL:
                 self.manual_controller.compute()
+            dt_control = time.time() - t_control
 
             # 4 update camera
+            t_camera = time.time()
             if self.camera_transmitter != None and (t_start - self.last_camera_transmitted) >= self.CAMERA_TRANSMITTER_DELAY:
                 self.last_camera_transmitted = t_start
                 camera_transmitter.send_frame()
+            dt_camera = time.time() - t_camera
+
+
+            # if self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE:
+            # elif self.mode == self.Mode.MANUAL:
+            #     print(f"delay: {(self.MANUAL_LOOP_INTERVAL*1000):.1f} ms")
 
             # 5 set delay
             dt = time.time() - t_start
-
+            print(f"\nBattery: {dt_battery*1000:.1f} ms,    Main: {dt_main*1000:.1f} ms,    Control: {dt_control*1000:.1f} ms,    Camera: {dt_camera*1000:.1f} ms,    ")
             print(f"dt: {(dt*1000):.1f} ms,    ", end='')
-            if self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE:
-                print(f"delay: {(self.MAIN_SERVER_INTERVAL*1000):.1f} ms")
-            elif self.mode == self.Mode.MANUAL:
-                print(f"delay: {(self.MANUAL_LOOP_INTERVAL*1000):.1f} ms")
+            if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE):
+                over = dt < self.MAIN_SERVER_INTERVAL:
+                print(f"delay: {(self.MAIN_SERVER_INTERVAL*1000):.1f} ms {'OVER' if over else ''}")
+                time.sleep(self.MAIN_SERVER_INTERVAL-dt) if not over else None
 
-            if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE) and dt < self.MAIN_SERVER_INTERVAL:
-                time.sleep(self.MAIN_SERVER_INTERVAL-dt)
             elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_LOOP_INTERVAL:
-                time.sleep(self.MANUAL_LOOP_INTERVAL - dt)
+                over = dt < self.MANUAL_LOOP_INTERVAL
+                print(f"delay: {(self.MANUAL_LOOP_INTERVAL*1000):.1f} ms {'OVER' if over else ''}")
+                time.sleep(self.MANUAL_LOOP_INTERVAL - dt) if not over else None
             
 
 
