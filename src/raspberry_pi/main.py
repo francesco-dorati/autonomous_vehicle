@@ -180,7 +180,7 @@ class Main:
             elif d[1] == '0':
                 self.camera_transmitter.close()
                 self.camera_transmitter = None
-                self.main_server.send(b'OK')
+                self.main_server.send('OK')
 
         elif d[0] == 'E': # STOP
             self.close_all()
@@ -231,8 +231,8 @@ class MainServer:
         except BlockingIOError:
             return None
         
-    def send(self, data: bytes):
-        self.connection.send(data)
+    def send(self, data: str):
+        self.connection.send(data.encode())
     
     def close_connection(self):
         if self.connection:

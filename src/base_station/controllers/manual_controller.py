@@ -11,13 +11,15 @@ from .camera_controller import CameraReceiver
 
 class ManualController:
     SENDER_DELAY = 0.1
+    RECEIVER_DELAY = 0.2
     def __init__(self, root, view, main_connection):
         self.root = root
         self.view = view
         self.main_connection = main_connection
-        self.keyboard_buffer = []
         self.running = False
         self.server_hostname = self.main_connection.getpeername()[0]
+        self.boost_buffer = 0
+        self.keyboard_buffer = []
 
         self.commands_socket = None
         self.data_socket = None
@@ -45,6 +47,7 @@ class ManualController:
 
         # start servers
         self.manual_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.manual_socket.setblocking(False)
 
         # set key bindings
         self.view.focus_set()
@@ -74,41 +77,61 @@ class ManualController:
             if event.type == "2":
                 if not 'f' in self.keyboard_buffer:
                     self.keyboard_buffer.append('f')
-                self.view.forward(True)
+                self.view.set('fwd', True)
             elif event.type == "3":
                 if 'f' in self.keyboard_buffer:
                     self.keyboard_buffer.remove('f')
-                self.view.forward(False)
+                self.view.set('fwd', False)
 
         elif key == 's': # BACKWARD
             if event.type == "2":
                 if not 'b' in self.keyboard_buffer:
                     self.keyboard_buffer.append('b')
-                self.view.backward(True)
+                self.view.set('bwd', True)
             elif event.type == "3":
                 if 'b' in self.keyboard_buffer:
                     self.keyboard_buffer.remove('b')
-                self.view.backward(False)
+                self.view.set('bwd', False)
 
         elif key == 'a':   # LEFT
             if event.type == "2":
                 if not 'l' in self.keyboard_buffer:
                     self.keyboard_buffer.append('l')
-                self.view.left(True)
+                self.view.set('left', True)
             elif event.type == "3":
                 if 'l' in self.keyboard_buffer:
                     self.keyboard_buffer.remove('l')
-                self.view.left(False)
+                self.view.set('left', False)
                 
         elif key == 'd':  # RIGHT
             if event.type == "2":
                 if not 'r' in self.keyboard_buffer:
                     self.keyboard_buffer.append('r')
-                self.view.right(True)
+                self.view.set('right', True)
             elif event.type == "3":
                 if 'r' in self.keyboard_buffer:
                     self.keyboard_buffer.remove('r')
-                self.view.right(False)
+                self.view.set('right', False)
+        
+        elif key == 'shift':
+            if event.type == "2":
+                if not 's' in self.boost_buffer:
+                    self.boost_buffer.append('s')
+                self.view.set('slow', True)
+            elif event.type == "3":
+                if 's' in self.boost_buffer:
+                    self.boost_buffer.remove('s')
+                self.view.set('slow', False)
+        
+        elif key == 'space':
+            if event.type == "2":
+                if not 'b' in self.boost_buffer:
+                    self.boost_buffer.append('b')
+                self.view.set('fast', True)
+            elif event.type == "3":
+                if 'b' in self.boost_buffer:
+                    self.boost_buffer.remove('b')
+                self.view.set('fast', False)
 
     def _sender_loop(self):
         if self.running:
@@ -118,26 +141,37 @@ class ManualController:
             if 'l' in self.keyboard_buffer and 'r' in self.keyboard_buffer:
                 self.keyboard_buffer.remove('l')
                 self.keyboard_buffer.remove('r')
-            
+            if 'b' in self.boost_buffer and 's' in self.boost_buffer:
+                self.boost_buffer.remove('b')
+                self.boost_buffer.remove('s')
+
+            b = 0 if (len(self.boost_buffer) == 0) else (1 if self.boost_buffer[0] == 'b' else -1)
             s = "".join(self.keyboard_buffer)
+
             # print("Sent:", s, " to ", self.server_hostname, ":", self.manual_port)
             try:
-                self.controls_socket.sendto(s.encode(), (self.server_hostname, self.controls_port))
+                command = f"{b} {s}"
+                self.controls_socket.sendto(command.encode(), (self.server_hostname, self.controls_port))
             except:
                 print("ERROR, stopping")
                 self.stop()
                 return
 
             self.root.after(self.SENDER_DELAY, self._sender_loop)
+
     def _receiver_loop(self):
+        if self.running:
+            pass
+            # try:
+            #     data, _ = self.manual_socket.recvfrom(32)
+            #     vel, pos = self._parse_data(data.decode())
+            #     self.view.update(vel, pos)
+            # except:
+            #     self.stop()
+            #     return
+            # self.root.after(100, self._receiver_loop)
 
-    
 
-
-
-
-
-        pass
     
     def start_controls(self):
         if self.controls_sender.is_running:

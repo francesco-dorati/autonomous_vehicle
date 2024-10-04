@@ -132,44 +132,44 @@ class ControlsFrame(tk.Frame):
     def set(self, key, show):
         if key == 'fwd' or key == 'all':
             if show == 1:
-                self.forward.config(state='normal', bg='lightgray', fg='black', relief='raised')
-            elif show == 0:
                 self.forward.config(state='normal', bg='black', fg='white', relief='sunken')
+            elif show == 0:
+                self.forward.config(state='normal', bg='lightgray', fg='black', relief='raised')
             elif show == -1:
                 self.forward.config(state='disabled', bg='lightgray', fg='black', relief='sunken')
         if key == 'bwd' or key == 'all':
             if show == 1:
-                self.backward.config(state='normal', bg='lightgray', fg='black', relief='raised')
-            elif show == 0:
                 self.backward.config(state='normal', bg='black', fg='white', relief='sunken')
+            elif show == 0:
+                self.backward.config(state='normal', bg='lightgray', fg='black', relief='raised')
             elif show == -1:
                 self.backward.config(state='disabled', bg='lightgray', fg='black', relief='sunken')
         if key == 'left' or key == 'all':
             if show == 1:
-                self.left.config(state='normal', bg='lightgray', fg='black', relief='raised')
-            elif show == 0:
                 self.left.config(state='normal', bg='black', fg='white', relief='sunken')
+            elif show == 0:
+                self.left.config(state='normal', bg='lightgray', fg='black', relief='raised')
             elif show == -1:
                 self.left.config(state='disabled', bg='lightgray', fg='black', relief='sunken')
         if key == 'right' or key == 'all':
             if show == 1:
-                self.right.config(state='normal', bg='lightgray', fg='black', relief='raised')
-            elif show == 0:
                 self.right.config(state='normal', bg='black', fg='white', relief='sunken')
+            elif show == 0:
+                self.right.config(state='normal', bg='lightgray', fg='black', relief='raised')
             elif show == -1:
                 self.right.config(state='disabled', bg='lightgray', fg='black', relief='sunken')
         if key == 'slow' or key == 'all':
             if show == 1:
-                self.shift.config(state='normal', bg='lightgray', fg='black', relief='raised')
-            elif show == 0:
                 self.shift.config(state='normal', bg='black', fg='white', relief='sunken')
+            elif show == 0:
+                self.shift.config(state='normal', bg='lightgray', fg='black', relief='raised')
             elif show == -1:
                 self.shift.config(state='disabled', bg='lightgray', fg='black', relief='sunken')
         if key == 'fast' or key == 'all':
             if show == 1:
-                self.boost.config(state='normal', bg='lightgray', fg='black', relief='raised')
-            elif show == 0:
                 self.boost.config(state='normal', bg='black', fg='white', relief='sunken')
+            elif show == 0:
+                self.boost.config(state='normal', bg='lightgray', fg='black', relief='raised')
             elif show == -1:
                 self.boost.config(state='disabled', bg='lightgray', fg='black', relief='sunken')
     
