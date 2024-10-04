@@ -119,12 +119,12 @@ class Main:
             print(f"\n{dt_battery*1000:.1f}\t{dt_main*1000:.1f}\t{dt_control*1000:.1f}\t{dt_camera*1000:.1f}")
             print(f"dt: {(dt*1000):.1f} ms,    ", end='')
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE):
-                over = dt < self.MAIN_SERVER_INTERVAL
+                over = dt >= self.MAIN_SERVER_INTERVAL
                 print(f"delay: {(self.MAIN_SERVER_INTERVAL*1000):.1f} ms {'OVER' if over else ''}")
                 time.sleep(self.MAIN_SERVER_INTERVAL-dt) if not over else None
 
-            elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_LOOP_INTERVAL:
-                over = dt < self.MANUAL_LOOP_INTERVAL
+            elif self.mode == self.Mode.MANUAL:
+                over = dt >= self.MANUAL_LOOP_INTERVAL
                 print(f"delay: {(self.MANUAL_LOOP_INTERVAL*1000):.1f} ms {'OVER' if over else ''}")
                 time.sleep(self.MANUAL_LOOP_INTERVAL - dt) if not over else None
             
