@@ -94,7 +94,9 @@ class ManualController:
 
 
     def compute(self):
+        t_request = time.time()
         self.rp2040.request_data()
+        dt_request = time.time() - t_request
 
         t_receive = time.time()
         command = self.__receive()
@@ -120,7 +122,7 @@ class ManualController:
         # else:
             # print('NONE')
             # self.nano.set_powers(pow_l, pow_r)
-        print(f"M {(dt_receive*1000):.1f}\t{(dt_compute*1000):.1f}\t{(dt_transmit*1000):.1f}")
+        print(f"M {(dt_request*1000):.1f}\t{(dt_receive*1000):.1f}\t{(dt_compute*1000):.1f}\t{(dt_transmit*1000):.1f}")
 
         # if (time.time() - self.last_transmitted) >= self.TRANSMITTER_DELAY:
         #     self.__transmit()
