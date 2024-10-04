@@ -105,6 +105,7 @@ class ManualController:
         if command != None:
             pow_l, pow_r = command.calculate_powers()
             print(pow_l, pow_r)
+            self.nano.send_power(pow_l, pow_r)
         else:
             print('NONE')
             # self.nano.set_powers(pow_l, pow_r)

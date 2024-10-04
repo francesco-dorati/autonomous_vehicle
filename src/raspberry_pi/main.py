@@ -104,9 +104,12 @@ class Main:
 
             # 5 set delay
             dt = time.time() - t_start
+            print("dt: ", dt*1000, " ms, ", end='')
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE) and dt < self.MAIN_SERVER_INTERVAL:
+                print("delay: ", self.MAIN_SERVER_INTERVAL)
                 time.sleep(self.MAIN_SERVER_INTERVAL-dt)
             elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_LOOP_INTERVAL:
+                print("delay: ", self.MANUAL_LOOP_INTERVAL)
                 time.sleep(self.MANUAL_LOOP_INTERVAL - dt)
 
 
@@ -117,7 +120,7 @@ class Main:
             return
 
         print("Main Request", data)
-        data = data.decode().split('\n')
+        data = data.decode().split('\n')[:-1]
         for d in data:
             d = d.strip().split(' ')
             print("command: ", d)
