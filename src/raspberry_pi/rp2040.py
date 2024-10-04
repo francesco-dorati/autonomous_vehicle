@@ -157,7 +157,7 @@ class RP2040:
         self.encoders_odometry.set_position(unpacked_data[i]/10, unpacked_data[i+1]/10, unpacked_data[i+2]*180/(1000*math.pi))
         i+=3
         dt_compute = time.time() - t_compute
-        ptint(f"R {(dt_request*1000):.1f}\t{(dt_unpack*1000):.1f}\t{(dt_compute*1000):.1f}")
+        print(f"R {(dt_request*1000):.1f}\t{(dt_unpack*1000):.1f}\t{(dt_compute*1000):.1f}")
          
 
 
