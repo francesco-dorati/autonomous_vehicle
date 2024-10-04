@@ -22,24 +22,10 @@ class Main:
     # delays
     BATTERY_CHECK_INTERVAL = 5 # s
     MAIN_SERVER_INTERVAL = 0.4 # s
-    MANUAL_LOOP_DELAY = 1/50 # s
+    MANUAL_TRANSMITTER_INTERVAL = 0.2 # s
+    MANUAL_LOOP_INTERVAL = 0.05 # s
+    CAMERA_TRANSMITTER_INTERVAL = 1/30 # s
 
-    # frequencies
-    MANUAL_FREQ = 50 # Hz
-    MANUAL_TRANSMITTER_FREQ = 5 # Hz
-
-    # time 
-    NOT_CONNECTED_DELAY = 1 # s
-    IDLE_DELAY = 0.1 # s
-    MANUAL_DELAY = 1/MANUAL_FREQ # s 
-    MANUAL_TRANSMITTER_DELAY = 1/MANUAL_TRANSMITTER_FREQ # s
-    CAMERA_TRANSMITTER_DELAY = 0.033 # s
-    # battery
-
-    #  manual
-    MANUAL_STD_POW = 100
-    MANUAL_BOOST_POW = 150
-    MANUAL_SLOW_POW = 50
 
     class Mode(Enum):
         NOT_CONNECTED = -1
@@ -78,16 +64,16 @@ class Main:
             self.rp2040.updated = False
 
             #1 BATTERY CHECK
-            if self.rp2040.battery_on and (time.time() - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
-                self.last_battery_check = time.time()
+            if self.rp2040.battery_on and (t_start - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
+                self.last_battery_check = t_start
                 self.rp2040.request_data()
                 print(f"Battery Check <{'on' if self.rp2040.battery_on else 'off'}>: {self.rp2040.battery.voltage} V ({self.rp2040.battery.level().name})")
                 if self.rp2040.battery_on and self.rp2040.battery.is_critical():
                     self.shutdown()
 
             # 2 MAIN CONNECTION HANDLING
-            if (time.time() - self.last_main_server_check) >= self.MAIN_SERVER_INTERVAL:
-                self.last_main_server_check = time.time()
+            if (t_start - self.last_main_server_check) >= self.MAIN_SERVER_INTERVAL:
+                self.last_main_server_check = t_start
                 if self.mode == self.Mode.NOT_CONNECTED: # not connected
                     ok = self.main_server.check_connection()
                     if ok:
@@ -111,16 +97,16 @@ class Main:
                 self.manual_controller.compute()
 
             # 4 update camera
-            if self.camera_transmitter != None and (time.time() - self.last_camera_transmitted) >= self.CAMERA_TRANSMITTER_DELAY:
-                self.last_camera_transmitted = time.time()
+            if self.camera_transmitter != None and (t_start - self.last_camera_transmitted) >= self.CAMERA_TRANSMITTER_DELAY:
+                self.last_camera_transmitted = t_start
                 camera_transmitter.send_frame()
 
             # 5 set delay
             dt = time.time() - t_start
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE) and dt < self.MAIN_SERVER_INTERVAL:
                 time.sleep(self.MAIN_SERVER_INTERVAL-dt)
-            elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_DELAY:
-                time.sleep(self.MANUAL_DELAY - dt)
+            elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_LOOP_DELAY:
+                time.sleep(self.MANUAL_LOOP_DELAY - dt)
 
 
     

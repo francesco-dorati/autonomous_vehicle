@@ -105,6 +105,8 @@ class ManualController:
         if command != None:
             pow_l, pow_r = command.calculate_powers()
             print(pow_l, pow_r)
+        else:
+            print('NONE')
             # self.nano.set_powers(pow_l, pow_r)
 
         # if (time.time() - self.last_transmitted) >= self.TRANSMITTER_DELAY:
