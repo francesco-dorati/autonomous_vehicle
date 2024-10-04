@@ -134,7 +134,7 @@ class Main:
                 self.main_server.send(f'OK {self.MANUAL_PORT}')
                 print("MANUAL START")
 
-            elif d[1] == b'0': # stop manual mode
+            elif d[1] == '0': # stop manual mode
                 if self.mode != self.Mode.MANUAL:
                     self.main_server.send('KO')
                     return
@@ -144,7 +144,7 @@ class Main:
                 self.main_server.send('OK')
                 print("MANUAL STOP")
             
-            elif d[1] == b'S': 
+            elif d[1] == 'S': 
                 if self.mode != self.Mode.MANUAL:
                     self.main_server.send('KO')
                     return
