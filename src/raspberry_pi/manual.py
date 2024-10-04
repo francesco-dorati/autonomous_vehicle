@@ -96,19 +96,29 @@ class ManualController:
     def compute(self):
         self.rp2040.request_data()
 
+        t_receive = time.time()
         command = self.__receive()
+        dt_receive = time.time() - t_receive
+
+
+
 
         # obstacle sensing
         # if self.obstacle_sensing:
         #     speed, direction = self.__obstacle_sensing(speed, direction) # modify speed based on obstacle sensing
 
         if command != None:
+            t_compute = time.time()
             pow_l, pow_r = command.calculate_powers()
+            dt_compute = time.time() - t_compute
             # print(pow_l, pow_r)
+            t_transmit = time.time()
             self.nano.send_power(pow_l, pow_r)
+            dt_transmit = time.time() - t_transmit
         # else:
             # print('NONE')
             # self.nano.set_powers(pow_l, pow_r)
+        print(f"M {(dt_receive*1000):.1f}\t{(dt_compute*1000):.1f}\t{(dt_transmit*1000):.1f}")
 
         # if (time.time() - self.last_transmitted) >= self.TRANSMITTER_DELAY:
         #     self.__transmit()
