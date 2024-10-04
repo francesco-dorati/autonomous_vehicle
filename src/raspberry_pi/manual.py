@@ -23,7 +23,7 @@ class ManualController:
                 pow_l = self.__pow() * self.x
                 pow_r = self.__pow() * self.x
             
-            elif c.x == 0:
+            elif self.x == 0:
                 pow_l = -self.__pow() * self.y
                 pow_r = self.__pow() * self.y
 

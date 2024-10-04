@@ -57,7 +57,7 @@ class MainController:
         if self.manual_controller and self.manual_controller.running:
             self.manual_controller.stop()
             self.manual_controller = None
-            time.wait(0.1)
+            time.sleep(0.1)
         if self.main_connection:
             self.main_connection.send(b"E")
             self.main_connection.close()
