@@ -1,6 +1,7 @@
 import smbus
 import struct 
 import math
+import time
 from enum import Enum
 
 
@@ -125,10 +126,15 @@ class RP2040:
         else:
             self.updated = True
 
+        t_request = time.time()
         raw_data = self.bus.read_i2c_block_data(self.addr, 32) 
+        dt_request = time.time() - t_request
         #print("Received: ", len(raw_data), raw_data) 
+        t_unpack = time.time()
         unpacked_data = struct.unpack(b'<B9h3ib', bytes(raw_data))
+        dt_unpack = time.time() - t_unpack
 
+        t_compute = time.time()
         i = 0
         status = unpacked_data[i]
         self.battery_on = (status & 0b100) >> 2
@@ -150,6 +156,8 @@ class RP2040:
 
         self.encoders_odometry.set_position(unpacked_data[i]/10, unpacked_data[i+1]/10, unpacked_data[i+2]*180/(1000*math.pi))
         i+=3
+        dt_compute = time.time() - t_compute
+        ptint(f"R {(dt_request*1000):.1f}\t{(dt_unpack*1000):.1f}\t{(dt_compute*1000):.1f}")
          
 
 
