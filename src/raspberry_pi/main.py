@@ -105,7 +105,7 @@ class Main:
             dt = time.time() - t_start
 
             print(f"dt: {(dt*1000):.1f} ms,    ", end='')
-            if self.mode == self.Mode.NOT_CONNECTED: or self.mode == self.Mode.IDLE:
+            if self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE:
                 print(f"delay: {(self.MAIN_SERVER_INTERVAL*1000):.1f} ms")
             elif self.mode == self.Mode.MANUAL:
                 print(f"delay: {(self.MANUAL_LOOP_INTERVAL*1000):.1f} ms")
