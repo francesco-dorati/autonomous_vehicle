@@ -119,7 +119,7 @@ class Main:
             print(f"\nBattery: {dt_battery*1000:.1f} ms,    Main: {dt_main*1000:.1f} ms,    Control: {dt_control*1000:.1f} ms,    Camera: {dt_camera*1000:.1f} ms,    ")
             print(f"dt: {(dt*1000):.1f} ms,    ", end='')
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE):
-                over = dt < self.MAIN_SERVER_INTERVAL:
+                over = dt < self.MAIN_SERVER_INTERVAL
                 print(f"delay: {(self.MAIN_SERVER_INTERVAL*1000):.1f} ms {'OVER' if over else ''}")
                 time.sleep(self.MAIN_SERVER_INTERVAL-dt) if not over else None
 
