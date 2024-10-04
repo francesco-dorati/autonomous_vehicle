@@ -117,68 +117,69 @@ class Main:
             return
 
         print("Main Request", data)
-
-        d = data.decode().split(' ')
-
-        if d[0] == 'P': # PING
-            self.rp2040.request_data()
-            self.main_server.send('P ' + str(self.rp2040.battery.voltage) + ' ' + self.rp2040.battery.level().name)
-
-        elif d[0] == 'M': # MANUAL
-            if d[1] == '1': # start manual mode
-                if self.mode != self.Mode.IDLE:
-                    self.main_server.send('KO')
-                    return
-                self.manual_controller = ManualController(self.rp2040, self.nano, self.HOST, self.MANUAL_PORT)
-                self.mode = self.Mode.MANUAL
-                self.main_server.send(f'OK {self.MANUAL_PORT}')
-                print("MANUAL START")
-
-            elif d[1] == '0': # stop manual mode
-                if self.mode != self.Mode.MANUAL:
-                    self.main_server.send('KO')
-                    return
-                self.manual_controller.stop()
-                self.manual_controller = None
-                self.mode = self.Mode.IDLE
-                self.main_server.send('OK')
-                print("MANUAL STOP")
+        data = data.decode().split('\n')
+        for d in data:
+            d = d.strip().split(' ')
             
-            elif d[1] == 'S': 
-                if self.mode != self.Mode.MANUAL:
-                    self.main_server.send('KO')
-                    return
+            if d[0] == 'P': # PING
+                self.rp2040.request_data()
+                self.main_server.send('P ' + str(self.rp2040.battery.voltage) + ' ' + self.rp2040.battery.level().name)
 
-                # enable/disable sensors
-                # add distance sensing
-                for e in d[2:]:
-                    if e[0] == 'E':
-                        # encoders
-                        set_encoder_odometry(int(e[1]))
-                        pass
-                    elif e[0] == 'D':
-                        # distance
-                        set_distance_sensing(int(e[1]))
-                        pass
-                    else:
-                        main_server.send(b'KO')
+            elif d[0] == 'M': # MANUAL
+                if d[1] == '1': # start manual mode
+                    if self.mode != self.Mode.IDLE:
+                        self.main_server.send('KO')
                         return
-                    
-        elif d[0] == 'C': # CAMERA
-            if d[1] == '1':
-                self.camera_transmitter = CameraTransmitter()
-                self.main_server.send(f'OK {CAMERA_PORT}'.encode())
-            elif d[1] == '0':
-                self.camera_transmitter.close()
-                self.camera_transmitter = None
-                self.main_server.send('OK')
+                    self.manual_controller = ManualController(self.rp2040, self.nano, self.HOST, self.MANUAL_PORT)
+                    self.mode = self.Mode.MANUAL
+                    self.main_server.send(f'OK {self.MANUAL_PORT}')
+                    print("MANUAL START")
 
-        elif d[0] == 'E': # STOP
-            self.close_all()
-            self.mode = self.Mode.NOT_CONNECTED
+                elif d[1] == '0': # stop manual mode
+                    if self.mode != self.Mode.MANUAL:
+                        self.main_server.send('KO')
+                        return
+                    self.manual_controller.stop()
+                    self.manual_controller = None
+                    self.mode = self.Mode.IDLE
+                    self.main_server.send('OK')
+                    print("MANUAL STOP")
+                
+                elif d[1] == 'S': 
+                    if self.mode != self.Mode.MANUAL:
+                        self.main_server.send('KO')
+                        return
 
-        elif d[0] == 'S': # SHUTDOWN
-            self.shutdown()
+                    # enable/disable sensors
+                    # add distance sensing
+                    for e in d[2:]:
+                        if e[0] == 'E':
+                            # encoders
+                            set_encoder_odometry(int(e[1]))
+                            pass
+                        elif e[0] == 'D':
+                            # distance
+                            set_distance_sensing(int(e[1]))
+                            pass
+                        else:
+                            main_server.send(b'KO')
+                            return
+                        
+            elif d[0] == 'C': # CAMERA
+                if d[1] == '1':
+                    self.camera_transmitter = CameraTransmitter()
+                    self.main_server.send(f'OK {CAMERA_PORT}'.encode())
+                elif d[1] == '0':
+                    self.camera_transmitter.close()
+                    self.camera_transmitter = None
+                    self.main_server.send('OK')
+
+            elif d[0] == 'E': # STOP
+                self.close_all()
+                self.mode = self.Mode.NOT_CONNECTED
+
+            elif d[0] == 'S': # SHUTDOWN
+                self.shutdown()
         
     def close_all(self):
         self.nano.send_power(0, 0)
