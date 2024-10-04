@@ -106,7 +106,7 @@ class ManualController:
             pow_l, pow_r = command.calculate_powers()
             print(pow_l, pow_r)
 
-        if (time.time() - self.last_transmitted) >= TRANSMITTER_DELAY:
+        if (time.time() - self.last_transmitted) >= self.TRANSMITTER_DELAY:
             self.__transmit(pow_l, pow_r)
     
     def stop(self):
