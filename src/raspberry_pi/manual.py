@@ -107,6 +107,8 @@ class ManualController:
         # if self.obstacle_sensing:
         #     speed, direction = self.__obstacle_sensing(speed, direction) # modify speed based on obstacle sensing
 
+        dt_compute = -1
+        dt_transmit = -1
         if command != None:
             t_compute = time.time()
             pow_l, pow_r = command.calculate_powers()
