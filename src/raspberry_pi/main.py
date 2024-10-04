@@ -116,7 +116,7 @@ class Main:
 
             # 5 set delay
             dt = time.time() - t_start
-            print(f"\nBattery: {dt_battery*1000:.1f} ms,    Main: {dt_main*1000:.1f} ms,    Control: {dt_control*1000:.1f} ms,    Camera: {dt_camera*1000:.1f} ms,    ")
+            print(f"\n{dt_battery*1000:.1f}\t{dt_main*1000:.1f}\t{dt_control*1000:.1f}\t{dt_camera*1000:.1f}")
             print(f"dt: {(dt*1000):.1f} ms,    ", end='')
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE):
                 over = dt < self.MAIN_SERVER_INTERVAL
