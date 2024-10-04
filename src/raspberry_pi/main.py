@@ -105,8 +105,8 @@ class Main:
             dt = time.time() - t_start
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE) and dt < self.MAIN_SERVER_INTERVAL:
                 time.sleep(self.MAIN_SERVER_INTERVAL-dt)
-            elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_LOOP_DELAY:
-                time.sleep(self.MANUAL_LOOP_DELAY - dt)
+            elif self.mode == self.Mode.MANUAL and dt < self.MANUAL_LOOP_INTERVAL:
+                time.sleep(self.MANUAL_LOOP_INTERVAL - dt)
 
 
     
