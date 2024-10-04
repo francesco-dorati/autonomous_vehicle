@@ -120,7 +120,8 @@ class Main:
         data = data.decode().split('\n')
         for d in data:
             d = d.strip().split(' ')
-            
+            print("command: ", d)
+
             if d[0] == 'P': # PING
                 self.rp2040.request_data()
                 self.main_server.send('P ' + str(self.rp2040.battery.voltage) + ' ' + self.rp2040.battery.level().name)
