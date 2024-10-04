@@ -21,7 +21,7 @@ class ManualController:
             
             elif self.y == 0:
                 pow_l = self.__pow() * self.x
-                pow_r = self.__pow() * c.x
+                pow_r = self.__pow() * self.x
             
             elif c.x == 0:
                 pow_l = -self.__pow() * self.y
@@ -160,27 +160,3 @@ class ManualController:
     #             speed = self.Speed.SLOW
     #         if self.rp2040.obstacle_distance.back_min() <= 10:
     #             direction.x = 0
-
-
-
-    def __calculate_powers(self, c) -> (int, int):
-        # calculate direction
-        if c.x == 0 and c.y == 0:
-            pow_l = 0
-            pow_r = 0
-        
-        elif c.y == 0:
-            pow_l = speed.pow * c.x
-            pow_r = speed.pow * c.x
-        
-        elif c.x == 0:
-            pow_l = -speed.pow * c.y
-            pow_r = speed.pow * c.y
-
-        else:
-            pow_l = speed.pow * direction.x
-            pow_r = speed.pow * direction.x
-            pow_l += -speed.delta_pow * direction.y
-            pow_r += speed.delta_pow * direction.y
-
-        return pow_l, pow_r
