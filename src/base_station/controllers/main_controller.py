@@ -15,7 +15,7 @@ class MainController:
         self.manual_controller = None
 
         self.add_commands()
-        self.check_connection()
+    
     
     def add_commands(self):
         # SIDEBAR
@@ -50,6 +50,7 @@ class MainController:
             self.main_connection = None
             return
         self.main_view.connect()
+        self.check_connection()
 
     
     def disconnect(self):
@@ -59,7 +60,7 @@ class MainController:
             self.manual_controller = None
             time.sleep(0.1)
         if self.main_connection:
-            self.main_connection.send(b"E")
+            self.main_connection.send(b"E\n")
             self.main_connection.close()
         self.main_connection = None
         self.main_view.disconnect()
@@ -68,7 +69,7 @@ class MainController:
         if self.main_connection:
             try:
                 t_start = time.time()
-                self.main_connection.send(b'P')
+                self.main_connection.send(b'P\n')
                 response = self.main_connection.recv(32)
                 dt_ms = (time.time() - t_start)*1000
                 response = response.decode().strip().split(' ')
@@ -82,11 +83,11 @@ class MainController:
             except (socket.timeout, BrokenPipeError, ConnectionResetError, socket.error):
                 self.disconnect()
 
+            self.main_view.after(PING_INTERVAL_MS, self.check_connection)
             # ping server
             # if receaves response, keep connection
             # else disconnect
             
-        self.main_view.after(PING_INTERVAL_MS, self.check_connection)
 
     def confirm_config_sidebar(self):
         if self.main_connection:
