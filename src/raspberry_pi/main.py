@@ -138,24 +138,24 @@ class Main:
         elif d[0] == 'M': # MANUAL
             if d[1] == '1': # start manual mode
                 if self.mode != self.Mode.IDLE:
-                    self.main_server.send(b'KO')
+                    self.main_server.send('KO')
                     return
                 self.manual_controller = ManualController(self.rp2040, self.nano, self.HOST, self.MANUAL_PORT)
                 self.mode = self.Mode.MANUAL
-                self.main_server.send(f'OK {self.MANUAL_PORT}'.encode())
+                self.main_server.send(f'OK {self.MANUAL_PORT}')
 
             elif d[1] == b'0': # stop manual mode
                 if self.mode != self.Mode.MANUAL:
-                    self.main_server.send(b'KO')
+                    self.main_server.send('KO')
                     return
                 self.manual_controller.stop()
                 self.manual_controller = None
                 self.mode = self.Mode.IDLE
-                self.main_server.send(b'OK')
+                self.main_server.send('OK')
             
             elif d[1] == b'S': 
                 if self.mode != self.Mode.MANUAL:
-                    self.main_server.send(b'KO')
+                    self.main_server.send('KO')
                     return
 
                 # enable/disable sensors
