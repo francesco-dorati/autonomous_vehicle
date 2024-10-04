@@ -139,25 +139,25 @@ class ManualController:
         self.server.sendto(message.encode(), self.client_addr)
         last_transmitted = time.time()
 
-    def __obstacle_sensing(self, speed: Speed, direction: Direction) -> (Speed, Direction):
-        if speed == None or direction == None:
-            # only check distance if speed and direction are not None
-            pass
+    # def __obstacle_sensing(self, speed: Speed, direction: Direction) -> (Speed, Direction):
+    #     if speed == None or direction == None:
+    #         # only check distance if speed and direction are not None
+    #         pass
 
-        if direction.x > 0: # forward
-            if self.rp2040.obstacle_distance.front_min() <= 30 and speed == self.Speed.FAST:
-                speed = self.Speed.NORMAL
-            if self.rp2040.obstacle_distance.front_min() <= 20 and speed == self.Speed.NORMAL:
-                speed = self.Speed.SLOW
-            if self.rp2040.obstacle_distance.front_min() <= 10:
-                direction.x = 0
-        elif direction.x < 0:
-            if self.rp2040.obstacle_distance.back_min() <= 30 and speed == self.Speed.FAST:
-                speed = self.Speed.NORMAL
-            if self.rp2040.obstacle_distance.back_min() <= 20 and speed == self.Speed.NORMAL:
-                speed = self.Speed.SLOW
-            if self.rp2040.obstacle_distance.back_min() <= 10:
-                direction.x = 0
+    #     if direction.x > 0: # forward
+    #         if self.rp2040.obstacle_distance.front_min() <= 30 and speed == self.Speed.FAST:
+    #             speed = self.Speed.NORMAL
+    #         if self.rp2040.obstacle_distance.front_min() <= 20 and speed == self.Speed.NORMAL:
+    #             speed = self.Speed.SLOW
+    #         if self.rp2040.obstacle_distance.front_min() <= 10:
+    #             direction.x = 0
+    #     elif direction.x < 0:
+    #         if self.rp2040.obstacle_distance.back_min() <= 30 and speed == self.Speed.FAST:
+    #             speed = self.Speed.NORMAL
+    #         if self.rp2040.obstacle_distance.back_min() <= 20 and speed == self.Speed.NORMAL:
+    #             speed = self.Speed.SLOW
+    #         if self.rp2040.obstacle_distance.back_min() <= 10:
+    #             direction.x = 0
 
 
 
