@@ -20,18 +20,18 @@ class ManualController:
                 return 0, 0
             
             elif self.y == 0:
-                pow_l = self.__pow() * c.x
+                pow_l = self.__pow() * self.x
                 pow_r = self.__pow() * c.x
             
             elif c.x == 0:
-                pow_l = -self.__pow() * c.y
-                pow_r = self.__pow() * c.y
+                pow_l = -self.__pow() * self.y
+                pow_r = self.__pow() * self.y
 
             else:
-                pow_l = self.__pow() * direction.x
-                pow_r = self.__pow() * direction.x
-                pow_l += -self.__pow() * direction.y
-                pow_r += self.__pow() * direction.y
+                pow_l = self.__pow() * self.x
+                pow_r = self.__pow() * self.x
+                pow_l += -self.__pow() * self.y
+                pow_r += self.__pow() * self.y
 
             return pow_l, pow_r
 
