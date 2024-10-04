@@ -56,6 +56,8 @@ class ManualController:
         self.rp2040.request_data()
 
         speed, direction = self.__receive()
+        if not speed or not direction:
+            return
 
         # obstacle sensing
         if self.obstacle_sensing:

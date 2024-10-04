@@ -36,6 +36,7 @@ class ManualController:
 
 
     def start(self):
+        print("Starting manual controller")
         # start receiver and sender
         self.main_connection.send("M 1".encode())
         res = self.main_connection.recv(32)
@@ -148,9 +149,9 @@ class ManualController:
             b = 0 if (len(self.boost_buffer) == 0) else (1 if self.boost_buffer[0] == 'b' else -1)
             s = "".join(self.keyboard_buffer)
 
-            # print("Sent:", s, " to ", self.server_hostname, ":", self.manual_port)
+            command = f"{b} {s}"
+            print(f"Sent: <{command}> to ", self.server_hostname, ":", self.manual_port)
             try:
-                command = f"{b} {s}"
                 self.controls_socket.sendto(command.encode(), (self.server_hostname, self.controls_port))
             except:
                 print("ERROR, stopping")
