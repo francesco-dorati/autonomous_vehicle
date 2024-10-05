@@ -86,7 +86,7 @@ class RP2040:
     def __init__(self):
         self.bus = SMBus(1)  
         self.addr = 0x08 
-        self.bus._set_clock(400000)
+        # self.bus._set_clock(400000)
 
 
         self.updated = False
