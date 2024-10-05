@@ -54,6 +54,7 @@ int get_distance_mm(uint8_t trig, uint8_t echo);
 
 void setup() {
     Wire.begin(0x08);
+    Wire.setClock(400000); // 400kHz
     Wire.onRequest(requestEvent);
     Wire.onReceive(receiveEvent);
     
@@ -101,6 +102,7 @@ void loop() {
 }
 
 void requestEvent() {
+    long t = millis();
     if (DEBUG) {
         Serial.println("requestEvent start");
     }
@@ -154,8 +156,11 @@ void requestEvent() {
     Wire.write(data_buffer, 32);
 
     if (DEBUG) {
-        Serial.println("requestEvent end, buffer sent.");
+        Serial.print("requestEvent end, buffer sent, time: ");
+        Serial.print(millis() - t);
+        Serial.println(" ms");
     }
+
 }
 void receiveEvent(int bytes) {
     if (DEBUG) { Serial.println("receiveEvent start"); }

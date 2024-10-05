@@ -1,4 +1,4 @@
-import smbus
+from smbus2 import SMBus
 import struct 
 import math
 import time
@@ -84,7 +84,7 @@ class RP2040:
             return min(self.bl, self.br)
 
     def __init__(self):
-        self.bus = smbus.SMBus(1)  
+        self.bus = SMBus(1)  
         self.addr = 0x08 
         self.bus._set_clock(400000)
 
