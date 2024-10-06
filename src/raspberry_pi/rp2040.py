@@ -131,8 +131,9 @@ class RP2040:
         t_request = time.time()
         # raw_data = self.bus.read_i2c_block_data(self.addr, 0, 32) 
         raw_data = self.bus.read_i2c_block_data(self.addr, 0, 1) 
-        
         dt_request = time.time() - t_request
+        print(f"R {(dt_request*1000):.1f}")
+        return
         #print("Received: ", len(raw_data), raw_data) 
         t_unpack = time.time()
         unpacked_data = struct.unpack(b'<B9h3ib', bytes(raw_data))
