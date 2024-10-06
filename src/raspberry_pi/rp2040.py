@@ -248,7 +248,9 @@ class RP2040_SER:
             return min(self.bl, self.br)
 
     def __init__(self):
+        print("SERIAL SETUP")
         self.ser = serial.Serial('/dev/serial1', 115200)
+        print("SERIAL SETUP ok")
         self.updated = False
 
         self.battery_on = False
