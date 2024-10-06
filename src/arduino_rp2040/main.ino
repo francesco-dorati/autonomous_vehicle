@@ -85,18 +85,41 @@ void setup() {
 }
 
 void loop() {
+    if (DEBUG) {
+        Serial.println("LOOP START");
+    }
     unsigned long t_start = millis();
 
     // read battery
+    long t = millis();
     if (battery_reader_running) update_battery();
+    if (DEBUG) {
+        Serial.print("Battery time: ");
+        Serial.println(millis() - t);
+    }
     
     // read sensors
+    t = millis();
     if (sensors_running) update_sensors();
+    if (DEBUG) {
+        Serial.print("Sensors time: ");
+        Serial.println(millis() - t);
+    }
 
     // read encoders
+    t = millis();
     if (encoders_running) update_encoders();
+    if (DEBUG) {
+        Serial.print("Encoders time: ");
+        Serial.println(millis() - t);
+    }
     
     long dt = millis() - t_start;
+    if (DEBUG) {
+        Serial.print("LOOP END, time: ");
+        Serial.print(dt);
+        Serial.println(" ms");
+    }
     if (dt < CONTROLLER_UPDATE_TIME_MS)
         delay(CONTROLLER_UPDATE_TIME_MS - dt);
 }
@@ -110,12 +133,14 @@ void requestEvent() {
     uint8_t data_buffer[32]; // Adjust size based on the data you are sending
     int index = 0;
 
-    Serial.print("b: ");
-    Serial.print(battery_reader_running);
-    Serial.print(", d: ");
-    Serial.print(sensors_running);
-    Serial.print(", e: ");
-    Serial.println(encoders_running);
+    if (DEBUG) {
+        Serial.print("b: ");
+        Serial.print(battery_reader_running);
+        Serial.print(", d: ");
+        Serial.print(sensors_running);
+        Serial.print(", e: ");
+        Serial.println(encoders_running);
+    }
 
 
     // // running data: 1 byte
@@ -144,8 +169,8 @@ void requestEvent() {
     index += sizeof(robot_velocities);
 
     // robot position: 12 bytes
-    int position[4];
-    for (int i = 0; i < 4; i++) position[i] = (int)(robot_position[i]/1000);
+    int position[3];
+    for (int i = 0; i < 3; i++) position[i] = (int)(robot_position[i]/1000);
     if (encoders_running) memcpy(&data_buffer[index], position, sizeof(position));
     else memset(&data_buffer[index], 0, sizeof(position));
     index += sizeof(position);
@@ -153,7 +178,8 @@ void requestEvent() {
     data_buffer[index] = '\0'; // Null terminator
 
     // Send the entire packed data buffer
-    Wire.write(data_buffer, 32);
+    // Wire.write(data_buffer, 32); // 32 FIXXX
+    Wire.write(data_buffer, 1); // 32 FIXXX
 
     if (DEBUG) {
         Serial.print("requestEvent end, buffer sent, time: ");

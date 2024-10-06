@@ -129,7 +129,9 @@ class RP2040:
             self.updated = True
 
         t_request = time.time()
-        raw_data = self.bus.read_i2c_block_data(self.addr, 0, 32) 
+        # raw_data = self.bus.read_i2c_block_data(self.addr, 0, 32) 
+        raw_data = self.bus.read_i2c_block_data(self.addr, 0, 1) 
+        
         dt_request = time.time() - t_request
         #print("Received: ", len(raw_data), raw_data) 
         t_unpack = time.time()
