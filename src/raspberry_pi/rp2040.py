@@ -262,12 +262,14 @@ class RP2040_SER:
         self.obstacle_distance = self.SensorDistance()
     
     def set_battery(self, on):
+        return
         # send command to rp2040
         self.bus.write_byte(self.addr, ord('B') if on else ord('b'))
         self.battery_on = on
         self.battery.reset()
     
     def set_encoder(self, on):
+        return
         # send command to rp2040
         self.bus.write_byte(self.addr, ord('E') if on else ord('e'))
         self.encoder_on = on
@@ -275,6 +277,7 @@ class RP2040_SER:
         self.encoders_odometry.reset()
 
     def set_distance(self, on):
+        return
         # send command to rp2040
         self.bus.write_byte(self.addr, ord('D') if on else ord('d'))
         self.distance_on = on
