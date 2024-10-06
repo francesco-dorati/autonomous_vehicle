@@ -1,4 +1,5 @@
 from smbus2 import SMBus
+import serial
 import struct 
 import math
 import time
@@ -294,7 +295,7 @@ class RP2040_SER:
         raw_data = self.ser.read(32)
         dt_request = time.time() - t_request
         print(f"Req {(dt_request*1000):.1f}")
-        
+
         return
         #print("Received: ", len(raw_data), raw_data) 
         t_unpack = time.time()
