@@ -54,7 +54,7 @@ int get_distance_mm(uint8_t trig, uint8_t echo);
 
 void setup() {
     Wire.begin(0x08);
-    Wire.setClock(400000); // 400kHz
+    Wire.setClock(50000); // 400kHz
     Wire.onRequest(requestEvent);
     Wire.onReceive(receiveEvent);
     
