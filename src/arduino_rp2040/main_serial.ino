@@ -1,11 +1,14 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <WiFiNINA.h>
+#include <math.h>
 
 #define DEBUG 0
 
-#define CONTROLLER_FREQ 50 // Hz
-#define CONTROLLER_UPDATE_TIME_MS (1000/CONTROLLER_FREQ)
+
+
+#define LOOP_DELAY_MS 20 // ms
+#define BATTERY_DELAY_MS 1000 // ms
 
 #define FL_trig 2
 #define FL_echo 3
@@ -28,15 +31,18 @@
 
 const long wheel_circumference_mm = 2*PI*wheel_radius_mm;
 
-short battery_voltage_mv = 0; // millivolts
-short dist_mm[4] = {0, 0, 0, 0}; // FL FR RL RR
-short wheel_velocities[2] = {0, 0}; // vl, vr (mm/s)
-short robot_velocities[2] = {0, 0}; // vx (mm/s), vt (mrad/s)
+int battery_voltage_mv = 0; // millivolts
+int dist_mm[4] = {0, 0, 0, 0}; // FL FR RL RR
+int wheel_velocities[2] = {0, 0}; // vl, vr (mm/s)
+int robot_velocities[2] = {0, 0}; // vx (mm/s), vt (mrad/s)
 long robot_position[3] = {0, 0, 0}; // x, y (um), theta (urad)
 
 bool battery_reader_running = true;
-bool sensors_running = false;
+bool distance_running = false;
 bool encoders_running = false;
+
+long last_battery_time = 0;
+
 
 // sensor
 int sensor_n = 0; // fl, rl, fr, rr
@@ -81,141 +87,137 @@ void setup() {
 
 void loop() {
     unsigned long t_start = millis();
+
     // check serial
     if (Serial1.available() > 0) {
         char c = Serial1.read();
-        
-        Serial.print("received <");
-        Serial.print(c);
-        Serial.println(">. ");
-
-        Serial1.println("ok_____________________________");
+        if (c == 'R') // request
+            handle_request()
+        else if (c == 'S') // set
+            handle_set()
     }
 
     // read battery
-    long t = millis();
-    if (battery_reader_running) update_battery();
-    if (DEBUG) {
-        Serial.print("Battery time: ");
-        Serial.println(millis() - t);
-    }
-    
+    if (battery_reader_running && (millis() - last_battery_time) >= BATTERY_DELAY_MS) 
+        update_battery();
+
     // read sensors
-    t = millis();
-    if (sensors_running) update_sensors();
-    if (DEBUG) {
-        Serial.print("Sensors time: ");
-        Serial.println(millis() - t);
-    }
+    if (distance_running) 
+        update_distance();
 
     // read encoders
-    t = millis();
-    if (encoders_running) update_encoders();
-    if (DEBUG) {
-        Serial.print("Encoders time: ");
-        Serial.println(millis() - t);
-    }
+    if (encoders_running) 
+        update_encoders();
     
-    long dt = millis() - t_start;
-    if (DEBUG) {
+    // delay
+    int dt = millis() - t_start;
+    if (Serial) {
         Serial.print("LOOP END, time: ");
         Serial.print(dt);
         Serial.println(" ms");
     }
-    if (dt < CONTROLLER_UPDATE_TIME_MS)
-        delay(CONTROLLER_UPDATE_TIME_MS - dt);
+    if (dt < LOOP_DELAY_MS)
+        delay(LOOP_DELAY_MS - dt);
 }
 
-void requestEvent() {
+void handle_request() {
     long t = millis();
-
-    uint8_t data_buffer[32]; // Adjust size based on the data you are sending
-    int index = 0;
-
-
-
-    // // running data: 1 byte
-    data_buffer[index++] = (battery_reader_running ? 0b100 : 0) |
-                           (sensors_running ? 0b010 : 0) |
-                           (encoders_running ? 0b001 : 0);
+    Serial1.read();
+    if (Serial) Serial.println("REQUEST START");
     
-    // battery voltage: 2 bytes
-    if (battery_reader_running) memcpy(&data_buffer[index], &battery_voltage_mv, sizeof(battery_voltage_mv));
-    else memset(&data_buffer[index], 0, sizeof(battery_voltage_mv));
-    index += sizeof(battery_voltage_mv);
+    // BATTERY
+    Serial1.print("B ");
+    if (battery_reader_running) {
+        Serial1.print("1 ");
+        Serial1.println(battery_voltage_mv*0.001); // V
+    } else {
+        Serial1.println("0");
+    }
 
-    // sensor distance: 8 bytes
-    if (sensors_running) memcpy(&data_buffer[index], dist_mm, sizeof(dist_mm));
-    else memset(&data_buffer[index], 0, sizeof(dist_mm));
-    index += sizeof(dist_mm);
+    // DISTANCE
+    Serial1.print("D ");
+    if (distance_running) {
+        Serial1.print("1 ");
+        Serial1.print(dist_mm[0]*0.1); // cm
+        Serial1.print(" ");
+        Serial1.print(dist_mm[1]*0.1); // cm
+        Serial1.print(" ");
+        Serial1.print(dist_mm[2]*0.1); // cm
+        Serial1.print(" ");
+        Serial1.println(dist_mm[3]*0.1); // cm
+    } else {
+        Serial1.println("0");
+    }
 
-    // wheel velocities: 4 bytes
-    if (encoders_running) memcpy(&data_buffer[index], wheel_velocities, sizeof(wheel_velocities));
-    else memset(&data_buffer[index], 0, sizeof(wheel_velocities));      
-    index += sizeof(wheel_velocities);
+    // ENCODER ODOMETRY
+    Serial1.print("E ");
+    if (encoders_running) {
+        Serial1.print("1 ");
+        Serial1.print(robot_velocities[0]*0.1); // cm/s
+        Serial1.print(" ");
+        Serial1.print((robot_velocities[1]*0.001*180)/M_PI); // rad/s
+        Serial1.print(" ");
+        Serial1.print(robot_position[0]*0.0001); // cm
+        Serial1.print(" ");
+        Serial1.print(robot_position[1]*0.0001); // cm
+        Serial1.print(" ");
+        Serial1.println((robot_position[2]*0.001*180)/M_PI); // deg
+    } else {
+        Serial1.println("0");
+    }
 
-    // robot velocities: 4 bytes
-    if (encoders_running) memcpy(&data_buffer[index], robot_velocities, sizeof(robot_velocities));
-    else memset(&data_buffer[index], 0, sizeof(robot_velocities));
-    index += sizeof(robot_velocities);
-
-    // robot position: 12 bytes
-    int position[3];
-    for (int i = 0; i < 3; i++) position[i] = (int)(robot_position[i]/1000);
-    if (encoders_running) memcpy(&data_buffer[index], position, sizeof(position));
-    else memset(&data_buffer[index], 0, sizeof(position));
-    index += sizeof(position);
-
-    data_buffer[index] = '\0'; // Null terminator
-
-    // Send the entire packed data buffer
-    // Wire.write(data_buffer, 32); // 32 FIXXX
-    Wire.write(data_buffer, 1); // 32 FIXXX
-
-    if (DEBUG) {
-        Serial.print("requestEvent end, buffer sent, time: ");
-        Serial.print(millis() - t);
+    if (Serial) {
+        int dt = millis() - t;
+        Serial.print("REQUEST END ");
+        Serial.print(dt);
         Serial.println(" ms");
     }
 
 }
-void receiveEvent(int bytes) {
-    if (DEBUG) { Serial.println("receiveEvent start"); }
 
-    while (bytes > 0) {
-        char c = Wire.read();
-        Serial.println(c);
-        if (c == 'D' || c == 'd') {
-            sensors_running = (c == 'D');
-            dist_mm[0] = 0;
-            dist_mm[1] = 0;
-            dist_mm[2] = 0;
-            dist_mm[3] = 0;
-            
-        } else if (c == 'E' || c == 'e') {
-            encoders_running = (c == 'E');
-            ticks_l = 0;
-            ticks_r = 0;
-            prev_ticks_l = 0;
-            prev_ticks_r = 0;
-            prev_time_encoder_us = micros();
-            wheel_velocities[0] = 0;
-            wheel_velocities[1] = 0;
-            robot_velocities[0] = 0; 
-            robot_velocities[1] = 0;
-            robot_position[0] = 0; 
-            robot_position[1] = 0;
-            robot_position[2] = 0;
-            
-        } else if (c == 'B' || c == 'b') {
-            battery_reader_running = (c == 'B');
-            battery_voltage_mv = 0;
-        } else {
-            // Invalid command
-        }
-        bytes--;
+void handle_set() {
+    if (Serial) Serial.println("SET START");
+    char type = Serial1.read();
+    char on = Serial1.read() == '1';
+    if (type == 'B') {
+        battery_reader_running = on;
+        reset_battery();
+    } else if (type == 'D') {
+        distance_running = on;
+        reset_distance();
+    } else if (type == 'E') {
+        encoders_running = on;
+        reset_encoders();
     }
+    if (Serial) Serial.println("SET END");
 }
+
+void reset_battery() {
+    battery_voltage_mv = 0;
+}
+
+void reset_distance() {
+    dist_mm[0] = 0;
+    dist_mm[1] = 0;
+    dist_mm[2] = 0;
+    dist_mm[3] = 0;
+}
+
+void reset_encoders() {
+    ticks_l = 0;
+    ticks_r = 0;
+    prev_ticks_l = 0;
+    prev_ticks_r = 0;
+    prev_time_encoder_us = micros();
+    wheel_velocities[0] = 0;
+    wheel_velocities[1] = 0;
+    robot_velocities[0] = 0; 
+    robot_velocities[1] = 0;
+    robot_position[0] = 0; 
+    robot_position[1] = 0;
+    robot_position[2] = 0;
+}
+
 
 void left_tick() { 
     if (!encoders_running) return;
@@ -234,6 +236,12 @@ void right_tick() {
         ticks_r--;  // Backward
     }
 } 
+
+void update_battery() {
+    // Serial.println("BATTERY START");
+    int pin_voltage_mv = (analogRead(battery_reader) / 1023.0) * 3300;
+    battery_voltage_mv = pin_voltage_mv * 4;
+}
 
 void update_encoders() {
     // delta ticks
@@ -266,7 +274,7 @@ void update_encoders() {
     robot_position[0] /* um */ += dS_um * cos(robot_position[2]/1000000.0);
     robot_position[1] /* um */ += dS_um * sin(robot_position[2]/1000000.0);
 
-    if (DEBUG) {
+    if (Serial) {
         Serial.print("TICKS TOT ");
         Serial.println(ticks_r);
         Serial.print("Ticks: L ");
@@ -308,13 +316,7 @@ void update_encoders() {
 
 }
 
-void update_battery() {
-    // Serial.println("BATTERY START");
-    int pin_voltage_mv = (analogRead(battery_reader) / 1023.0) * 3300;
-    battery_voltage_mv = pin_voltage_mv * 4;
-}
-
-void update_sensors() {
+void update_distance() {
     // DIRECTION BASED
     if (encoders_running) {
         if (robot_velocities[0] > 0) {

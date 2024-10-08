@@ -166,9 +166,6 @@ class RP2040_I2C:
         print(f"R {(dt_request*1000):.1f}\t{(dt_unpack*1000):.1f}\t{(dt_compute*1000):.1f}")
          
 
-
-
-
 class RP2040_SER:
     class Battery:
         MEDIUM_V = 11.3
@@ -203,15 +200,6 @@ class RP2040_SER:
         
         def is_critical(self):
             return self.level() == self.Level.CRITICAL
-        
-    class Wheels: 
-        def __init__(self):
-            self.set(0.0, 0.0)
-        def set(self, vl, vr):
-            self.vl = vl 
-            self.vr = vr
-        def reset(self):
-            self.set(0.0, 0.0)
     
     class Odometry:
         def __init__(self):
@@ -249,39 +237,37 @@ class RP2040_SER:
 
     def __init__(self):
         print("SERIAL SETUP")
-        self.ser = serial.Serial('/dev/ttyAMA2', 115200)
-        print("SERIAL SETUP ok")
+        self.ser = serial.Serial('/dev/ttyAMA2', 115200, timeout=0.1)
         self.updated = False
 
         self.battery_on = False
         self.battery = self.Battery()
 
         self.encoder_on = False
-        self.wheels = self.Wheels()
         self.encoders_odometry = self.Odometry()
 
         self.distance_on = False
         self.obstacle_distance = self.SensorDistance()
+        print("RP2040 READY")
     
     def set_battery(self, on):
-        self.battery_on = on
-        return
         # send command to rp2040
-        self.bus.write_byte(self.addr, ord('B') if on else ord('b'))
+        s = f"SB{1 if on else 0}"
+        self.ser.write(s.encode())
+        self.battery_on = on
         self.battery.reset()
     
     def set_encoder(self, on):
-        return
         # send command to rp2040
-        self.bus.write_byte(self.addr, ord('E') if on else ord('e'))
+        s = f"SE{1 if on else 0}"
+        self.ser.write(s.encode())
         self.encoder_on = on
-        self.wheels.reset()
         self.encoders_odometry.reset()
 
     def set_distance(self, on):
-        return
         # send command to rp2040
-        self.bus.write_byte(self.addr, ord('D') if on else ord('d'))
+        s = f"SD{1 if on else 0}"
+        self.ser.write(s.encode())
         self.distance_on = on
         self.obstacle_distance.reset()
 
@@ -293,48 +279,37 @@ class RP2040_SER:
         else:
             self.updated = True
 
-        # raw_data = self.bus.read_i2c_block_data(self.addr, 0, 32) 
-        print("Requesting data")
+        print("Data request")
         t_request = time.time()
+
         self.ser.flush()
-        # print("flush ok")
-        self.ser.write(b'R')
-        # print("write ok")
-        raw_data = self.ser.read(32)
-        # print("read ok")
+        self.ser.write(b'R*')
+
+        for line in self.ser.readlines():
+            l = line.decode().strip().split(' ')
+            print("Received line: ", l)  
+            
+            if l[0] == 'B': # Battery
+                self.battery_on = (int(l[1]) == 1)
+                if self.battery_on:
+                    self.battery.voltage = float(l[2])
+                else:
+                    self.battery.reset()
+            elif l[0] == 'D': # Distance
+                self.distance_on = (int(l[1]) == 1)
+                if self.distance_on:
+                    self.obstacle_distance.set(float(l[2]), float(l[3]), float(l[4]), float(l[5]))
+                else:
+                    self.obstacle_distance.reset()
+            elif l[0] == 'E': # Encoders
+                self.encoder_on = (int(l[1]) == 1)
+                if self.encoder_on:
+                    self.encoders_odometry.set_velocity(float(l[2]), float(l[3]))
+                    self.encoders_odometry.set_position(float(l[4]), float(l[5]), float(l[6]))
+                else:
+                    self.encoders_odometry.reset()
+
         dt_request = time.time() - t_request
-        print(f"Req {(dt_request*1000):.1f}")
-
-        return
-        #print("Received: ", len(raw_data), raw_data) 
-        t_unpack = time.time()
-        unpacked_data = struct.unpack(b'<B9h3ib', bytes(raw_data))
-        dt_unpack = time.time() - t_unpack
-
-        t_compute = time.time()
-        i = 0
-        status = unpacked_data[i]
-        self.battery_on = (status & 0b100) >> 2
-        self.distance_on = (status & 0b010) >> 1
-        self.encoders_on = (status & 0b001)
-        i += 1
-
-        self.battery.voltage = (unpacked_data[i]/1000) if self.battery_on else None
-        i+=1
-
-        self.obstacle_distance.set(unpacked_data[i]/10, unpacked_data[i+1]/10, unpacked_data[i+2]/10, unpacked_data[i+3]/10)
-        i += 4
-
-        self.wheels.set(unpacked_data[i]/10, unpacked_data[i+1]/10)
-        i+=2
-
-        self.encoders_odometry.set_velocity(unpacked_data[i]/10, (unpacked_data[i+1]*180)/(1000*math.pi))
-        i+=2
-
-        self.encoders_odometry.set_position(unpacked_data[i]/10, unpacked_data[i+1]/10, unpacked_data[i+2]*180/(1000*math.pi))
-        i+=3
-        dt_compute = time.time() - t_compute
-        print(f"R {(dt_request*1000):.1f}\t{(dt_unpack*1000):.1f}\t{(dt_compute*1000):.1f}")
-         
+        print(f"Request took {(dt_request*1000):.1f} ms")
 
 
