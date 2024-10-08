@@ -249,7 +249,7 @@ class RP2040_SER:
 
     def __init__(self):
         print("SERIAL SETUP")
-        self.ser = serial.Serial('/dev/serial1', 115200)
+        self.ser = serial.Serial('/dev/ttyAMA2', 115200)
         print("SERIAL SETUP ok")
         self.updated = False
 
