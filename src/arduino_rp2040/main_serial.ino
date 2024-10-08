@@ -53,8 +53,8 @@ void update_sensors();
 int get_distance_mm(uint8_t trig, uint8_t echo);
 
 void setup() {
-    Serial.begin(9600);
-    Serial1.begin(115200);
+    Serial.begin(115200);
+    // Serial1.begin(115200);
 
     // sensors
     pinMode(FL_trig, OUTPUT);
@@ -81,14 +81,14 @@ void setup() {
 void loop() {
     unsigned long t_start = millis();
     // check serial
-    if (Serial1.available() > 0) {
-        char c = Serial1.read();
+    if (Serial.available() > 0) {
+        char c = Serial.read();
         
-        Serial.print("received <");
-        Serial.print(c);
-        Serial.println(">. ")
+        // Serial.print("received <");
+        // Serial.print(c);
+        // Serial.println(">. ")
 
-        Serial1.println("ok");
+        Serial.println("ok");
     }
 
     // read battery
