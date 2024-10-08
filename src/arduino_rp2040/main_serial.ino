@@ -1,9 +1,8 @@
 #include <Wire.h>
 #include <WiFiNINA.h>
+#include <Arduino.h>
 
-
-#define TX_PIN 0  
-#define RX_PIN 1
+#define DEBUG 0
 
 #define CONTROLLER_FREQ 50 // Hz
 #define CONTROLLER_UPDATE_TIME_MS (1000/CONTROLLER_FREQ)
@@ -54,8 +53,9 @@ void update_sensors();
 int get_distance_mm(uint8_t trig, uint8_t echo);
 
 void setup() {
-    Serial.begin(115200);
-    Serial1.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
+    // serial
+    Serial.begin(9600);
+    Serial1.begin(115200);
 
     // sensors
     pinMode(FL_trig, OUTPUT);
@@ -83,11 +83,11 @@ void loop() {
     unsigned long t_start = millis();
     // check serial
     if (Serial1.available() > 0) {
-        char c = Serial.read();
+        char c = Serial1.read();
         
         Serial.print("received <");
         Serial.print(c);
-        Serial.println(">. ")
+        Serial.println(">. ");
 
         Serial1.print("ok");
     }

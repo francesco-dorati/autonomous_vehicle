@@ -293,16 +293,15 @@ class RP2040_SER:
         else:
             self.updated = True
 
-        t_request = time.time()
         # raw_data = self.bus.read_i2c_block_data(self.addr, 0, 32) 
         print("Requesting data")
+        t_request = time.time()
         self.ser.flush()
-        print("flush ok")
+        # print("flush ok")
         self.ser.write(b'R')
-        print("write ok")
-        time.sleep(0.1)
+        # print("write ok")
         raw_data = self.ser.read(32)
-        print("read ok")
+        # print("read ok")
         dt_request = time.time() - t_request
         print(f"Req {(dt_request*1000):.1f}")
 
