@@ -300,6 +300,7 @@ class RP2040_SER:
         print("flush ok")
         self.ser.write(b'R')
         print("write ok")
+        time.sleep(0.1)
         raw_data = self.ser.read(32)
         print("read ok")
         dt_request = time.time() - t_request
