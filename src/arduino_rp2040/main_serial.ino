@@ -3,10 +3,6 @@
 #include <WiFiNINA.h>
 #include <math.h>
 
-#define DEBUG 0
-
-
-
 #define LOOP_DELAY_MS 20 // ms
 #define BATTERY_DELAY_MS 1000 // ms
 
@@ -92,9 +88,9 @@ void loop() {
     if (Serial1.available() > 0) {
         char c = Serial1.read();
         if (c == 'R') // request
-            handle_request()
+            handle_request();
         else if (c == 'S') // set
-            handle_set()
+            handle_set();
     }
 
     // read battery
@@ -111,11 +107,11 @@ void loop() {
     
     // delay
     int dt = millis() - t_start;
-    if (Serial) {
-        Serial.print("LOOP END, time: ");
-        Serial.print(dt);
-        Serial.println(" ms");
-    }
+    // if (Serial) {
+    //     Serial.print("LOOP END, time: ");
+    //     Serial.print(dt);
+    //     Serial.println(" ms");
+    // }
     if (dt < LOOP_DELAY_MS)
         delay(LOOP_DELAY_MS - dt);
 }
@@ -129,7 +125,7 @@ void handle_request() {
     Serial1.print("B ");
     if (battery_reader_running) {
         Serial1.print("1 ");
-        Serial1.println(battery_voltage_mv*0.001); // V
+        Serial1.println(battery_voltage_mv/1000.0); // V
     } else {
         Serial1.println("0");
     }
@@ -138,13 +134,13 @@ void handle_request() {
     Serial1.print("D ");
     if (distance_running) {
         Serial1.print("1 ");
-        Serial1.print(dist_mm[0]*0.1); // cm
+        Serial1.print(dist_mm[0]/10.0); // cm
         Serial1.print(" ");
-        Serial1.print(dist_mm[1]*0.1); // cm
+        Serial1.print(dist_mm[1]/10.0); // cm
         Serial1.print(" ");
-        Serial1.print(dist_mm[2]*0.1); // cm
+        Serial1.print(dist_mm[2]/10.0); // cm
         Serial1.print(" ");
-        Serial1.println(dist_mm[3]*0.1); // cm
+        Serial1.println(dist_mm[3]/10.0); // cm
     } else {
         Serial1.println("0");
     }
@@ -153,15 +149,15 @@ void handle_request() {
     Serial1.print("E ");
     if (encoders_running) {
         Serial1.print("1 ");
-        Serial1.print(robot_velocities[0]*0.1); // cm/s
+        Serial1.print(robot_velocities[0]/10.0); // cm/s
         Serial1.print(" ");
-        Serial1.print((robot_velocities[1]*0.001*180)/M_PI); // rad/s
+        Serial1.print((robot_velocities[1]*180)/(1000.0/M_PI)); // rad/s
         Serial1.print(" ");
-        Serial1.print(robot_position[0]*0.0001); // cm
+        Serial1.print(robot_position[0]/10000.0); // cm
         Serial1.print(" ");
-        Serial1.print(robot_position[1]*0.0001); // cm
+        Serial1.print(robot_position[1]/10000.0); // cm
         Serial1.print(" ");
-        Serial1.println((robot_position[2]*0.001*180)/M_PI); // deg
+        Serial1.println((robot_position[2]*0.18)/(1000.0/M_PI)); // deg
     } else {
         Serial1.println("0");
     }
@@ -318,31 +314,31 @@ void update_encoders() {
 
 void update_distance() {
     // DIRECTION BASED
-    if (encoders_running) {
-        if (robot_velocities[0] > 0) {
-            // front sensors
-            if (sensor_n % 2 == 0) 
-                dist_mm[0] = get_distance_mm(FL_trig, FL_echo);
-            else 
-                dist_mm[1] = get_distance_mm(FR_trig, FR_echo);
-        } else if (robot_velocities[0] < 0) {
-            // back sensors
-            if (sensor_n % 2 == 0) 
-                dist_mm[2] = get_distance_mm(RL_trig, RL_echo);
-            else 
-                dist_mm[3] = get_distance_mm(RR_trig, RR_echo);
-        } else {
-            // all sensors
-            if (sensor_n == 0)
-                dist_mm[0] = get_distance_mm(FL_trig, FL_echo);
-            else if (sensor_n == 1)
-                dist_mm[1] = get_distance_mm(FR_trig, FR_echo);
-            else if (sensor_n == 2)
-                dist_mm[2] = get_distance_mm(RL_trig, RL_echo);
-            else if (sensor_n == 3) 
-                dist_mm[3] = get_distance_mm(RR_trig, RR_echo);
-        }
-    }
+    // if (encoders_running) {
+    //     if (robot_velocities[0] > 0) {
+    //         // front sensors
+    //         if (sensor_n % 2 == 0) 
+    //             dist_mm[0] = get_distance_mm(FL_trig, FL_echo);
+    //         else 
+    //             dist_mm[1] = get_distance_mm(FR_trig, FR_echo);
+    //     } else if (robot_velocities[0] < 0) {
+    //         // back sensors
+    //         if (sensor_n % 2 == 0) 
+    //             dist_mm[2] = get_distance_mm(RL_trig, RL_echo);
+    //         else 
+    //             dist_mm[3] = get_distance_mm(RR_trig, RR_echo);
+    //     } else {
+    //         // all sensors
+    //         if (sensor_n == 0)
+    //             dist_mm[0] = get_distance_mm(FL_trig, FL_echo);
+    //         else if (sensor_n == 1)
+    //             dist_mm[1] = get_distance_mm(FR_trig, FR_echo);
+    //         else if (sensor_n == 2)
+    //             dist_mm[2] = get_distance_mm(RL_trig, RL_echo);
+    //         else if (sensor_n == 3) 
+    //             dist_mm[3] = get_distance_mm(RR_trig, RR_echo);
+    //     }
+    // }
 
     // NORMAL MODE
     // fl, rl, fr, rr 

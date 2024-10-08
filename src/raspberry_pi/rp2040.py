@@ -237,7 +237,7 @@ class RP2040_SER:
 
     def __init__(self):
         print("SERIAL SETUP")
-        self.ser = serial.Serial('/dev/ttyAMA2', 115200, timeout=0.1)
+        self.ser = serial.Serial('/dev/ttyAMA2', 115200, timeout=0.05)
         self.updated = False
 
         self.battery_on = False
@@ -256,6 +256,7 @@ class RP2040_SER:
         self.ser.write(s.encode())
         self.battery_on = on
         self.battery.reset()
+        print("Set Battery ok")
     
     def set_encoder(self, on):
         # send command to rp2040
@@ -281,11 +282,20 @@ class RP2040_SER:
 
         print("Data request")
         t_request = time.time()
-
         self.ser.flush()
         self.ser.write(b'R*')
+        dt_request = time.time() - t_request
+        print(f"Request took {(dt_request*1000):.1f} ms")
 
-        for line in self.ser.readlines():
+        t_response = time.time()
+        l1 = self.ser.readline()
+        l2 = self.ser.readline()
+        l3 = self.ser.readline()
+        dt_response = time.time() - t_response
+        print(f"Response took {(dt_response*1000):.1f} ms")
+
+        t_decode = time.time()
+        for line in [l1, l2, l3]:
             l = line.decode().strip().split(' ')
             print("Received line: ", l)  
             
@@ -308,8 +318,7 @@ class RP2040_SER:
                     self.encoders_odometry.set_position(float(l[4]), float(l[5]), float(l[6]))
                 else:
                     self.encoders_odometry.reset()
-
-        dt_request = time.time() - t_request
-        print(f"Request took {(dt_request*1000):.1f} ms")
+        dt_decode = time.time() - t_decode
+        print(f"Decode took {(dt_decode*1000):.1f} ms")
 
 
