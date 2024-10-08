@@ -2,7 +2,8 @@
 #include <WiFiNINA.h>
 
 
-#define DEBUG 0
+#define TX_PIN 0  
+#define RX_PIN 1
 
 #define CONTROLLER_FREQ 50 // Hz
 #define CONTROLLER_UPDATE_TIME_MS (1000/CONTROLLER_FREQ)
@@ -54,7 +55,7 @@ int get_distance_mm(uint8_t trig, uint8_t echo);
 
 void setup() {
     Serial.begin(115200);
-    // Serial1.begin(115200);
+    Serial1.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
 
     // sensors
     pinMode(FL_trig, OUTPUT);
@@ -81,14 +82,14 @@ void setup() {
 void loop() {
     unsigned long t_start = millis();
     // check serial
-    if (Serial.available() > 0) {
+    if (Serial1.available() > 0) {
         char c = Serial.read();
         
-        // Serial.print("received <");
-        // Serial.print(c);
-        // Serial.println(">. ")
+        Serial.print("received <");
+        Serial.print(c);
+        Serial.println(">. ")
 
-        Serial.println("ok");
+        Serial1.print("ok");
     }
 
     // read battery
