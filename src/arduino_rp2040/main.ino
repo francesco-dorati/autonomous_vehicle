@@ -1,8 +1,8 @@
 #include <Wire.h>
 #include <WiFiNINA.h>
+#include <Arduino.h>
 
-
-#define DEBUG 1
+#define DEBUG 0
 
 #define CONTROLLER_FREQ 50 // Hz
 #define CONTROLLER_UPDATE_TIME_MS (1000/CONTROLLER_FREQ)
@@ -53,11 +53,10 @@ void update_sensors();
 int get_distance_mm(uint8_t trig, uint8_t echo);
 
 void setup() {
-    Wire.begin(0x08);
-    Wire.setClock(50000); // 400kHz
-    Wire.onRequest(requestEvent);
-    Wire.onReceive(receiveEvent);
-    
+    // serial
+    Serial.begin(9600);
+    Serial1.begin(115200);
+
     // sensors
     pinMode(FL_trig, OUTPUT);
     pinMode(FL_echo, INPUT);
@@ -78,17 +77,20 @@ void setup() {
 
     // battery reader
     pinMode(battery_reader, INPUT);
-
-    if (DEBUG) {
-        Serial.begin(9600);
-    }
 }
 
 void loop() {
-    if (DEBUG) {
-        Serial.println("LOOP START");
-    }
     unsigned long t_start = millis();
+    // check serial
+    if (Serial1.available() > 0) {
+        char c = Serial1.read();
+        
+        Serial.print("received <");
+        Serial.print(c);
+        Serial.println(">. ");
+
+        Serial1.println("ok_____________________________");
+    }
 
     // read battery
     long t = millis();
@@ -126,21 +128,10 @@ void loop() {
 
 void requestEvent() {
     long t = millis();
-    if (DEBUG) {
-        Serial.println("requestEvent start");
-    }
 
     uint8_t data_buffer[32]; // Adjust size based on the data you are sending
     int index = 0;
 
-    if (DEBUG) {
-        Serial.print("b: ");
-        Serial.print(battery_reader_running);
-        Serial.print(", d: ");
-        Serial.print(sensors_running);
-        Serial.print(", e: ");
-        Serial.println(encoders_running);
-    }
 
 
     // // running data: 1 byte
