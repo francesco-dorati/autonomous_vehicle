@@ -1,6 +1,6 @@
+#include <Arduino.h>
 #include <Wire.h>
 #include <WiFiNINA.h>
-#include <Arduino.h>
 
 #define DEBUG 0
 
@@ -89,7 +89,7 @@ void loop() {
         Serial.print(c);
         Serial.println(">. ");
 
-        Serial1.print("ok");
+        Serial1.println("ok_____________________________");
     }
 
     // read battery
