@@ -102,18 +102,15 @@ class ManualController:
         command = self.__receive()
         dt_receive = time.time() - t_receive
 
-
-
-
         # obstacle sensing
         # if self.obstacle_sensing:
         #     speed, direction = self.__obstacle_sensing(speed, direction) # modify speed based on obstacle sensing
-
         dt_compute = -1
         dt_transmit = -1
         if command != None:
+            print(f"Command: {command.vel} {command.x} {command.y}")
             t_compute = time.time()
-            pow_l, pow_r = command.calculate_powers()
+            # pow_l, pow_r = command.calculate_powers()
             dt_compute = time.time() - t_compute
             # print(pow_l, pow_r)
             t_transmit = time.time()
@@ -122,7 +119,7 @@ class ManualController:
         # else:
             # print('NONE')
             # self.nano.set_powers(pow_l, pow_r)
-        print(f"M {(dt_request*1000):.1f}\t{(dt_receive*1000):.1f}\t{(dt_compute*1000):.1f}\t{(dt_transmit*1000):.1f}")
+        print(f"M time {(dt_request*1000):.1f}\t{(dt_receive*1000):.1f}\t{(dt_compute*1000):.1f}\t{(dt_transmit*1000):.1f} ms")
 
         # if (time.time() - self.last_transmitted) >= self.TRANSMITTER_DELAY:
         #     self.__transmit()
@@ -156,7 +153,7 @@ class ManualController:
         message = f'P {self.rp2040.encoder_odometry.vx} {self.rp2040.encoder_odometry.vt} {self.rp2040.encoder_odometry.x} {self.rp2040.encoder_odometry.y} {self.rp2040.encoder_odometry.t}'
         message += f' D {self.rp2040.obstacle_distance.fl} {self.rp2040.obstacle_distance.fr} {self.rp2040.obstacle_distance.rl} {self.rp2040.obstacle_distance.rr}'
         self.server.sendto(message.encode(), self.client_addr)
-        last_transmitted = time.time()
+        self.last_transmitted = time.time()
 
     # def __obstacle_sensing(self, speed: Speed, direction: Direction) -> (Speed, Direction):
     #     if speed == None or direction == None:

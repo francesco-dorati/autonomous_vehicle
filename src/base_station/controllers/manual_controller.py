@@ -22,7 +22,7 @@ class ManualController:
         self.manual_port = None
 
         
-        self.socket = None
+        self.manual_socket = None
         self.vel_buffer = []
         self.x_buffer = []
         self.y_buffer = []
@@ -48,8 +48,8 @@ class ManualController:
 
         self.running = True
         # start servers
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.setblocking(False)
+        self.manual_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.manual_socket.setblocking(False)
 
         # set key bindings
         self.view.focus_set()
@@ -74,10 +74,15 @@ class ManualController:
         self.x_buffer = []
         self.y_buffer = []
 
-        self.socket.close()
-        self.socket = None
+        self.manual_socket.close()
+        self.manual_socket = None
         self.main_connection.send("M 0\n".encode())
+        res = self.main_connection.recv(32)
+        res = res.decode().strip().split(' ')
+        if res[0] != "OK":
+            raise Exception("Error stopping manual controller")
         self.view.stop()
+        print("Manual Stopped ok")
 
     def _key_event(self, event):
         key = event.keysym
@@ -153,7 +158,7 @@ class ManualController:
             print(f"Sent: <{command}> to ", self.manual_hostname, ":", self.manual_port)
             
             try:
-                self.socket.sendto(command.encode(), (self.manual_hostname, self.manual_port))
+                self.manual_socket.sendto(command.encode(), (self.manual_hostname, self.manual_port))
             except:
                 print("ERROR, stopping")
                 self.stop()
@@ -163,15 +168,13 @@ class ManualController:
 
     def _receiver_loop(self):
         if self.running:
-            pass
-            # try:
-            #     data, _ = self.manual_socket.recvfrom(32)
-            #     vel, pos = self._parse_data(data.decode())
-            #     self.view.update(vel, pos)
-            # except:
-            #     self.stop()
-            #     return
-            # self.root.after(100, self._receiver_loop)
+                data, _ = self.manual_socket.recvfrom(32)
+                vel, pos = self._parse_data(data.decode())
+                self.view.update(vel, pos)
+            except:
+                self.stop()
+                return
+            self.root.after(100, self._receiver_loop)
 
     def _transform_buffers(self) -> (int, int, int):
         if 'f' in self.x_buffer and 'b' in self.x_buffer:

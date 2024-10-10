@@ -166,25 +166,25 @@ class Main:
                     self.main_server.send('OK')
                     print("MANUAL STOP")
                 
-                elif d[1] == 'S': 
-                    if self.mode != self.Mode.MANUAL:
-                        self.main_server.send('KO')
-                        return
+                # elif d[1] == 'S': 
+                #     if self.mode != self.Mode.MANUAL:
+                #         self.main_server.send('KO')
+                #         return
 
-                    # enable/disable sensors
-                    # add distance sensing
-                    for e in d[2:]:
-                        if e[0] == 'E':
-                            # encoders
-                            set_encoder_odometry(int(e[1]))
-                            pass
-                        elif e[0] == 'D':
-                            # distance
-                            set_distance_sensing(int(e[1]))
-                            pass
-                        else:
-                            main_server.send(b'KO')
-                            return
+                #     # enable/disable sensors
+                #     # add distance sensing
+                #     for e in d[2:]:
+                #         if e[0] == 'E':
+                #             # encoders
+                #             set_encoder_odometry(int(e[1]))
+                #             pass
+                #         elif e[0] == 'D':
+                #             # distance
+                #             set_distance_sensing(int(e[1]))
+                #             pass
+                #         else:
+                #             main_server.send(b'KO')
+                #             return
                         
             elif d[0] == 'C': # CAMERA
                 if d[1] == '1':
