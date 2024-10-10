@@ -121,8 +121,8 @@ class ManualController:
             # self.nano.set_powers(pow_l, pow_r)
         print(f"M time {(dt_request*1000):.1f}\t{(dt_receive*1000):.1f}\t{(dt_compute*1000):.1f}\t{(dt_transmit*1000):.1f} ms")
 
-        # if (time.time() - self.last_transmitted) >= self.TRANSMITTER_DELAY:
-        #     self.__transmit()
+        if (time.time() - self.last_transmitted) >= self.TRANSMITTER_DELAY:
+            self.__transmit()
     
     def stop(self):
         self.nano.send_power(0, 0)
@@ -150,9 +150,9 @@ class ManualController:
     def __transmit(self):
         if self.client_addr == None:
             return
-        message = f'P {self.rp2040.encoder_odometry.vx} {self.rp2040.encoder_odometry.vt} {self.rp2040.encoder_odometry.x} {self.rp2040.encoder_odometry.y} {self.rp2040.encoder_odometry.t}'
-        message += f' D {self.rp2040.obstacle_distance.fl} {self.rp2040.obstacle_distance.fr} {self.rp2040.obstacle_distance.rl} {self.rp2040.obstacle_distance.rr}'
-        self.server.sendto(message.encode(), self.client_addr)
+        message = f'E {self.rp2040.encoder_odometry.vx} {self.rp2040.encoder_odometry.vt} {self.rp2040.encoder_odometry.x} {self.rp2040.encoder_odometry.y} {self.rp2040.encoder_odometry.t}\n'
+        message += f'D {self.rp2040.obstacle_distance.fl} {self.rp2040.obstacle_distance.fr} {self.rp2040.obstacle_distance.rl} {self.rp2040.obstacle_distance.rr}'
+        self.manual_socket.sendto(message.encode(), self.client_addr)
         self.last_transmitted = time.time()
 
     # def __obstacle_sensing(self, speed: Speed, direction: Direction) -> (Speed, Direction):

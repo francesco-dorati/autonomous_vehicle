@@ -168,13 +168,29 @@ class ManualController:
 
     def _receiver_loop(self):
         if self.running:
-                data, _ = self.manual_socket.recvfrom(32)
-                vel, pos = self._parse_data(data.decode())
-                self.view.update(vel, pos)
+            try:
+                data, _ = self.manual_socket.recvfrom(64)
+                odometry, distances = self._parse_data(data.decode())
+                self.view.odometry_frame.update(odometry[0], odometry[2:])
+            except BlockingIOError:
+                pass
+
             except:
                 self.stop()
                 return
-            self.root.after(100, self._receiver_loop)
+            self.root.after(self.RECEIVER_DELAY, self._receiver_loop)
+
+    def _parse_data(self, data):
+        odometry = [0.0, 0.0, 0.0, 0.0, 0.0]
+        distances = [0.0, 0.0, 0.0, 0.0]
+        data = data.strip().split('\n')
+        for line in data:
+            data = line.strip().split(' ')
+            if data[0] == 'E':
+                odometry = [float(data[1]), float(data[2]), float(data[3]), float(data[4]), float(data[5])]
+            elif data[0] == 'D':
+                distances = [float(data[1]), float(data[2]), float(data[3]), float(data[4])]
+        return odometry, distances
 
     def _transform_buffers(self) -> (int, int, int):
         if 'f' in self.x_buffer and 'b' in self.x_buffer:
