@@ -150,7 +150,7 @@ class ManualController:
     def __transmit(self):
         if self.client_addr == None:
             return
-        message = f'E {self.rp2040.encoder_odometry.vx} {self.rp2040.encoder_odometry.vt} {self.rp2040.encoder_odometry.x} {self.rp2040.encoder_odometry.y} {self.rp2040.encoder_odometry.t}\n'
+        message = f'E {self.rp2040.encoders_odometry.vx} {self.rp2040.encoders_odometry.vt} {self.rp2040.encoders_odometry.x} {self.rp2040.encoders_odometry.y} {self.rp2040.encoders_odometry.t}\n'
         message += f'D {self.rp2040.obstacle_distance.fl} {self.rp2040.obstacle_distance.fr} {self.rp2040.obstacle_distance.rl} {self.rp2040.obstacle_distance.rr}'
         self.manual_socket.sendto(message.encode(), self.client_addr)
         self.last_transmitted = time.time()
