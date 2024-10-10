@@ -267,6 +267,13 @@ void update_encoders() {
     robot_velocities[1] /* mrad/s */ = (dT_urad * 1000) / d_time_us; 
 
     robot_position[2] /* urad */ += dT_urad;
+    // normalize theta
+    const long TWO_PI_URAD = 6283185;   // 2π in microradians
+    const long PI_URAD = 3141593;       // π in microradians
+    robot_position[2] = (robot_position[2] + TWO_PI_URAD) % TWO_PI_URAD; // Constrain to [0, 2π) first
+    if (robot_position[2] >= PI_URAD) robot_position[2] -= TWO_PI_URAD; // Convert [0, 2π) to [-π, π)
+
+
     robot_position[0] /* um */ += dS_um * cos(robot_position[2]/1000000.0);
     robot_position[1] /* um */ += dS_um * sin(robot_position[2]/1000000.0);
 
