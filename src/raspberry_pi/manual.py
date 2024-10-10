@@ -152,7 +152,7 @@ class ManualController:
             return
         message = f'E {self.rp2040.encoders_odometry.vx} {self.rp2040.encoders_odometry.vt} {self.rp2040.encoders_odometry.x} {self.rp2040.encoders_odometry.y} {self.rp2040.encoders_odometry.t}\n'
         message += f'D {self.rp2040.obstacle_distance.fl} {self.rp2040.obstacle_distance.fr} {self.rp2040.obstacle_distance.rl} {self.rp2040.obstacle_distance.rr}'
-        self.manual_socket.sendto(message.encode(), self.client_addr)
+        self.server.sendto(message.encode(), self.client_addr)
         self.last_transmitted = time.time()
 
     # def __obstacle_sensing(self, speed: Speed, direction: Direction) -> (Speed, Direction):
