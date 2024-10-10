@@ -223,17 +223,17 @@ class RP2040_SER:
     class SensorDistance:
         def __init__(self):
             self.set(0.0, 0.0, 0.0, 0.0)
-        def set(self, fl, fr, bl, br):
+        def set(self, fl, fr, rl, rr):
             self.fl = fl
             self.fr = fr
-            self.bl = bl
-            self.br = br
+            self.rl = rl
+            self.rr = rr
         def reset(self):
             self.set(0.0, 0.0, 0.0, 0.0)
         def front_min(self):
             return min(self.fl, self.fr)
         def back_min(self):
-            return min(self.bl, self.br)
+            return min(self.rl, self.rr)
 
     def __init__(self):
         print("SERIAL SETUP")
