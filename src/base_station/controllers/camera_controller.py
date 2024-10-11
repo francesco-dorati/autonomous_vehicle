@@ -17,7 +17,8 @@ class CameraReceiver:
         self.view.stop_button.config(command=self.stop)
 
     def start(self):
-        self.main_connection.send("C 1".encode())
+        self.main_connection.send("C 1\n".encode())
+        
         response = self.main_connection.recv(32)
         try:
             data = response.decode().strip().split()
