@@ -68,5 +68,5 @@ class CameraReceiver:
         if self.camera_socket:
             self.camera_socket.close()
         self.camera_socket = None
-        self.main_connection.send("CAMERA STOP".encode())
+        self.main_connection.send("C 0\n".encode())
         self.view.disable()
