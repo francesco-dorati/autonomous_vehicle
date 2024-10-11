@@ -13,13 +13,12 @@ class CameraTransmitter:
 
     def send_frame(self):
         if self.client == None:
-            _, addr = self.socket.recvfrom(32)
-            self.client = (addr[0], int(addr[1]))
+            try:
+                _, addr = self.socket.recvfrom(32)
+                self.client = (addr[0], int(addr[1]))
+            except BlockingIOError:
+                return
 
-        ret, frame = self.camera.read()
-        if not ret:
-            return
-                
         ret, frame = self.camera.read()
         if ret:
             frame = cv2.rotate(frame, cv2.ROTATE_180)
