@@ -24,6 +24,9 @@
 #define wheel_distance_mm 240 // mm
 #define counts_per_rev 370
 #define half_sound_speed_mm_us 0.1715 // mm/us
+#define TWO_PI_URAD 6283185   // 2π in microradians
+#define PI_URAD 3141593.6       // π in microradians
+#define PI_MRAD 3141.5936
 
 const long wheel_circumference_mm = 2*PI*wheel_radius_mm;
 
@@ -151,13 +154,13 @@ void handle_request() {
         Serial1.print("1 ");
         Serial1.print(robot_velocities[0]/10.0); // cm/s
         Serial1.print(" ");
-        Serial1.print((robot_velocities[1]*180)/(1000.0/M_PI)); // rad/s
+        Serial1.print((robot_velocities[1]*180)/(PI_MRAD)); // rad/s
         Serial1.print(" ");
         Serial1.print(robot_position[0]/10000.0); // cm
         Serial1.print(" ");
         Serial1.print(robot_position[1]/10000.0); // cm
         Serial1.print(" ");
-        Serial1.println((robot_position[2]*0.18)/(1000.0/M_PI)); // deg
+        Serial1.println((robot_position[2]*180)/(PI_URAD)); // deg
     } else {
         Serial1.println("0");
     }
@@ -268,8 +271,7 @@ void update_encoders() {
 
     robot_position[2] /* urad */ += dT_urad;
     // normalize theta
-    const long TWO_PI_URAD = 6283185;   // 2π in microradians
-    const long PI_URAD = 3141593;       // π in microradians
+
     robot_position[2] = (robot_position[2] + TWO_PI_URAD) % TWO_PI_URAD; // Constrain to [0, 2π) first
     if (robot_position[2] >= PI_URAD) robot_position[2] -= TWO_PI_URAD; // Convert [0, 2π) to [-π, π)
 
