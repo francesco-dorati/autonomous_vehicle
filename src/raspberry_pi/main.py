@@ -1,7 +1,5 @@
 import time
 import socket
-import cv2
-import pickle
 import os
 from enum import Enum
 
@@ -106,13 +104,9 @@ class Main:
             t_camera = time.time()
             if self.camera_transmitter != None and (t_start - self.last_camera_transmitted) >= self.CAMERA_TRANSMITTER_DELAY:
                 self.last_camera_transmitted = t_start
-                camera_transmitter.send_frame()
+                self.camera_transmitter.send_frame()
             dt_camera = time.time() - t_camera
 
-
-            # if self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE:
-            # elif self.mode == self.Mode.MANUAL:
-            #     print(f"delay: {(self.MANUAL_LOOP_INTERVAL*1000):.1f} ms")
 
             # 5 set delay
             dt = time.time() - t_start
@@ -189,7 +183,7 @@ class Main:
             elif d[0] == 'C': # CAMERA
                 if d[1] == '1':
                     self.camera_transmitter = CameraTransmitter()
-                    self.main_server.send(f'OK {CAMERA_PORT}'.encode())
+                    self.main_server.send(f'OK {self.CAMERA_PORT}'.encode())
                 elif d[1] == '0':
                     self.camera_transmitter.close()
                     self.camera_transmitter = None

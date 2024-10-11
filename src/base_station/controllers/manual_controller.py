@@ -1,10 +1,6 @@
 import socket
 import time
-import select
-import pickle
-import cv2
-from PIL import Image
-import numpy as np
+
 
 from .camera_controller import CameraReceiver
 
@@ -27,9 +23,7 @@ class ManualController:
         self.x_buffer = []
         self.y_buffer = []
 
-        # self.controls_sender = ControlsSender(self.root, self.view.controls_frame, main_connection)
-        # self.data_receiver = DataReceiver(self.root, self.view.data_frame, main_connection)
-        # self.camera_receiver = CameraReceiver(self.root, self.view.camera_frame, main_connection)
+        self.camera_receiver = CameraReceiver(self.root, self.view.camera_frame, main_connection)
 
         self.view.start_button.config(command=self.start)
         self.view.stop_button.config(command=self.stop)
@@ -58,6 +52,7 @@ class ManualController:
         self.vel_buffer = []
         self.x_buffer = []
         self.y_buffer = []
+
 
         # start view
         self.view.start()

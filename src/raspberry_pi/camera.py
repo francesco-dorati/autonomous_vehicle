@@ -1,3 +1,6 @@
+import socket
+import cv2
+import pickle
 
 class CameraTransmitter:
     def __init__(self, host, port):
