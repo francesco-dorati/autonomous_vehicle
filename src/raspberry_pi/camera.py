@@ -11,11 +11,15 @@ class CameraTransmitter:
         self.camera = cv2.VideoCapture(0)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 
-    def send_frame(self, frame):
+    def send_frame(self):
         if self.client == None:
-            _, addr = self.socket.recvfrom(5)
+            _, addr = self.socket.recvfrom(32)
             self.client = (addr[0], int(addr[1]))
 
+        ret, frame = self.camera.read()
+        if not ret:
+            return
+                
         ret, frame = self.camera.read()
         if ret:
             frame = cv2.rotate(frame, cv2.ROTATE_180)
