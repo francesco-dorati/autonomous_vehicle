@@ -102,7 +102,7 @@ class Main:
 
             # 4 update camera
             t_camera = time.time()
-            if self.camera_transmitter != None and (t_start - self.last_camera_transmitted) >= self.CAMERA_TRANSMITTER_DELAY:
+            if self.camera_transmitter != None and (t_start - self.last_camera_transmitted) >= self.CAMERA_TRANSMITTER_INTERVAL:
                 self.last_camera_transmitted = t_start
                 self.camera_transmitter.send_frame()
             dt_camera = time.time() - t_camera
