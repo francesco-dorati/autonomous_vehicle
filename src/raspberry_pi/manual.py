@@ -110,11 +110,11 @@ class ManualController:
         if command != None:
             print(f"Command: {command.vel} {command.x} {command.y}")
             t_compute = time.time()
-            # pow_l, pow_r = command.calculate_powers()
+            pow_l, pow_r = command.calculate_powers()
             dt_compute = time.time() - t_compute
-            # print(pow_l, pow_r)
+            print(pow_l, pow_r)
             t_transmit = time.time()
-            # self.nano.send_power(pow_l, pow_r)
+            self.nano.send_power(pow_l, pow_r)
             dt_transmit = time.time() - t_transmit
         # else:
             # print('NONE')
