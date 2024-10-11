@@ -183,7 +183,7 @@ class Main:
             elif d[0] == 'C': # CAMERA
                 if d[1] == '1':
                     self.camera_transmitter = CameraTransmitter(self.HOST, self.CAMERA_PORT)
-                    self.main_server.send(f'OK {self.CAMERA_PORT}'.encode())
+                    self.main_server.send(f'OK {self.CAMERA_PORT}')
                 elif d[1] == '0':
                     self.camera_transmitter.close()
                     self.camera_transmitter = None
