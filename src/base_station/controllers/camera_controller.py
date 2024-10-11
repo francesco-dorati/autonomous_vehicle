@@ -5,6 +5,7 @@ from PIL import Image
 import numpy as np
 
 class CameraReceiver:
+    INTERVAL = 20 # ms
     def __init__(self, root, view, main_connection):
         self.root = root
         self.view = view
@@ -61,7 +62,7 @@ class CameraReceiver:
                 print(f"Socket error: {e}")
                 self.stop()
                 return
-            self.root.after(10, self._receiver_loop)
+        self.root.after(self.INTERVAL, self._receiver_loop)
 
     def stop(self):
         self.is_running = False
