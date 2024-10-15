@@ -49,7 +49,7 @@ class CameraReceiver:
             try:
                 data, _ = self.camera_socket.recvfrom(65536)
 
-                self._flush_socket()
+                # self._flush_socket()
 
                 # print("Received frame")
                 t = time.time()
