@@ -9,7 +9,7 @@ class CameraTransmitter:
         self.socket.setblocking(False)
         self.client = None
         self.camera = cv2.VideoCapture(0)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 500)
 
     def send_frame(self):
         print("UPDATING CAMERA")
@@ -19,12 +19,13 @@ class CameraTransmitter:
                 self.client = (addr[0], int(addr[1]))
             except BlockingIOError:
                 return
+            
         print("SENDING FRAME")
         ret, frame = self.camera.read()
         print(ret)
         if ret:
             frame = cv2.rotate(frame, cv2.ROTATE_180)
-            _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+            _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 40])
             data = pickle.dumps(buffer)
             self.socket.sendto(data, self.client)
 

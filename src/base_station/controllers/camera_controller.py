@@ -2,6 +2,7 @@ import socket
 import pickle
 import cv2
 from PIL import Image
+import time
 import numpy as np
 
 class CameraReceiver:
@@ -48,13 +49,18 @@ class CameraReceiver:
             try:
                 data, _ = self.camera_socket.recvfrom(65536)
 
+                self._flush_socket()
+
                 # print("Received frame")
+                t = time.time()
                 frame = pickle.loads(data)
                 np_data = np.frombuffer(frame, np.uint8)
                 frame = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 image = Image.fromarray(frame)
                 self.view.update_image(image)
+                dt_ms = (time.time() - t)*1000
+                print(f"Frame received in {dt_ms:.1f} ms")
             except BlockingIOError:
                 pass
 
@@ -63,6 +69,15 @@ class CameraReceiver:
                 self.stop()
                 return
         self.root.after(self.INTERVAL, self._receiver_loop)
+    
+    def _flush_socket(self):
+        while True:
+            try:
+                self.camera_socket.recv(65536)
+            except BlockingIOError:
+                break
+            except:
+                break
 
     def stop(self):
         self.is_running = False
