@@ -34,7 +34,6 @@ class Main:
         self.mode = self.Mode.NOT_CONNECTED
 
         self.main_server = MainServer(self.HOST, self.MAIN_PORT) # handles main connection to the user
-        self.main_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
         self.rp2040 = RP2040_SER() # handles communication with the rp2040 (SENSOR DATA)
         self.nano = NANO() # handles communication with the nano (ACTION EXECUTION)
@@ -224,6 +223,7 @@ class MainServer:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((host, main_port))
         self.socket.listen(1)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.setblocking(False)
 
         self.connection = None
