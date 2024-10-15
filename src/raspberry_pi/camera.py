@@ -27,7 +27,7 @@ class CameraTransmitter:
             dt_rotate = (time.time() - t_rotate)*1000
 
             t_encode = time.time()
-            _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+            _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
             dt_encode = (time.time() - t_encode)*1000
 
             t_dumps = time.time()
