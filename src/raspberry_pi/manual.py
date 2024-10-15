@@ -5,38 +5,37 @@ import time
 class ManualController:
     TRANSMITTER_DELAY = 0.2 # s
     class Command:
-        BOOST_POW = 180
-        NORMAL_POW = 140
-        SHIFT_POW = 110
+        BOOST_POW = {'lin': 200, 'rot': 150, 'delta': 50}
+        NORMAL_POW = {'lin': 150, 'rot': 120, 'delta': 40}
+        SHIFT_POW = {'lin': 110, 'rot': 100, 'delta': 30}
 
         def __init__(self, vel, x, y):
             self.vel = vel
             self.x = x
             self.y = y
+            self.pow = lambda: self._pow()
         
         def calculate_powers(self):
             # calculate direction
             if self.x == 0 and self.y == 0:
                 return 0, 0
             
-            elif self.y == 0:
-                pow_l = self.__pow() * self.x
-                pow_r = self.__pow() * self.x
+            elif self.y == 0: # front/back
+                pow_l = self.pow['lin'] * self.x
+                pow_r = self.pow['lin'] * self.x
             
-            elif self.x == 0:
-                pow_l = -self.__pow() * self.y
-                pow_r = self.__pow() * self.y
+            elif self.x == 0: # rotate
+                pow_l = -self.pow['rot'] * self.y
+                pow_r = self.pow['rot'] * self.y
 
-            else:
-                pow_l = self.__pow() * self.x
-                pow_r = self.__pow() * self.x
-                pow_l += -self.__pow() * self.y
-                pow_r += self.__pow() * self.y
+            else: # diagonal
+                pow_l = self.pow['lin'] * self.x - self.pow['delta'] * self.y
+                pow_r = self.pow['lin'] * self.x + self.pow['delta'] * self.y
 
             return pow_l, pow_r
 
         
-        def __pow(self):
+        def _pow(self):
             if self.vel == 1:
                 return self.BOOST_POW
             elif self.vel == 0:
