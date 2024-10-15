@@ -9,7 +9,7 @@ class CameraTransmitter:
         self.socket.setblocking(False)
         self.client = None
         self.camera = cv2.VideoCapture(0)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 500)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 400)
 
     def send_frame(self):
         print("UPDATING CAMERA")
@@ -25,7 +25,7 @@ class CameraTransmitter:
         print(ret)
         if ret:
             frame = cv2.rotate(frame, cv2.ROTATE_180)
-            _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 40])
+            _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 30])
             data = pickle.dumps(buffer)
             self.socket.sendto(data, self.client)
 

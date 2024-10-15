@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 class CameraFrame(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        self.config(borderwidth=2, bg='lightgray', relief='solid', width=500)
+        self.config(borderwidth=2, bg='lightgray', relief='solid', width=400)
 
         self.start_button = tk.Button(self, text="Start Camera", font=("Arial", 16))
         self.start_button.pack(fill='none', pady=20, expand=True)
