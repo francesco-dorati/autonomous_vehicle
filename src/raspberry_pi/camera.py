@@ -13,15 +13,12 @@ class CameraTransmitter:
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 400)
 
     def send_frame(self):
-        print("UPDATING CAMERA")
         if self.client == None:
             try:
                 _, addr = self.socket.recvfrom(32)
                 self.client = (addr[0], int(addr[1]))
             except BlockingIOError:
                 return
-            
-        print("SENDING FRAME")
         t = time.time()
         ret, frame = self.camera.read()
         if ret:
@@ -30,7 +27,7 @@ class CameraTransmitter:
             dt_rotate = (time.time() - t_rotate)*1000
 
             t_encode = time.time()
-            _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+            _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
             dt_encode = (time.time() - t_encode)*1000
 
             t_dumps = time.time()
@@ -42,7 +39,7 @@ class CameraTransmitter:
             dt_send = (time.time() - t_send)*1000
 
             dt_ms = (time.time() - t)*1000
-            print(f"Frame sent in {dt_ms:.1f} ms, rot: {dt_rotate:.1f} ms, enc: {dt_encode:.1f} ms, dumps: {dt_dumps:.1f} ms, send: {dt_send:.1f} ms")
+            print(f"CAMERA frame sent in {dt_ms:.1f} ms, rot: {dt_rotate:.1f} ms, enc: {dt_encode:.1f} ms, dumps: {dt_dumps:.1f} ms, send: {dt_send:.1f} ms")
 
     def close(self):
         self.camera.release()
