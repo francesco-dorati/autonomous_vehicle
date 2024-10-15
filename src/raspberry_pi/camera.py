@@ -1,6 +1,7 @@
 import socket
 import cv2
 import pickle
+import time
 
 class CameraTransmitter:
     def __init__(self, host, port):
@@ -21,13 +22,15 @@ class CameraTransmitter:
                 return
             
         print("SENDING FRAME")
+        t = time.time()
         ret, frame = self.camera.read()
-        print(ret)
         if ret:
             frame = cv2.rotate(frame, cv2.ROTATE_180)
             _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
             data = pickle.dumps(buffer)
             self.socket.sendto(data, self.client)
+            dt_ms = (time.time() - t)*1000
+            print(f"Frame sent in {dt_ms:.1f} ms")
 
     def close(self):
         self.camera.release()
