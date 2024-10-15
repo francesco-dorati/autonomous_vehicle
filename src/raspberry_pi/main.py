@@ -109,24 +109,24 @@ class Main:
 
 
             # 5 set delay
-            dt = time.time() - t_start
             print(f"{dt_battery*1000:.1f}\t{dt_main*1000:.1f}\t{dt_control*1000:.1f}\t{dt_camera*1000:.1f}")
-            print(f"dt: {(dt*1000):.1f} ms,    ", end='')
-    
+            dt = time.time() - t_start
+            dt_max = 0
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE):
                 if (self.camera_transmitter != None):
-                    over = dt >= self.CAMERA_TRANSMITTER_INTERVAL
-                    print(f"delay: {(self.CAMERA_TRANSMITTER_INTERVAL*1000):.1f} ms {'OVER' if over else ''}")
-                    time.sleep(self.CAMERA_TRANSMITTER_INTERVAL - dt) if not over else None
-                else:     
-                    over = dt >= self.MAIN_SERVER_INTERVAL
-                    print(f"delay: {(self.MAIN_SERVER_INTERVAL*1000):.1f} ms {'OVER' if over else ''}")
-                    time.sleep(self.MAIN_SERVER_INTERVAL-dt) if not over else None
-
+                    dt_max = self.CAMERA_TRANSMITTER_INTERVAL
+                else:
+                    dt_max = self.MAIN_SERVER_INTERVAL
             elif self.mode == self.Mode.MANUAL:
-                over = dt >= self.MANUAL_LOOP_INTERVAL
-                print(f"delay: {(self.MANUAL_LOOP_INTERVAL*1000):.1f} ms {'OVER' if over else ''}")
-                time.sleep(self.MANUAL_LOOP_INTERVAL - dt) if not over else None
+                if self.manual_controller != None:
+                    dt_max = self.MANUAL_LOOP_INTERVAL
+                else:
+                    dt_max = min(self.MANUAL_LOOP_INTERVAL, self.CAMERA_TRANSMITTER_INTERVAL)
+            over = dt >= dt_max
+            print(f"dt: {(dt*1000):.1f} ms,    ", end='')
+            print(f"delay: {(dt_max*1000):.1f} ms {'OVER' if over else ''}")
+            time.sleep(dt_max - dt) if not over else None
+
             
 
 

@@ -25,12 +25,24 @@ class CameraTransmitter:
         t = time.time()
         ret, frame = self.camera.read()
         if ret:
+            t_rotate = time.time()
             frame = cv2.rotate(frame, cv2.ROTATE_180)
+            dt_rotate = (time.time() - t_rotate)*1000
+
+            t_encode = time.time()
             _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+            dt_encode = (time.time() - t_encode)*1000
+
+            t_dumps = time.time()
             data = pickle.dumps(buffer)
+            dt_dumps = (time.time() - t_dumps)*1000
+
+            t_send = time.time()
             self.socket.sendto(data, self.client)
+            dt_send = (time.time() - t_send)*1000
+
             dt_ms = (time.time() - t)*1000
-            print(f"Frame sent in {dt_ms:.1f} ms")
+            print(f"Frame sent in {dt_ms:.1f} ms, rot: {dt_rotate:.1f} ms, enc: {dt_encode:.1f} ms, dumps: {dt_dumps:.1f} ms, send: {dt_send:.1f} ms")
 
     def close(self):
         self.camera.release()
