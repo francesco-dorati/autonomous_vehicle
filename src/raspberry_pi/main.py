@@ -34,7 +34,8 @@ class Main:
         self.mode = self.Mode.NOT_CONNECTED
 
         self.main_server = MainServer(self.HOST, self.MAIN_PORT) # handles main connection to the user
-
+        self.main_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        
         self.rp2040 = RP2040_SER() # handles communication with the rp2040 (SENSOR DATA)
         self.nano = NANO() # handles communication with the nano (ACTION EXECUTION)
 
@@ -109,7 +110,7 @@ class Main:
 
 
             # 5 set delay
-            print(f"{dt_battery*1000:.1f}\t{dt_main*1000:.1f}\t{dt_control*1000:.1f}\t{dt_camera*1000:.1f}")
+            print(f"bat: {dt_battery*1000:.1f}\tmain:{dt_main*1000:.1f}\tmanual:{dt_control*1000:.1f}\tcam:{dt_camera*1000:.1f}")
             dt = time.time() - t_start
             dt_max = 0
             if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE):

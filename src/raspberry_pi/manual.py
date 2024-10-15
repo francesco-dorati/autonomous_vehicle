@@ -105,8 +105,8 @@ class ManualController:
         # obstacle sensing
         # if self.obstacle_sensing:
         #     speed, direction = self.__obstacle_sensing(speed, direction) # modify speed based on obstacle sensing
-        dt_compute = -1
-        dt_transmit = -1
+        dt_compute = 0
+        dt_transmit = 0
         if command != None:
             print(f"Command: {command.vel} {command.x} {command.y}")
             t_compute = time.time()
@@ -116,10 +116,12 @@ class ManualController:
             t_transmit = time.time()
             self.nano.send_power(pow_l, pow_r)
             dt_transmit = time.time() - t_transmit
+        
         # else:
             # print('NONE')
             # self.nano.set_powers(pow_l, pow_r)
-        print(f"M time {(dt_request*1000):.1f}\t{(dt_receive*1000):.1f}\t{(dt_compute*1000):.1f}\t{(dt_transmit*1000):.1f} ms")
+
+        print(f"M time rp20:{(dt_request*1000):.1f}\trec:{(dt_receive*1000):.1f}\tcomp:{(dt_compute*1000):.1f}\ttransm:{(dt_transmit*1000):.1f} ms")
 
         if (time.time() - self.last_transmitted) >= self.TRANSMITTER_DELAY:
             self.__transmit()
