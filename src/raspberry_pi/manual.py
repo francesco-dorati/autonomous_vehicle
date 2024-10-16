@@ -5,9 +5,9 @@ import time
 class ManualController:
     TRANSMITTER_DELAY = 0.2 # s
     class Command:
-        BOOST_POW = {'lin': 200, 'rot': 150, 'delta': 50}
-        NORMAL_POW = {'lin': 150, 'rot': 120, 'delta': 40}
-        SHIFT_POW = {'lin': 110, 'rot': 100, 'delta': 30}
+        BOOST_POW = {'lin': 200, 'rot': 150, 'delta': 65}
+        NORMAL_POW = {'lin': 150, 'rot': 110, 'delta': 50}
+        SHIFT_POW = {'lin': 110, 'rot': 100, 'delta': 40}
 
         def __init__(self, vel, x, y):
             self.vel = vel
