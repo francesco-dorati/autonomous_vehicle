@@ -221,10 +221,10 @@ class Main:
 class MainServer:
     def __init__(self, host, main_port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((host, main_port))
         self.socket.listen(1)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.setblocking(False)
+        self.socket.bind((host, main_port))
 
         self.connection = None
         self.connection_addr = None

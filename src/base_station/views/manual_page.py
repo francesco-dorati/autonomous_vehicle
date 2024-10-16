@@ -36,7 +36,7 @@ class ManualPage(tk.Frame):
         self.odometry_frame = OdometryFrame(self.right_frame)
         self.odometry_frame.pack(side='top', fill='x', pady=10)
         self.sensors_frame = SensorsFrame(self.right_frame)
-        self.sensors_frame.pack(side='bottom', fill='x')
+        self.sensors_frame.pack(side='top', fill='x')
         
         # self.data_frame = DataFrame(self.side_frame)
 
@@ -255,13 +255,15 @@ class SensorsFrame(tk.Frame):
         super().__init__(parent)
         self.config(borderwidth=2, relief='solid')
 
+        self.title = tk.Label(self, text="Sensors", font=("Arial", 16))
+        self.title.pack(fill='x', pady=5)
         # Create a Canvas in the frame
-        self.canvas = tk.Canvas(self, borderwidth=2, relief='solid')
-        self.canvas.pack(fill='x', expand=True)
+        self.canvas = tk.Canvas(self)
+        self.canvas.pack(fill='x', expand=True, pady=10)
 
         # Now you can create a rectangle on the Canvas
-        x_pad = 35
-        y_pad = 40
+        x_pad = 30
+        y_pad = 30
         car_width = 110
         car_height = 140
         sensors_width = 40

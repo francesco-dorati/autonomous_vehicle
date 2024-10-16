@@ -12,6 +12,8 @@ class CameraReceiver:
         self.view = view
         self.main_connection = main_connection
         self.server_hostname = self.main_connection.getpeername()[0]
+
+        self.camera_socket = None
      
         self.is_running = False
 
