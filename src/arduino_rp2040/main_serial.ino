@@ -31,7 +31,7 @@
 const long wheel_circumference_mm = 2*PI*wheel_radius_mm;
 
 int battery_voltage_mv = 0; // millivolts
-int dist_mm[4] = {0, 0, 0, 0}; // FL FR RL RR
+int dist_mm[4] = {0, 0, 0, 0}; // FL FR RL RR (mm)
 int wheel_velocities[2] = {0, 0}; // vl, vr (mm/s)
 int robot_velocities[2] = {0, 0}; // vx (mm/s), vt (mrad/s)
 long robot_position[3] = {0, 0, 0}; // x, y (um), theta (urad)

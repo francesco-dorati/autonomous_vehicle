@@ -17,13 +17,12 @@ class ManualController:
         self.manual_hostname = self.main_connection.getpeername()[0]
         self.manual_port = None
 
+        self.camera_receiver = CameraReceiver(self.root, self.view.camera_frame, main_connection)
         
         self.manual_socket = None
         self.vel_buffer = []
         self.x_buffer = []
         self.y_buffer = []
-
-        self.camera_receiver = CameraReceiver(self.root, self.view.camera_frame, main_connection)
 
         self.view.start_button.config(command=self.start)
         self.view.stop_button.config(command=self.stop)
@@ -79,7 +78,7 @@ class ManualController:
         self.view.stop()
         print("Manual Stopped ok")
 
-    def _key_event(self, event):
+    def _key_event(self, event): # handles key events
         key = event.keysym
         if key.lower() == 'w': # FORWARD
             if event.type == "2":
@@ -143,7 +142,7 @@ class ManualController:
 
         # print(key, self.boost_buffer, self.keyboard_buffer)
 
-    def _sender_loop(self):
+    def _sender_loop(self): # sends commands to the rpi
         print(f"loop: {self.running}")
         if self.running:
             vel, x, y = self._transform_buffers()
@@ -161,18 +160,23 @@ class ManualController:
 
             self.root.after(self.SENDER_DELAY, self._sender_loop)
 
-    def _receiver_loop(self):
+    def _receiver_loop(self): # receives data from the rpi
         if self.running:
             try:
                 data, _ = self.manual_socket.recvfrom(64)
                 odometry, distances = self._parse_data(data.decode())
+                print("Received:", odometry, distances)
                 self.view.odometry_frame.update(odometry[0], odometry[2:])
+                self.view.sensors_frame.update(distances)
             except BlockingIOError:
                 pass
 
-            except:
-                self.stop()
-                return
+            
+            # except Exception as e:
+            #     print("ERROR, stopping", e)
+            #     self.stop()
+            #     return
+
             self.root.after(self.RECEIVER_DELAY, self._receiver_loop)
 
     def _parse_data(self, data):
@@ -187,7 +191,7 @@ class ManualController:
                 distances = [float(data[1]), float(data[2]), float(data[3]), float(data[4])]
         return odometry, distances
 
-    def _transform_buffers(self) -> (int, int, int):
+    def _transform_buffers(self):
         if 'f' in self.x_buffer and 'b' in self.x_buffer:
             self.x_buffer.remove('f')
             self.x_buffer.remove('b')
@@ -197,21 +201,18 @@ class ManualController:
         if 'b' in self.vel_buffer and 's' in self.vel_buffer:
             self.vel_buffer.remove('b')
             self.vel_buffer.remove('s')
-
         x = 0
         for c in self.x_buffer:
             if c == 'f':
                 x += 1
             elif c== 'b':
                 x += -1
-
         y = 0
         for c in self.y_buffer:
             if c == 'l':
                 y += 1
             elif c== 'r':
                 y += -1
-        
         vel = 0
         for c in self.vel_buffer:
             if c == 'b':

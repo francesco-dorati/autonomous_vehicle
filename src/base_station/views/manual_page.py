@@ -36,7 +36,7 @@ class ManualPage(tk.Frame):
         self.odometry_frame = OdometryFrame(self.right_frame)
         self.odometry_frame.pack(side='top', fill='x', pady=10)
         self.sensors_frame = SensorsFrame(self.right_frame)
-        self.sensors_frame.pack(side='bottom', fill='x', pady=10)
+        self.sensors_frame.pack(side='bottom', fill='x')
         
         # self.data_frame = DataFrame(self.side_frame)
 
@@ -72,7 +72,7 @@ class ManualPage(tk.Frame):
         self.start_button.pack(side='right', pady=20, padx=20)
         self.controls_frame.disable()
         self.odometry_frame.disable()
-    
+        self.sensors_frame.disable()
 
     def show(self):
         self.pack(fill='both', expand=True)
@@ -254,7 +254,95 @@ class SensorsFrame(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self.config(borderwidth=2, relief='solid')
-    pass
+
+        # Create a Canvas in the frame
+        self.canvas = tk.Canvas(self, borderwidth=2, relief='solid')
+        self.canvas.pack(fill='x', expand=True)
+
+        # Now you can create a rectangle on the Canvas
+        x_pad = 35
+        y_pad = 40
+        car_width = 110
+        car_height = 140
+        sensors_width = 40
+        sensors_height = 25
+        car_x0 = x_pad
+        car_y0 = y_pad
+        car_x1 = x_pad+car_width
+        car_y1 = y_pad+car_height
+        sensors_positions = { # (x0, y0, x1, y1)
+            'fl': (car_x0, car_y0, car_x0+sensors_width, car_y0+sensors_height),
+            'fr': (car_x1-sensors_width, car_y0, car_x1, car_y0+sensors_height),
+            'bl': (car_x0, car_y1-sensors_height, car_x0+sensors_width, car_y1),
+            'br': (car_x1-sensors_width, car_y1-sensors_height, car_x1, car_y1)
+         } 
+        self.car = self.canvas.create_rectangle(car_x0, car_y0, car_x1, car_y1, fill='lightgray')
+        self.sensors = [
+            self.canvas.create_rectangle(*sensors_positions['fl'], fill='gray'),
+            self.canvas.create_rectangle(*sensors_positions['fr'], fill='gray'),
+            self.canvas.create_rectangle(*sensors_positions['bl'], fill='gray'),
+            self.canvas.create_rectangle(*sensors_positions['br'], fill='gray')]
+        
+    def update(self, distances_cm):
+        DARKRED = '#8B0000'
+        DARKORANGE = '#FF8C00'
+
+        print('Updating sensors')
+        thresholds = [10, 15, 20, 30, 45, 1000]
+        colors = [DARKRED, 'red', DARKORANGE, 'orange', 'yellow', 'green']
+        
+        for i, dist in enumerate(distances_cm):
+            print("Distance", i, ":", dist)
+            color = None
+            for t in range(len(thresholds)-1):
+                if thresholds[t] <= dist < thresholds[t+1]:
+                    color = colors[t]
+                    break
+
+            print(f"Distance {i}:", dist, "Color:", color)
+            self.canvas.itemconfig(self.sensors[i], fill=color)
+    def disable(self):
+        for sensor in self.sensors:
+            self.canvas.itemconfig(sensor, fill='gray')
+
+     # self.canvas.create_text(50, 50, text=str(dist), font=("Arial", 12), fill='black')
+
+
+    #     sensor_positions = [
+    #     (120, 170),  # Top-left
+    #     (280, 170),  # Top-right
+    #     (120, 330),  # Bottom-left
+    #     (280, 330)   # Bottom-right
+    # ]
+
+    # # Create sensor squares
+    # sensor_size = 40  # Size of the sensor squares
+
+    # for index, (x, y) in enumerate(sensor_positions):
+    #     # Choose color based on distance
+    #     distance = distances[index]
+    #     if distance < 50:
+    #         color = 'gray'
+    #         text_color = 'white'
+    #     elif distance < 100:
+    #         color = 'gray'
+    #         text_color = 'black'
+    #     elif distance < 150:
+    #         color = 'gray'
+    #         text_color = 'black'
+    #     else:
+    #         color = 'gray'
+    #         text_color = 'black'
+
+    #     # Draw the sensor square, ensuring they stay within the rectangle
+    #     canvas.create_rectangle(x - sensor_size // 2, y - sensor_size // 2,
+    #                             x + sensor_size // 2, y + sensor_size // 2,
+    #                             fill=color)
+
+    #     # Draw the distance text inside the square
+    #     canvas.create_text(x, y, text=str(distance), font=("Arial", 12), fill=text_color)
+
+
 
 
 

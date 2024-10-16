@@ -224,7 +224,7 @@ class RP2040_SER:
         def __init__(self):
             self.set(0.0, 0.0, 0.0, 0.0)
         def set(self, fl, fr, rl, rr):
-            self.fl = fl
+            self.fl = fl # 
             self.fr = fr
             self.rl = rl
             self.rr = rr
@@ -302,20 +302,29 @@ class RP2040_SER:
             if l[0] == 'B': # Battery
                 self.battery_on = (int(l[1]) == 1)
                 if self.battery_on:
-                    self.battery.voltage = float(l[2])
+                    try:
+                        self.battery.voltage = float(l[2])
+                    except ValueError:
+                        self.battery.reset()
                 else:
                     self.battery.reset()
             elif l[0] == 'D': # Distance
                 self.distance_on = (int(l[1]) == 1)
                 if self.distance_on:
-                    self.obstacle_distance.set(float(l[2]), float(l[3]), float(l[4]), float(l[5]))
+                    try:
+                        self.obstacle_distance.set(float(l[2]), float(l[3]), float(l[4]), float(l[5]))
+                    except ValueError:
+                        self.obstacle_distance.reset()
                 else:
                     self.obstacle_distance.reset()
             elif l[0] == 'E': # Encoders
                 self.encoder_on = (int(l[1]) == 1)
                 if self.encoder_on:
-                    self.encoders_odometry.set_velocity(float(l[2]), float(l[3]))
-                    self.encoders_odometry.set_position(float(l[4]), float(l[5]), float(l[6]))
+                    try:
+                        self.encoders_odometry.set_velocity(float(l[2]), float(l[3]))
+                        self.encoders_odometry.set_position(float(l[4]), float(l[5]), float(l[6]))
+                    except ValueError:
+                        self.encoders_odometry.reset()
                 else:
                     self.encoders_odometry.reset()
         dt_decode = time.time() - t_decode
