@@ -16,12 +16,12 @@ class CameraFrame(tk.Frame):
     def start(self):
         self.start_button.pack_forget()
         self.image_label.pack()
-        self.stop_button.place(relx=0.5, rely=0.9, anchor='s')  # Place button at the bottom center over the image
+        self.stop_button.place(relx=0.5, rely=0.95, anchor='s')  # Place button at the bottom center over the image
         self.stop_button.lift()
 
     def disable(self):
         self.image_label.pack_forget()
-        self.stop_button.pack_forget()
+        self.stop_button.place_forget()
         self.start_button.pack(fill='none', pady=20, expand=True)
 
     def update_image(self, image):

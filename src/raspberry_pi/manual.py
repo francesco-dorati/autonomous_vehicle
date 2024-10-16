@@ -31,8 +31,9 @@ class ManualController:
                 pow_r = p['rot'] * self.y
 
             else: # diagonal
-                pow_l = p['lin'] * self.x - p['delta'] * self.y
-                pow_r = p['lin'] * self.x + p['delta'] * self.y
+                pow_l = p['lin'] * self.x - p['delta'] * self.y * self.x
+                pow_r = p['lin'] * self.x + p['delta'] * self.y * self.x
+
 
             return pow_l, pow_r
 
