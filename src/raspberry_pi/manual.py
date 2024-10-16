@@ -21,16 +21,16 @@ class ManualController:
                 return 0, 0
             
             elif self.y == 0: # front/back
-                pow_l = self.pow['lin'] * self.x
-                pow_r = self.pow['lin'] * self.x
+                pow_l = (self.pow)['lin'] * self.x
+                pow_r = (self.pow)['lin'] * self.x
             
             elif self.x == 0: # rotate
-                pow_l = -self.pow['rot'] * self.y
-                pow_r = self.pow['rot'] * self.y
+                pow_l = -(self.pow)['rot'] * self.y
+                pow_r = (self.pow)['rot'] * self.y
 
             else: # diagonal
-                pow_l = self.pow['lin'] * self.x - self.pow['delta'] * self.y
-                pow_r = self.pow['lin'] * self.x + self.pow['delta'] * self.y
+                pow_l = (self.pow)['lin'] * self.x - (self.pow)['delta'] * self.y
+                pow_r = (self.pow)['lin'] * self.x + (self.pow)['delta'] * self.y
 
             return pow_l, pow_r
 
