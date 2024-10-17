@@ -4204,6 +4204,16 @@
 	)
 	(wire
 		(pts
+			(xy 236.22 38.1) (xy 242.57 38.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "142717eb-30e6-44d2-8e87-b44942dff2a5")
+	)
+	(wire
+		(pts
 			(xy 31.75 109.22) (xy 38.1 109.22)
 		)
 		(stroke
@@ -4211,16 +4221,6 @@
 			(type default)
 		)
 		(uuid "16fd6bfd-06c9-41ba-b766-dbef270e3fb2")
-	)
-	(wire
-		(pts
-			(xy 236.22 45.72) (xy 241.3 45.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1cb2e460-867a-4224-bb05-171b1d26a9df")
 	)
 	(wire
 		(pts
@@ -4281,16 +4281,6 @@
 			(type default)
 		)
 		(uuid "30b39c72-a032-46ff-978d-898d53d237fe")
-	)
-	(wire
-		(pts
-			(xy 118.11 113.03) (xy 121.92 113.03)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "30d6af75-d065-4b33-980b-c2e45f15ac6e")
 	)
 	(wire
 		(pts
@@ -4474,16 +4464,6 @@
 	)
 	(wire
 		(pts
-			(xy 118.11 110.49) (xy 121.92 110.49)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "77082139-7d77-4317-940d-c2f665d1e4f8")
-	)
-	(wire
-		(pts
 			(xy 179.07 107.95) (xy 179.07 113.03)
 		)
 		(stroke
@@ -4504,13 +4484,13 @@
 	)
 	(wire
 		(pts
-			(xy 118.11 115.57) (xy 121.92 115.57)
+			(xy 118.11 100.33) (xy 121.92 100.33)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "7f8a2aa1-51e2-45d0-9d69-bbb87570dcef")
+		(uuid "7fa016af-569a-4449-a77b-7b66bebb3932")
 	)
 	(wire
 		(pts
@@ -4684,6 +4664,16 @@
 	)
 	(wire
 		(pts
+			(xy 87.63 107.95) (xy 92.71 107.95)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b642893b-5823-4081-a6e1-e15dcac466c9")
+	)
+	(wire
+		(pts
 			(xy 31.75 101.6) (xy 38.1 101.6)
 		)
 		(stroke
@@ -4764,16 +4754,6 @@
 	)
 	(wire
 		(pts
-			(xy 118.11 107.95) (xy 121.92 107.95)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ca2a40a8-0a23-4cc5-b14c-9000fa4a69af")
-	)
-	(wire
-		(pts
 			(xy 53.34 127) (xy 53.34 132.08)
 		)
 		(stroke
@@ -4801,6 +4781,16 @@
 			(type default)
 		)
 		(uuid "d45b71a5-5134-43b1-99fc-2fcb2b980eae")
+	)
+	(wire
+		(pts
+			(xy 236.22 40.64) (xy 242.57 40.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d46444ce-8e57-46ca-b83d-bf514e170a12")
 	)
 	(wire
 		(pts
@@ -4834,16 +4824,6 @@
 	)
 	(wire
 		(pts
-			(xy 118.11 100.33) (xy 121.92 100.33)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ec67a0bf-fc38-4919-9ab2-c05a95cd05fd")
-	)
-	(wire
-		(pts
 			(xy 86.36 53.34) (xy 86.36 55.88)
 		)
 		(stroke
@@ -4871,16 +4851,6 @@
 			(type default)
 		)
 		(uuid "fa24cd4a-3d57-4cbb-9d00-2ac86cfa59cc")
-	)
-	(wire
-		(pts
-			(xy 236.22 48.26) (xy 241.3 48.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fc5969f1-a54f-415d-99c8-8aa224611133")
 	)
 	(wire
 		(pts
@@ -4913,29 +4883,7 @@
 		)
 		(uuid "a25ea8a0-780d-420d-873f-db0824d8af6a")
 	)
-	(global_label "LA Encoder"
-		(shape input)
-		(at 121.92 100.33 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "0b91cacb-1d9c-435c-b322-7c79b27b276b")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 135.5489 100.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "LB Encoder"
+	(global_label "RA Encoder"
 		(shape input)
 		(at 121.92 102.87 0)
 		(fields_autoplaced yes)
@@ -4947,7 +4895,7 @@
 		)
 		(uuid "0ef4ca48-6a81-4fbb-a031-7f7ba3161dfb")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 135.7303 102.87 0)
+			(at 135.7908 102.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4992,6 +4940,28 @@
 		(uuid "1b2725d5-9647-42a9-914d-4638cfb398cb")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 146.2702 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "LB Encoder (D11)"
+		(shape input)
+		(at 87.63 110.49 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "1d24db94-85ba-495c-95f5-361b37216442")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 67.4697 110.49 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5111,28 +5081,6 @@
 			)
 		)
 	)
-	(global_label "SDA Rpi"
-		(shape input)
-		(at 121.92 110.49 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "43a6e2eb-c3ec-4ca2-b4e3-5b169b576103")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 132.4647 110.49 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "A0 Shifter"
 		(shape input)
 		(at 34.29 88.9 180)
@@ -5212,28 +5160,6 @@
 		(uuid "59a28459-92da-4046-8dd1-9da6be0349a9")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 212.1722 125.73 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "SCL Rpi"
-		(shape input)
-		(at 121.92 113.03 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "62ed1eb0-d5cb-4a8c-b7ca-c51ba220c3a2")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 132.4042 113.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5353,9 +5279,9 @@
 			)
 		)
 	)
-	(global_label "SCL RP2040"
+	(global_label "RX RP2040"
 		(shape input)
-		(at 241.3 48.26 0)
+		(at 242.57 40.64 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5365,7 +5291,7 @@
 		)
 		(uuid "8841356d-66b2-4c70-a6ed-c33a386b8100")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 256.1384 48.26 0)
+			(at 256.3803 40.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5419,7 +5345,7 @@
 			)
 		)
 	)
-	(global_label "RA Encoder"
+	(global_label "RB Encoder"
 		(shape input)
 		(at 121.92 105.41 0)
 		(fields_autoplaced yes)
@@ -5431,7 +5357,7 @@
 		)
 		(uuid "958170d5-de12-4252-8892-3f4d1885e511")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 135.7908 105.41 0)
+			(at 135.9722 105.41 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5485,6 +5411,28 @@
 			)
 		)
 	)
+	(global_label "LA Encoder"
+		(shape input)
+		(at 87.63 107.95 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "a023b9e6-a1ee-497f-9cb6-15dfb87e23e2")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 74.0011 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "FR echo"
 		(shape input)
 		(at 87.63 95.25 180)
@@ -5503,28 +5451,6 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "RB Encoder"
-		(shape input)
-		(at 121.92 107.95 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "ad7f26d3-e351-45b2-8105-c68854a7c433")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 135.9722 107.95 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
 				(hide yes)
 			)
 		)
@@ -5663,7 +5589,7 @@
 	)
 	(global_label "Battery Level"
 		(shape input)
-		(at 121.92 115.57 0)
+		(at 121.92 100.33 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5673,7 +5599,7 @@
 		)
 		(uuid "e747afe3-0b57-43f7-9aed-74dbd67d61e2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 137.4237 115.57 0)
+			(at 137.4237 100.33 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5683,9 +5609,9 @@
 			)
 		)
 	)
-	(global_label "SDA RP2040"
+	(global_label "TX RP2040"
 		(shape input)
-		(at 241.3 45.72 0)
+		(at 242.57 38.1 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5695,7 +5621,7 @@
 		)
 		(uuid "ed431406-b798-4a10-803d-2eeb98e7a7e8")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 256.1989 45.72 0)
+			(at 256.0779 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
