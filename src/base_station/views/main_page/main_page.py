@@ -1,5 +1,5 @@
 import tkinter as tk
-from .camera_frame import CameraFrame
+from ..components.camera_frame import CameraFrame
 
 class MainPage(tk.Frame):
     def __init__(self, parent):

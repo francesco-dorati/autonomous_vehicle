@@ -1,6 +1,4 @@
 TODO
-- fix diagonal movement
-- add sensors visualization
 - add distance stop
 - add imu
 

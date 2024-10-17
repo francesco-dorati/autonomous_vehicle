@@ -1,7 +1,7 @@
 import tkinter as tk 
 from PIL import Image, ImageTk
 
-from .camera_frame import CameraFrame
+from ..components.camera_frame import CameraFrame
 
 class ManualPage(tk.Frame):
     def __init__(self, parent):

@@ -4,7 +4,7 @@ import os
 from enum import Enum
 
 
-from rp2040 import RP2040_SER
+from rp2040 import RP2040
 from nano import NANO
 from manual import ManualController
 from camera import CameraTransmitter
@@ -35,7 +35,7 @@ class Main:
 
         self.main_server = MainServer(self.HOST, self.MAIN_PORT) # handles main connection to the user
         
-        self.rp2040 = RP2040_SER() # handles communication with the rp2040 (SENSOR DATA)
+        self.rp2040 = RP2040() # handles communication with the rp2040 (SENSOR DATA)
         self.nano = NANO() # handles communication with the nano (ACTION EXECUTION)
 
         self.last_battery_check = 0

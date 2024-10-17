@@ -1,10 +1,10 @@
 import tkinter as tk
-from views.sidebar import Sidebar
+from .components.sidebar import Sidebar
 
-from views.not_connected_page import NotConnectedPage
-from views.main_page import MainPage
-from views.manual_page import ManualPage
-from views.settings_page import SettingsPage
+from .main_page.not_connected_page import NotConnectedPage
+from .main_page.main_page import MainPage
+from .manual_page.manual_page import ManualPage
+from .settings_page.settings_page import SettingsPage
 
 
 class View(tk.Frame):
