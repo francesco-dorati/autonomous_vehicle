@@ -1,23 +1,5 @@
-- rimuovere pid da ARDUINO
-
-- dividere i compiti in due arduino:
-    - sensing (sensors, imu, encoders)
-    - acting (motors, leds)
-
-- arduino manual loop
-    - 
-
 TODO
-    RASPBERRY
-        - completare state updater e manual controller
-
-    DEV MACHINE
-        - riconciliarsi con rpi
-        - implementare boost di velocità (con shift o spazio)
-        
-    ARDUINO
-        - aggiungerer kinematics e spece diff
-        - pensare a nuovi adattamenti visto velocità
-
+- add distance stop
+- add imu
 
 
