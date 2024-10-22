@@ -1,4 +1,5 @@
-# Autonomous Two-Wheeled Robot
+# Two-Wheeled Robot
+![manual interface](./img/manual_interface.png)
 ## Introduction
 Manual control via a **graphical interface** with camera and sensors feedback.  
 **Odometry** and **obstacle detection** capabilities for accurate positioning and movement.  
