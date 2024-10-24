@@ -10,6 +10,7 @@ dependencies:
   - pip
   - tk
   - matplotlib
+  - ipykernel
   - pip:
       - pyserial
       - rplidar
