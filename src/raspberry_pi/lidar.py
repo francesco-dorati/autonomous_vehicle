@@ -15,56 +15,58 @@ class Lidar:
     STOP_COMMAND = b'\xA5\x25'
     HEALTH_COMMAND = b'\xA5\x52'
     HEALTH_RESPONSE_DESCRIPTOR = b"\xA5\x5A\x03\x00\x00\x00\x06"
+    # \xa5Z\x03\x00\x00\x00\x06
 
 
     def __init__(self):
         self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT)
         self.scanning = False
-        self.scan = []
         self.get_health()
 
     
     def get_health(self):
         self.ser.write(self.HEALTH_COMMAND)
         response_descriptor = self.ser.read(7)
-        if response_descriptor != self.START_RESPONSE_DESCRIPTOR:
-            print()
-            self.scanning = False
-            return
+        # if response_descriptor != self.HEALTH_RESPONSE_DESCRIPTOR:
+        #     print(f"HEALTH Wrong response descriptor: {response_descriptor} instead of {self.HEALTH_RESPONSE_DESCRIPTOR}")
+        #     self.scanning = False
+        #     return
 
         data = self.ser.read(3)
-        status = data[0].decode()
-        print(status)
+        status = data[0]
+        print(f"Status: {status}")
 
-        
-    
     def start(self):
         # start scanning thread
         self.ser.write(self.START_COMMAND)
         response_descriptor = self.ser.read(7)
-        if response_descriptor != self.START_RESPONSE_DESCRIPTOR:
-            print(f"Wrong response descriptor: {response_descriptor}")
-            self.scanning = False
-            return
+        # if response_descriptor != self.START_RESPONSE_DESCRIPTOR:
+        #     print(f"START Wrong response descriptor: {response_descriptor} instead of {self.START_RESPONSE_DESCRIPTOR}")
+        #     self.scanning = False
+        #     return
         
         self.scanning = True
         self.scan_thread = threading.Thread(target=self.scan)
         self.scan_thread.start()
 
     def scan(self): # THREAD
+        print("Scanning Thread:")
         while self.scanning:
             data = self.ser.read(5)
             if len(data) != 5:
                 print(f"LIDAR ignored data: {data}")
                 continue
             
-            print(data)
+
             self.unpack_data(data)
     
     def unpack_data(self, data):
-        s = (data[0] & 0b00000001)  # Start flag (0-1)
-        ns = (data[0] & 0b00000010) >> 1  # Inverted start flag (1-2)
+        
+        s = bool((data[0] & 0b00000001))  # Start flag (0-1)
+        ns = bool((data[0] & 0b00000010) >> 1)  # Inverted start flag (1-2)
         quality = (data[0] >> 2) & 0b00111111  # Quality (2-8)
+        print(f"data 0: {format(data[0], '08b') }, s: {s}, ns: {ns},  q: {quality}")
+        
         c = (data[0] & 0b01000000) >> 6  # Check bit (8-9)
         angle_q6_low = data[1]  # angle_q6[6:0] (9-16)
         angle_q6_high = data[2]  # angle_q6[14:7] (16-24)
@@ -81,44 +83,8 @@ class Lidar:
     
 
     def stop(self):
+        print("sending STOP")
         self.ser.write(self.STOP_COMMAND)
         self.scanning = False
     
 
-
-
-# Define the serial port and baud rate
-PORT = '/dev/ttyUSB0'  # Replace with your RPLIDAR port
-BAUD_RATE = 460800  # Adjust if necessary
-
-# Function to communicate with RPLIDAR
-def communicate_with_rplidar():
-    with serial.Serial(PORT, BAUD_RATE, timeout=1) as ser:
-        try:
-        # Initialize serial connection
-            print("Serial connection established.")
-            
-            # Send command to start the motor (0xA5 for starting motor)
-            start_motor_cmd = b'\xA5\x20'  # Modify if needed based on RPLIDAR commands
-            ser.write(start_motor_cmd)
-            print("Sent command to start motor.")
-
-            # Give some time for the motor to start
-            time.sleep(2)
-
-            # Read data continuously
-            while True:
-                if ser.in_waiting > 0:
-                    data = ser.read(ser.in_waiting)  # Read available bytes
-                    print(f"Received data: {data.hex()}")  # Print data in hexadecimal format
-                else:
-                    print("No data available.")
-                time.sleep(0.1)
-
-        except KeyboardInterrupt:
-            start_motor_cmd = b'\xA5\x25'  # Modify if needed based on RPLIDAR commands
-            ser.write(start_motor_cmd)
-            print("Sent command to stop motor.")
-
-# Run the function
-communicate_with_rplidar()
