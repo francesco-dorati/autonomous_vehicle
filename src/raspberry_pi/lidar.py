@@ -19,7 +19,7 @@ class Lidar:
 
 
     def __init__(self):
-        self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT)
+        self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
         self.scanning = False
         # self.get_health()
 
@@ -27,10 +27,11 @@ class Lidar:
     def get_health(self):
         self.ser.write(self.HEALTH_COMMAND)
         response_descriptor = self.ser.read(7)
-        ok, _, _, _ = self.unpack_descriptor(response_descriptor)
+        ok, l, m, t = self.unpack_descriptor(response_descriptor)
         if not ok:
             print("Health response descriptor not OK")
             return
+        print(f"l: {l}, m: {m}, t: {t}")
 
         data = self.ser.read(3)
         status = data[0]
@@ -42,24 +43,40 @@ class Lidar:
         self.scan_thread.start()
 
     def scan(self): # THREAD
+        print("THREAD START")
         # send start command
         self.ser.write(self.START_COMMAND)
         response_descriptor = self.ser.read(7)
-        ok, _, _, _, = self.unpack_descriptor(response_descriptor)
+        ok, l, _, _, = self.unpack_descriptor(response_descriptor)
         if not ok:
             print("Response descriptor not OK")
             self.scanning = False
             return
         
-        print("Scanning Thread:")
         self.scanning = True
         while self.scanning:
-            data = self.ser.read(5)
-            if len(data) != 5:
-                print(f"LIDAR ignored data: {data}")
-                continue
+            if self.ser.in_waiting >= l:
+                data = self.ser.read(l)
+                if len(data) != l:
+                    # print(f"LIDAR ignored data: {data}")
+                    continue
 
-            self.unpack_data(data)
+                s, ns, q, c, angle_deg, dist_mm = self.unpack_data(data)
+                # data check
+                if s == ns:
+                    # error
+                    print("ERROR")
+                    print(f"data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}")
+                    print(f"waiting: {self.ser.in_waiting}")
+                    # self.stop_scanning()
+                    
+                    # self.get_health()
+                    # break
+                else:
+                    print(f"\tdeg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
+
+        print("THREAD END")
+
     
     def unpack_data(self, data):
         s = bool((data[0] & 0b00000001))  # Start flag (0-1)
@@ -78,16 +95,8 @@ class Lidar:
         distance_q2 = (distance_high << 8) | distance_low  # Combine high and low bytes for distance
         dist_mm = distance_q2 / 4.0  # Convert to mm
 
-        # print(f"data 1: {format(data[1], '08b') }")
-        # print(f"data 2: {format(data[2], '08b') }")
-        # print(f"data 3: {format(data[3], '08b') }")
-        print(f"Scan: {'NEW' if s else ''} deg: {angle_deg}°, dist: {dist_mm} mm")
-        
+        return s, ns, q, c, angle_deg, dist_mm
 
-
-        # Calculate actual angle and distance
-
-        return s
 
         
     def unpack_descriptor(self, descriptor):
@@ -108,9 +117,13 @@ class Lidar:
         return True, data_len, data_mode, data_type
     
 
-    def stop(self):
-        print("sending STOP")
-        self.ser.write(self.STOP_COMMAND)
+    def stop_scanning(self):
+        print("Stopping LIDAR")
         self.scanning = False
+        self.ser.write(self.STOP_COMMAND)
+        time.sleep(0.01)
+        self.ser.flushInput()
+
+        # self.ser.close()
     
 
