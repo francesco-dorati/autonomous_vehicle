@@ -64,10 +64,10 @@ class Lidar:
 
                 s, ns, q, c, angle_deg, dist_mm = self.unpack_data(data)
                 # data check
-                print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
-                if not (s ^ ns) or c != 1 or angle_deg > 360:
+                #print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
+                if not (s ^ ns) or c != 1 or angle_deg > 360 or dist_mm == 0.0:
                     # error
-                    print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360}")
+                    #print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360}")
                     # print(f"    s: {s}, ns: {ns}, c: {c}, deg: {angle_deg}\t\tdist: {dist_mm}")
                     # self.ser.read(2)
                     self.ser.flushInput()
