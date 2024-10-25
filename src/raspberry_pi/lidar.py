@@ -27,7 +27,7 @@ class Lidar:
     def get_health(self):
         self.ser.write(self.HEALTH_COMMAND)
         response_descriptor = self.ser.read(7)
-        ok = self.unpack_descriptor(response_descriptor)
+        ok, _, _, _ = self.unpack_descriptor(response_descriptor)
         if not ok:
             print("Health response descriptor not OK")
             return
@@ -45,13 +45,14 @@ class Lidar:
         # send start command
         self.ser.write(self.START_COMMAND)
         response_descriptor = self.ser.read(7)
-        ok = self.unpack_descriptor(response_descriptor)
+        ok, _, _, _, = self.unpack_descriptor(response_descriptor)
         if not ok:
             print("Response descriptor not OK")
             self.scanning = False
             return
         
         print("Scanning Thread:")
+        self.scanning = True
         while self.scanning:
             data = self.ser.read(5)
             if len(data) != 5:
@@ -63,23 +64,28 @@ class Lidar:
     def unpack_data(self, data):
         s = bool((data[0] & 0b00000001))  # Start flag (0-1)
         ns = bool((data[0] & 0b00000010) >> 1)  # Inverted start flag (1-2)
-        quality = (data[0] >> 2) & 0b00111111  # Quality (2-8)
-        print(f"data 0: {format(data[0], '08b') }, s: {s}, ns: {ns},  q: {quality}")
-        print(f"data 1: {format(data[1], '08b') }")
-        print(f"data 2: {format(data[2], '08b') }")
-        print(f"data 3: {format(data[3], '08b') }")
+        q = int((data[0] >> 2) & 0b00111111)  # Quality (2-8)
+        # print(f"data 0: {format(data[0], '08b') }, s: {s}, ns: {ns}, ok: {s != ns}, quality: {q}")
+
+        c = (data[1] & 0b00000001)  # Check bit
+        angle_q6_low = (data[1] & 0b11111110) >> 1  # angle_q6[6:0] 
+        angle_q6_high = data[2]  # angle_q6[14:7]
+        angle_q6 = (angle_q6_high << 7) | angle_q6_low
+        angle_deg = angle_q6 / 64.0  # Convert to degrees
+
+        distance_low = data[3]  # distance_q2[7:0] 
+        distance_high = data[4]  # distance_q2[15:8]
+        distance_q2 = (distance_high << 8) | distance_low  # Combine high and low bytes for distance
+        dist_mm = distance_q2 / 4.0  # Convert to mm
+
+        # print(f"data 1: {format(data[1], '08b') }")
+        # print(f"data 2: {format(data[2], '08b') }")
+        # print(f"data 3: {format(data[3], '08b') }")
+        print(f"Scan: {'NEW' if s else ''} deg: {angle_deg}°, dist: {dist_mm} mm")
         
-        c = (data[0] & 0b01000000) >> 6  # Check bit (8-9)
-        angle_q6_low = data[1]  # angle_q6[6:0] (9-16)
-        angle_q6_high = data[2]  # angle_q6[14:7] (16-24)
-        distance_low = data[3]  # distance_q2[7:0] (24-32)
-        distance_high = data[4]  # distance_q2[15:8] (32-40)
+
 
         # Calculate actual angle and distance
-        angle_q6 = (angle_q6_high << 7) | angle_q6_low  # Combine high and low bytes for angle
-        angle = angle_q6 / 64.0  # Convert to degrees
-        distance_q2 = (distance_high << 8) | distance_low  # Combine high and low bytes for distance
-        distance = distance_q2 / 4.0  # Convert to mm
 
         return s
 
@@ -87,16 +93,19 @@ class Lidar:
     def unpack_descriptor(self, descriptor):
         flag1 = descriptor[0]
         flag2 = descriptor[1]
-        if flag1 != b'\xA5' or flag2 != b'\x5A':
-            print(f"Wrong response descriptor: {descriptor}")
-            return False
+        if flag1 != 0xA5 or flag2 != 0x5A:
+            print(f"Wrong response descriptor: {hex(flag1)}, {hex(flag2)}")
+            return False, None, None, None
         
-        data_len_mode = (descriptor[2] << 24) | (descriptor[3] << 16) | (descriptor[4] << 8) | descriptor[5]
-        data_len = (data_len_mode >> 2) & 0x3FFFFFFF 
-        mode = data_len_mode & 0x3  
-        data_type = descriptor[6]
-        print(f"Response descriptor OK: \n\tdata len: {data_len}, mode: {mode}, type: {data_type}")
-        return True
+        data_len = (descriptor[2])
+        data_len |= (descriptor[3]) << 8
+        data_len |= (descriptor[4]) << 16
+        data_len |= (descriptor[5] & 0b00111111) << 24
+        data_len = int(data_len)
+        data_mode = int((descriptor[5] & 0b11000000) >> 6)
+        data_type = int(descriptor[6])
+        # print(f"Response descriptor OK: \n\tdata len: {data_len}, mode: {data_mode}, type: {data_type}")
+        return True, data_len, data_mode, data_type
     
 
     def stop(self):
