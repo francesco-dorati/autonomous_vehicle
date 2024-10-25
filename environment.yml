@@ -13,4 +13,5 @@ dependencies:
   - ipykernel
   - pip:
       - pyserial
-      - rplidar
+      - rplidar-roboticia
+
