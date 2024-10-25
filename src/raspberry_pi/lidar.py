@@ -37,7 +37,7 @@ class Lidar:
         status = data[0]
         print(f"Status: {status}")
 
-    def start(self):
+    def start_scan(self):
         # start scanning thread
         self.scan_thread = threading.Thread(target=self.scan)
         self.scan_thread.start()
@@ -45,6 +45,7 @@ class Lidar:
     def scan(self): # THREAD
         print("THREAD START")
         # send start command
+        self.ser.flushInput()
         self.ser.write(self.START_COMMAND)
         response_descriptor = self.ser.read(7)
         ok, l, _, _, = self.unpack_descriptor(response_descriptor)
@@ -52,7 +53,7 @@ class Lidar:
             print("Response descriptor not OK")
             self.scanning = False
             return
-        
+        time.sleep(0.1)
         self.scanning = True
         while self.scanning:
             if self.ser.in_waiting >= l:
@@ -63,17 +64,19 @@ class Lidar:
 
                 s, ns, q, c, angle_deg, dist_mm = self.unpack_data(data)
                 # data check
-                if s == ns:
+                print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
+                if not (s ^ ns) or c != 1 or angle_deg > 360:
                     # error
-                    print("ERROR")
-                    print(f"data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}")
-                    print(f"waiting: {self.ser.in_waiting}")
+                    print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360}")
+                    # print(f"    s: {s}, ns: {ns}, c: {c}, deg: {angle_deg}\t\tdist: {dist_mm}")
+                    # self.ser.read(2)
+                    self.ser.flushInput()
                     # self.stop_scanning()
                     
                     # self.get_health()
                     # break
                 else:
-                    print(f"\tdeg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
+                    print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
 
         print("THREAD END")
 
@@ -84,7 +87,7 @@ class Lidar:
         q = int((data[0] >> 2) & 0b00111111)  # Quality (2-8)
         # print(f"data 0: {format(data[0], '08b') }, s: {s}, ns: {ns}, ok: {s != ns}, quality: {q}")
 
-        c = (data[1] & 0b00000001)  # Check bit
+        c = int(data[1] & 0b00000001)  # Check bit
         angle_q6_low = (data[1] & 0b11111110) >> 1  # angle_q6[6:0] 
         angle_q6_high = data[2]  # angle_q6[14:7]
         angle_q6 = (angle_q6_high << 7) | angle_q6_low
@@ -117,7 +120,7 @@ class Lidar:
         return True, data_len, data_mode, data_type
     
 
-    def stop_scanning(self):
+    def stop_scan(self):
         print("Stopping LIDAR")
         self.scanning = False
         self.ser.write(self.STOP_COMMAND)
