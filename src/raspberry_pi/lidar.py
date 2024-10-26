@@ -84,6 +84,7 @@ class Lidar:
             if angle_deg < last_angle:
                 sample_n = 0
                 scan_index = 0
+                scan_n += 1
                 # print(f"i: {i}")
                 # print("\n\nNEW SCAN")
             
