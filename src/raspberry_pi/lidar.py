@@ -19,14 +19,16 @@ class Lidar:
         self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
         self.scanning = False
         self.scan_thread = None
-        self.scan = []
+
+        self._scan = []
+        self._sample_index = 0
         # self.get_health()
 
     
     def get_health(self):
         self.ser.write(self.HEALTH_COMMAND)
         response_descriptor = self.ser.read(7)
-        ok, l, m, t = self.unpack_descriptor(response_descriptor)
+        ok, l, m, t = self._unpack_descriptor(response_descriptor)
         if not ok:
             print("Health response descriptor not OK")
             return
@@ -38,16 +40,16 @@ class Lidar:
 
     def start_scan(self):
         # start scanning thread
-        self.scan_thread = threading.Thread(target=self.scan_data_handler)
+        self.scan_thread = threading.Thread(target=self._scan_handler)
         self.scan_thread.start()
 
-    def scan_data_handler(self): # THREAD
+    def _scan_handler(self): # THREAD
         print("THREAD START")
         # send start command
         self.ser.flushInput()
         self.ser.write(self.START_COMMAND)
         response_descriptor = self.ser.read(7)
-        ok, l, _, _, = self.unpack_descriptor(response_descriptor)
+        ok, l, _, _, = self._unpack_descriptor(response_descriptor)
         if not ok:
             print("Response descriptor not OK")
             self.scanning = False
@@ -57,7 +59,6 @@ class Lidar:
         self.scanning = True
 
         sample_n = 0
-        scan_index = 0
         scan_n = 0
         last_angle = 360.0
         while self.scanning:
@@ -70,7 +71,7 @@ class Lidar:
                 continue
 
             # unpack data
-            s, ns, q, c, angle_deg, dist_mm = self.unpack_data(data)
+            s, ns, q, c, angle_deg, dist_mm = self._unpack_data(data)
             
             # validity check
             if not (s ^ ns) or c != 1 or angle_deg > 360.0:
@@ -83,23 +84,15 @@ class Lidar:
             # new scan check
             sample_n += 1
             if angle_deg < last_angle:
-                sample_n = 0
-                scan_index = 0
-                scan_n += 1
-                print(f"sample_n: {sample_n}, scan_n: {scan_n}, scan_index: {scan_index}")
+                print(f"sample_n: {sample_n}, scan_n: {scan_n}, scan_index: {self._sample_index}")
                 print("\n\nNEW SCAN")
+                sample_n = 0
+                self._sample_index = 0
+                scan_n += 1
             
             last_angle = angle_deg
             # add to last scan
-            if  len(self.scan) <= scan_index:
-                self.scan.append((angle_deg, dist_mm, scan_n))
-
-            elif self.scan[scan_index][0] >= angle_deg:
-                # add it to the scan
-                self.scan[scan_index] = (angle_deg, dist_mm, scan_n)
-             
-            scan_index += 1
-         
+            self._add_sample_to_scan((angle_deg, dist_mm, sample_n))
 
             print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
 
@@ -107,7 +100,7 @@ class Lidar:
         print("THREAD END")
 
     
-    def unpack_data(self, data):
+    def _unpack_data(self, data):
         s = bool((data[0] & 0b00000001))  # Start flag (0-1)
         ns = bool((data[0] & 0b00000010) >> 1)  # Inverted start flag (1-2)
         q = int((data[0] >> 2) & 0b00111111)  # Quality (2-8)
@@ -126,9 +119,7 @@ class Lidar:
 
         return s, ns, q, c, angle_deg, dist_mm
 
-
-        
-    def unpack_descriptor(self, descriptor):
+    def _unpack_descriptor(self, descriptor):
         flag1 = descriptor[0]
         flag2 = descriptor[1]
         if flag1 != 0xA5 or flag2 != 0x5A:
@@ -145,16 +136,36 @@ class Lidar:
         # print(f"Response descriptor OK: \n\tdata len: {data_len}, mode: {data_mode}, type: {data_type}")
         return True, data_len, data_mode, data_type
     
+    def _add_sample_to_scan(self, sample): # sample_index, sample
+        end = lambda: self._sample_index >= len(self._scan)
+
+        # find correct place
+        while not end() and self._scan[self._sample_index][0] < sample[0]: 
+            self._sample_index += 1
+
+        # add sample
+        if end():
+            self._scan.append(sample)
+        else:
+            self._scan[self._sample_index] = sample
+        
+        self._sample_index += 1
+            
+
+
+
+
 
     def stop_scan(self):
         print("Stopping LIDAR")
         self.scanning = False
+        self.scan_thread.join()
+        self.ser.flushInput()
         self.ser.write(self.STOP_COMMAND)
         time.sleep(0.01)
-        self.ser.flushInput()
     
     def get_scan(self):
-        return self.scan.copy()
+        return self._scan.copy()
 
         # self.ser.close()
     
