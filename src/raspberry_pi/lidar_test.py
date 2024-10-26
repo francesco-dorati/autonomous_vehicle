@@ -7,7 +7,7 @@ def print_scan(scan):
         angle = scan[i][0]
         distance = scan[i][1]
         print(scan[i])
-        # print(f"a: {angle:.1f} °,\r d: {int(distance)} mm")
+        print(f"a: {angle:.1f} °,\t d: {int(distance)} mm")
     print("\n\n")
 
 l = Lidar()
