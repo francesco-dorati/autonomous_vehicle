@@ -16,13 +16,16 @@ def print_scan(scan):
 l = Lidar()
 l.start_scan()
 
-time.sleep(5)
 
 time.sleep(5)
-print_scan(l.get_scan())
+l1 = l.get_scan()
 time.sleep(5)
-print_scan(l.get_scan())
+l2 = l.get_scan()
 time.sleep(5)
-print_scan(l.get_scan())
+l3 = l.get_scan()
 l.stop_scan()
+
+print_scan(l1)
+print_scan(l2)
+print_scan(l3)
         

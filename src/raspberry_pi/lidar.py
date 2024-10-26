@@ -67,14 +67,14 @@ class Lidar:
             data = self.ser.read(l)
             if len(data) != l:
                 continue
-            #print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
 
             # unpack data
             s, ns, q, c, angle_deg, dist_mm = self.unpack_data(data)
             
             # validity check
             if not (s ^ ns) or c != 1 or angle_deg > 360.0:
-                # print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360} {dist_mm == 0.0}")
+                print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360} {dist_mm == 0.0}")
+                print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
                 # FIX try to read until it gets a valid data
                 self.ser.flushInput()
                 continue
@@ -85,8 +85,8 @@ class Lidar:
                 sample_n = 0
                 scan_index = 0
                 scan_n += 1
-                # print(f"i: {i}")
-                # print("\n\nNEW SCAN")
+                print(f"sample_n: {sample_n}, scan_n: {scan_n}, scan_index: {scan_index}")
+                print("\n\nNEW SCAN")
             
             last_angle = angle_deg
             # add to last scan
@@ -100,7 +100,7 @@ class Lidar:
             scan_index += 1
          
 
-            # print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
+            print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
 
 
         print("THREAD END")
