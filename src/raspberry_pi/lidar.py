@@ -11,16 +11,14 @@ class Lidar:
     BAUD_RATE = 460800 
     TIMEOUT = 0.05
     START_COMMAND = b'\xA5\x20'
-    # START_RESPONSE_DESCRIPTOR = b"\xA5\x5A\x05\x00\x00\x40\x81"
     STOP_COMMAND = b'\xA5\x25'
     HEALTH_COMMAND = b'\xA5\x52'
-    # HEALTH_RESPONSE_DESCRIPTOR = b"\xA5\x5A\x03\x00\x00\x00\x06"
-    # \xa5Z\x03\x00\x00\x00\x06
-
 
     def __init__(self):
         self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
         self.scanning = False
+        self.scan_thread = None
+        self.scan = []
         # self.get_health()
 
     
@@ -57,43 +55,50 @@ class Lidar:
         time.sleep(0.1)
         self.scanning = True
 
-        i = 0
-        last_angle = 361.0
+        sample_n = 0
+        scan_index = 0
+        last_angle = 360.0
         while self.scanning:
-            if self.ser.in_waiting >= l:
-                data = self.ser.read(l)
-                if len(data) != l:
-                    # print(f"LIDAR ignored data: {data}")
-                    continue
+            if self.ser.in_waiting < l:
+                continue
 
-                s, ns, q, c, angle_deg, dist_mm = self.unpack_data(data)
-                # data check
-                #print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
-                if not (s ^ ns) or c != 1 or angle_deg > 360.0:
-                    print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360} {dist_mm == 0.0}")
-                    self.ser.flushInput()
-                    continue
-                
-                if angle_deg < last_angle:
-                    print(f"i: {i}")
-                    i = 0
-                    print("\n\nNEW SCAN")
-                # if s == True:
-                #     print(f"i: {i}")
-                #     i = 0
-                #     print("\n\nNEW SCAN")
-                    # error
-                    #print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360}")
-                    # print(f"    s: {s}, ns: {ns}, c: {c}, deg: {angle_deg}\t\tdist: {dist_mm}")
-                    # self.ser.read(2)
-                    # self.stop_scanning()
-                    
-                    # self.get_health()
-                    # break
-                
-                i += 1
-                last_angle = angle_deg
-                print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
+            # read data
+            data = self.ser.read(l)
+            if len(data) != l:
+                continue
+            #print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
+
+            # unpack data
+            s, ns, q, c, angle_deg, dist_mm = self.unpack_data(data)
+            
+            # validity check
+            if not (s ^ ns) or c != 1 or angle_deg > 360.0:
+                # print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360} {dist_mm == 0.0}")
+                # FIX try to read until it gets a valid data
+                self.ser.flushInput()
+                continue
+
+            # new scan check
+            i += 1
+            if angle_deg < last_angle:
+                i = 0
+                scan_index = 0
+                # print(f"i: {i}")
+                # print("\n\nNEW SCAN")
+            
+            last_angle = angle_deg
+            # add to last scan
+            if  len(self.scan) <= scan_index:
+                self.scan.append((angle_deg, dist_mm))
+
+            elif self.scan[scan_index][0] >= angle_deg:
+                # add it to the scan
+                self.scan[scan_index] = (angle_deg, dist_mm)
+             
+            scan_index += 1
+         
+
+            # print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
 
 
         print("THREAD END")
@@ -144,6 +149,9 @@ class Lidar:
         self.ser.write(self.STOP_COMMAND)
         time.sleep(0.01)
         self.ser.flushInput()
+    
+    def get_scan(self):
+        return self.scan.copy()
 
         # self.ser.close()
     
