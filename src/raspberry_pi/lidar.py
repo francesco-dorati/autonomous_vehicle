@@ -79,9 +79,9 @@ class Lidar:
                 continue
 
             # new scan check
-            i += 1
+            sample_n += 1
             if angle_deg < last_angle:
-                i = 0
+                sample_n = 0
                 scan_index = 0
                 # print(f"i: {i}")
                 # print("\n\nNEW SCAN")
