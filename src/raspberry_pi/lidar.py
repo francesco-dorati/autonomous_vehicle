@@ -69,6 +69,7 @@ class Lidar:
                 if not (s ^ ns) or c != 1 or angle_deg > 360 or dist_mm == 0.0:
                     print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360} {dist_mm == 0.0}")
                     self.ser.flushInput()
+                    continue
                 
                 if s == True:
                     print(f"i: {i}")
