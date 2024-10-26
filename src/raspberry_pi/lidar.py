@@ -57,6 +57,7 @@ class Lidar:
 
         sample_n = 0
         scan_index = 0
+        scan_n = 0
         last_angle = 360.0
         while self.scanning:
             if self.ser.in_waiting < l:
@@ -89,11 +90,11 @@ class Lidar:
             last_angle = angle_deg
             # add to last scan
             if  len(self.scan) <= scan_index:
-                self.scan.append((angle_deg, dist_mm))
+                self.scan.append((angle_deg, dist_mm, scan_n))
 
             elif self.scan[scan_index][0] >= angle_deg:
                 # add it to the scan
-                self.scan[scan_index] = (angle_deg, dist_mm)
+                self.scan[scan_index] = (angle_deg, dist_mm, scan_n)
              
             scan_index += 1
          

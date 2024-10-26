@@ -6,8 +6,9 @@ def print_scan(scan):
     for i in range(0, len(scan)):
         angle = scan[i][0]
         distance = scan[i][1]
+        n = scan[i][2]
         # print(scan[i])
-        print(f"a: {angle:.1f}°,\t d: {int(distance)} mm")
+        print(f"a: {angle:.1f}°,\t d: {int(distance)} mm,\t n: {n}")
     print("SCAN END")
     print(f"size: {len(scan)}")
     print("\n\n")
