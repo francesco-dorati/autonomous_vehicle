@@ -53,9 +53,12 @@ class Lidar:
             print("Response descriptor not OK")
             self.scanning = False
             return
+        
         time.sleep(0.1)
         self.scanning = True
+
         i = 0
+        last_angle = 361.0
         while self.scanning:
             if self.ser.in_waiting >= l:
                 data = self.ser.read(l)
@@ -71,10 +74,14 @@ class Lidar:
                     self.ser.flushInput()
                     continue
                 
-                if s == True:
+                if angle_deg < last_angle:
                     print(f"i: {i}")
                     i = 0
                     print("\n\nNEW SCAN")
+                # if s == True:
+                #     print(f"i: {i}")
+                #     i = 0
+                #     print("\n\nNEW SCAN")
                     # error
                     #print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360}")
                     # print(f"    s: {s}, ns: {ns}, c: {c}, deg: {angle_deg}\t\tdist: {dist_mm}")
