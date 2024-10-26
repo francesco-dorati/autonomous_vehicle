@@ -92,6 +92,7 @@ class Lidar:
                     # break
                 
                 i += 1
+                last_angle = angle_deg
                 print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
 
 
