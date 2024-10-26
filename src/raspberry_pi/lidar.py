@@ -13,6 +13,7 @@ class Lidar:
     START_COMMAND = b'\xA5\x20'
     STOP_COMMAND = b'\xA5\x25'
     HEALTH_COMMAND = b'\xA5\x52'
+    MAX_IN_WAITING = 4095
 
     def __init__(self):
         self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
@@ -54,27 +55,6 @@ class Lidar:
         
         time.sleep(0.1)
         self.scanning = True
-        # TEST MAX IN WAITING
-        max_in_waiting = 0
-        try:
-            while True:
-                    # Check the current in_waiting value
-                    current_in_waiting = self.ser.in_waiting
-                    
-                    # Update max_in_waiting if current_in_waiting is higher
-                    if current_in_waiting > max_in_waiting:
-                        max_in_waiting = current_in_waiting
-                    
-                    # Print the max_in_waiting value for reference
-                    print(f"Max in_waiting so far: {max_in_waiting}")
-                    
-                    # Delay to avoid excessive polling
-                    time.sleep(0.1)
-
-        finally:
-            print("Stopping...")
-            self.stop_scan()
-            return
 
         sample_n = 0
         scan_index = 0
