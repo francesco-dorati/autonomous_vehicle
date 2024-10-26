@@ -37,10 +37,10 @@ class Lidar:
 
     def start_scan(self):
         # start scanning thread
-        self.scan_thread = threading.Thread(target=self.scan)
+        self.scan_thread = threading.Thread(target=self.scan_data_handler)
         self.scan_thread.start()
 
-    def scan(self): # THREAD
+    def scan_data_handler(self): # THREAD
         print("THREAD START")
         # send start command
         self.ser.flushInput()
