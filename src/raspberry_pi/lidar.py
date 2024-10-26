@@ -55,6 +55,7 @@ class Lidar:
             return
         time.sleep(0.1)
         self.scanning = True
+        i = 0
         while self.scanning:
             if self.ser.in_waiting >= l:
                 data = self.ser.read(l)
@@ -66,17 +67,24 @@ class Lidar:
                 # data check
                 #print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
                 if not (s ^ ns) or c != 1 or angle_deg > 360 or dist_mm == 0.0:
+                    self.ser.flushInput()
+                
+                if s == True:
+                    print(f"i: {i}")
+                    i = 0
+                    print("\n\nNEW SCAN")
                     # error
                     #print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360}")
                     # print(f"    s: {s}, ns: {ns}, c: {c}, deg: {angle_deg}\t\tdist: {dist_mm}")
                     # self.ser.read(2)
-                    self.ser.flushInput()
                     # self.stop_scanning()
                     
                     # self.get_health()
                     # break
-                else:
-                    print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
+                
+                i += 1
+                print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
+
 
         print("THREAD END")
 
