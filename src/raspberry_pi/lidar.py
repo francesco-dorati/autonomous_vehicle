@@ -142,10 +142,12 @@ class Lidar:
         return True, data_len, data_mode, data_type
     
     def _add_sample_to_scan(self, sample): # sample_index, sample
-        end = lambda: self._sample_index >= len(self._scan)
+        # als cen be pun in a fixed size queue
+        # one element per degree
         angle = sample[0]
         dist = sample[1]
         scan_n = sample[2]
+        end = lambda: self._sample_index >= len(self._scan)
 
         # find correct place
         while not end() and self._scan[self._sample_index][0] < angle: 
