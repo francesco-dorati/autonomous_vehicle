@@ -15,7 +15,8 @@ def print_scan(scan):
     print(f"size: {len(scan)}")
     print("\n\n")
 
-def draw_scan(scan):
+def draw_scan(scan, name="test"):
+    path_name = f"../../img/{name}.png"
     # Convert polar coordinates to Cartesian
     x_points = []
     y_points = []
@@ -45,10 +46,8 @@ def draw_scan(scan):
     plt.ylabel("Y (mm)")
     plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
     plt.grid(True)
-    plt.savefig('../../img/test.png', format='png')
+    plt.savefig(path_name, format='png')
     plt.close()
-
-
 
 l = Lidar()
 l.start_scan()
@@ -56,13 +55,33 @@ l.start_scan()
 
 time.sleep(5)
 l1 = l.get_scan()
-time.sleep(5)
+print("scan 1")
+
+time.sleep(1)
 l2 = l.get_scan()
-time.sleep(5)
+print("scan 2")
+
+time.sleep(1)
 l3 = l.get_scan()
+print("scan 3")
+
+time.sleep(1)
+l4 = l.get_scan()
+print("scan 4")
+
+time.sleep(1)
+l5 = l.get_scan()
+print("scan 5")
+
 l.stop_scan()
 
 print_scan(l1)
 print_scan(l2)
-draw_scan(l3)
+print_scan(l3)
+draw_scan(l1, "test1")
+draw_scan(l2, "test2")
+draw_scan(l3, "test3")
+draw_scan(l4, "test4")
+draw_scan(l5, "test5")
+
         
