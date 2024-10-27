@@ -97,7 +97,7 @@ class Lidar:
             
             last_angle = angle_deg
             # add to last scan
-            self._add_sample_to_scan((angle_deg, dist_mm, sample_n))
+            self._add_sample_to_scan((angle_deg, dist_mm, scan_n))
 
             print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
 
