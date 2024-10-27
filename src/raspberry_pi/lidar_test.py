@@ -39,7 +39,8 @@ def draw_scan(scan):
     plt.ylabel("Y (mm)")
     plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
     plt.grid(True)
-    plt.show()
+    plt.savefig('../../img/test.png', format='png')
+    plt.close()
 
 l = Lidar()
 l.start_scan()
