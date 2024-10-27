@@ -30,15 +30,14 @@ def draw_scan(scan):
             y = distance * np.sin(angle_rad)
             x_points.append(x)
             y_points.append(y)
+            
     # Plotting
     plt.figure(figsize=(8, 8))
     plt.scatter(x_points, y_points, s=1, color='blue')  # Smaller marker for a denser plot
 
     # Robot position
     plt.plot(0, 0, 'ro', label="Robot Position")  # Red dot for robot location
-    arrow_length = 500  # Adjust length based on the scale of your plot
-    plt.arrow(0, 0, arrow_length, 0, head_width=100, head_length=100, fc='red', ec='red', label="Heading")
-    
+    plt.arrow(0, 0, 50, 0, head_width=30, head_length=30, fc='red', ec='red', label="Heading")
     plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
 
     plt.title("LIDAR Scan")
@@ -48,6 +47,8 @@ def draw_scan(scan):
     plt.grid(True)
     plt.savefig('../../img/test.png', format='png')
     plt.close()
+
+
 
 l = Lidar()
 l.start_scan()
