@@ -143,17 +143,19 @@ class Lidar:
     
     def _add_sample_to_scan(self, sample): # sample_index, sample
         end = lambda: self._sample_index >= len(self._scan)
+        angle = sample[0]
+        dist = sample[1]
+        scan_n = sample[2]
 
         # find correct place
-        while not end() and self._scan[self._sample_index][0] < sample[0]: 
+        while not end() and self._scan[self._sample_index][0] < angle: 
             # set to 0 if sample is old
-            if self._scan[self._sample_index][2] < sample[2] - 5:
-                self._scan[self._sample_index][1] = 0
-                self._scan[self._sample_index][2] = sample[2]
+            if self._scan[self._sample_index][2] < scan_n - 5:
+                self._scan[self._sample_index] = (self._scan[self._sample_index][0], 0, scan_n)
             self._sample_index += 1
 
         # add sample
-        if sample[1] != 0.0:
+        if dist != 0.0:
             if end():
                 self._scan.append(sample)
             else:
@@ -161,7 +163,6 @@ class Lidar:
         
         self._sample_index += 1
             
-
 
 
 
