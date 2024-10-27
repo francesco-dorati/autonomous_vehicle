@@ -37,7 +37,7 @@ def draw_scan(scan):
 
     # Robot position
     plt.plot(0, 0, 'ro', label="Robot Position")  # Red dot for robot location
-    plt.arrow(0, 0, 300, 0, head_width=50, head_length=50, fc='red', ec='red', label="Heading")
+    plt.arrow(0, 0, 500, 0, head_width=100, head_length=80, fc='red', ec='red', label="Heading")
     plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
 
     plt.title("LIDAR Scan")
