@@ -146,6 +146,7 @@ class Lidar:
 
         # find correct place
         while not end() and self._scan[self._sample_index][0] < sample[0]: 
+            # set to 0 if sample is old
             self._sample_index += 1
 
         # add sample
