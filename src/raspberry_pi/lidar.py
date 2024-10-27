@@ -65,6 +65,11 @@ class Lidar:
             if self.ser.in_waiting < l:
                 continue
 
+            if self.ser.in_waiting > (510*5 + 5):
+                print(f"FLUSHING: {self.ser.in_waiting}")
+                self.ser.read(510*5)
+                continue
+
             # read data
             data = self.ser.read(l)
             if len(data) != l:
