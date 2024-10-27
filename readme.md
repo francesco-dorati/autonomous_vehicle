@@ -10,7 +10,7 @@ Working on expanding the project with LIDAR integration, **autonomous mapping** 
 - Raspberry Pi 
 - Arduino nano
 - Arduino RP2040 Connect
-- [Full components list...](schematics/compnents_list.md)
+- [Full components list...](docs/compnents_list.md)
 
 ## Software Details
 ### Program Structure
