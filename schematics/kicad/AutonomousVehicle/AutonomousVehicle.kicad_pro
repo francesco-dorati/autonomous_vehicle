@@ -1,6 +1,14 @@
 {
   "board": {
     "3dviewports": [],
+    "design_settings": {
+      "defaults": {},
+      "diff_pair_dimensions": [],
+      "drc_exclusions": [],
+      "rules": {},
+      "track_widths": [],
+      "via_dimensions": []
+    },
     "ipc2581": {
       "dist": "",
       "distpn": "",
@@ -231,7 +239,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "MainScheme.kicad_pro",
+    "filename": "AutonomousVehicle.kicad_pro",
     "version": 1
   },
   "net_settings": {
