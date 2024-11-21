@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Wire.h>
 #include <WiFiNINA.h>
 #include <math.h>
 
