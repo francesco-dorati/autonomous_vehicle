@@ -10,10 +10,10 @@
  - D5 -> ENB (shifter)
  - D6 -> IN3 (shifter)
  - D7 -> IN4 (shifter)
- - D8 -> LA Encoder
- - D9 -> LB Encoder
- - D10 -> RA Encoder
- - D11 -> RA Encoder
+ - D8 -> RB Encoder
+ - D9 -> RA Encoder
+ - D10 -> LB Encoder
+ - D11 -> LA Encoder
 
 
 ### ARDUINO NANO
