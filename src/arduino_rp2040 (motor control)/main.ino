@@ -19,7 +19,7 @@
         - set target velocity
         - (vx, vt) in [mm/s, mrad/s]
 
-    "PID <kpl> <kdl> <kil> <kpr> <kdr> <kir>"
+    "PID <kp> <ki> <kd>"
         - change pid values
 
     "ORQ" -> "ODM <x> <y> <theta> <vl> <va>"
@@ -152,10 +152,9 @@ int target_wheel_velocities_m[2] = {0, 0}; // vl, vr (mm/s)
 double pid_goal_left = 0, pid_goal_right = 0; // PID goal
 double pid_actual_left = 0, pid_actual_right = 0; // PID actual
 double pid_output_left = 0, pid_output_right = 0; // PID output
-double KpL = 0, KiL = 0, KdL = 0;
-double KpR = 0, KiR = 0, KdR = 0;
-PID PID_LEFT(&pid_actual_left, &pid_output_left, &pid_goal_left, KpL, KiL, KdL, DIRECT);
-PID PID_RIGHT(&pid_actual_right, &pid_output_right, &pid_goal_right, KpR, KiR, KdR, DIRECT);
+double Kp = 0, Ki = 0, Kd = 0;
+PID PID_LEFT(&pid_actual_left, &pid_output_left, &pid_goal_left, Kp, Ki, Kd, DIRECT);
+PID PID_RIGHT(&pid_actual_right, &pid_output_right, &pid_goal_right, Kp, Ki, Kd, DIRECT);
 void velocity_control();
 
 
@@ -307,14 +306,13 @@ void handle_serial() {
 
         } else if (strcmp(command, "PID") == 0) {
             // pid values change
-            // "PID <kpl> <kdl> <kil> <kpr> <kdr> <kir>"
+            // "PID <kp> <ki> <kd>"
             // if (Serial1.available() < 6) return;
-            KpL = Serial1.parseFloat();
-            KdL = Serial1.parseFloat();
-            KiL = Serial1.parseFloat();
-            KpR = Serial1.parseFloat();
-            KdR = Serial1.parseFloat();
-            KiR = Serial1.parseFloat();
+            Kp = Serial1.parseFloat();
+            Ki = Serial1.parseFloat();
+            Kd = Serial1.parseFloat();
+            PID_LEFT.SetTuinings(Kp, Ki, Kd);
+            PID_RIGHT.SetTuinings(Kp, Ki, Kd);
 
         } else if (strcmp(command, "ORQ") == 0) {
             // odometry request

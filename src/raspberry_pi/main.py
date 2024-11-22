@@ -4,7 +4,7 @@ import os
 from enum import Enum
 
 
-from rp2040 import RP2040
+from raspberry_pi.rp2040_old import RP2040
 from nano import NANO
 from manual import ManualController
 from camera import CameraTransmitter
