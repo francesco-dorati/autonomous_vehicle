@@ -6,10 +6,9 @@
 
 /*
     REQUIREMENTS    
-    distance between targets: 100 mm < dist < 1000 mm
-    heading between targets: 0 < heading < pi
+    INPUTS (Serial1 115200) 
+    ALL INPUTS ENDS WITH '\n'
 
-    INPUTS (Serial1 115200)
     "STP" 
         - stop motors
 
@@ -24,22 +23,30 @@
     "PID <kpl> <kdl> <kil> <kpr> <kdr> <kir>"
         - change pid values
 
-    "ORQ" -> "ODM <odometry>"
+    "ORQ" -> "ODM <x> <y> <theta> <vl> <va>"
         - odometry request
+        - (x, y) in [mm], theta in [mrad], 
+        - (vl, va) in [mm/s, mrad/s]
 
     "ORS"
         - reset odometry values
     
-    "OST <odometry>"
+    "OST <x> <y> <theta>"
         - set odometry values
+        - (x, y) in [mm], theta in [mrad]
 
     "PTH <n> <x1> <y1> <th1> ... <xn> <yn> <thn>"
-        - set path to follow
+        - set new path to follow
         - n: number of points
         - (x, y) in [mm], th in [mrad]
+        - requirements:
+            - max number of points simultaneously: 20
+            - distance between targets: 100 mm < dist < 1000 mm
+            - heading between targets < pi
     
-    "APP <x> <y> <th>"
+    "APP <n> <x> <y> <th> ... <xn> <yn> <thn>"
         - append point to path
+        - n: number of points
         - (x, y) in [mm], th in [mrad]
 
 */
@@ -48,16 +55,26 @@
 #define POSITION_CONTROL_INTERVAL 100 // ms
 #define SERIAL_CONTROL_INTERVAL 100 // ms
 
-// MOTORS
-#define ENA 0
-#define IN1 0
-#define IN2 0
-#define ENB 0
-#define IN3 0
-#define IN4 0
+// STATE
+enum control_state = {
+    STALL,
+    POWER_CONTROL,
+    VELOCITY_CONTROL,
+    POSITION_CONTROL
+};
 
 // SERIAL
+#define END_CHAR '\n'
 long last_serial_time = 0;
+void handle_serial();
+
+// GENERAL
+class Position {
+    public:
+        int x, y, th;
+        Position();
+        void reset();
+}
 
 // ENCODERS
 #define LA_ENCODER_PIN 0
@@ -76,22 +93,54 @@ volatile long ticks_l, ticks_r;
 long prev_ticks_l, prev_ticks_r, prev_time_encoder_us;
 int actual_wheel_velocities_m[2]; // vl, vr (mm/s)
 int actual_robot_velocities_m[2]; // vx (mm/s), vt (mrad/s)
-long actual_robot_position_u[3]; // x, y (um), theta (urad)
-
-enum control_state = {
-    STALL,
-    POWER_CONTROL,
-    VELOCITY_CONTROL,
-    POSITION_CONTROL
-};
+Position actual_robot_position_u = Position(); // x, y (um), theta (urad)
+void left_tick();
+void right_tick();
+void reset_odometry();
+void update_odometry();
 
 // POSITION CONTROL
-#define D_THRESH_MM 25
-#define H_THRESH_MRAD 100 // 5 degrees
-#define A_THRESH_MRAD 200 // 10 degrees
+#define QUEUE_SIZE 20
+class PositionQueue {
+    public:
+        PositionQueue();
+        Position pop();
+        void push(Position p);
+        void is_empty();
+        void reset();
+    private:
+        Position queue[QUEUE_SIZE];
+        int front, rear, count;
+}
 long last_position_control_time = 0;
-long target_robot_position_m[3] = {0, 0, 0}; // x, y (mm), theta (mrad)
-// int points_to_follow = 0;
+Position target_robot_position_m = Position(); // x, y (mm), theta (mrad)
+PositionQueue target_position_queue = PositionQueue();
+void position_control();
+void calculate_inverse_kinematic();
+// dist
+#define DIST_THRESH_MM 25   // mm   distance where target is reached
+#define CHANGE_THRESH_MM 50 // mm    distance where target is changed
+#define MIN_LIN_SPEED_DIST_MM 100 // mm     distance where minimum speed is reached 
+#define MIN_LIN_SPEED_MMS 0         // mm/s    minimum speed
+#define MAX_LIN_SPEED_DIST_MM 500 // mm     distance where maximum speed is reached
+#define MAX_LIN_SPEED_MMS 0       // mm/s    maximum speed
+const int LIN_SPEED_SLOPE = (MAX_LIN_SPEED_MMS - MIN_LIN_SPEED_MMS)/(MAX_LIN_SPEED_DIST_MM - MIN_LIN_SPEED_DIST_MM); 
+int distance_error_mm();
+int distance_velocity(int dist_mm);
+// heading
+#define H_THRESH_MRAD 100 // 5 degrees    angle where target is reached
+#define MIN_ANG_SPEED_DIST_MRAD 0 // mrad/s  angle where minimum speed is reached
+#define MIN_ANG_SPEED_MRADS 0 // mrad/s        minimum speed
+#define MAX_ANG_SPEED_DIST_MRAD 0 // mrad/s     angle where maximum speed is reached
+#define MAX_ANG_SPEED_MRADS 100 // mrad/s      maximum speed
+const int ANG_SPEED_SLOPE = (MAX_ANG_SPEED_MRADS - MIN_ANG_SPEED_MRADS)/(MAX_ANG_SPEED_DIST_MRAD - MIN_ANG_SPEED_DIST_MRAD);
+int heading_error_mrad();
+int heading_velocity(int heading_mrad);
+// alpha
+#define A_THRESH_MRAD 200 // 10 degrees
+#define ALPHA_SPEED_MRADS 0 // 5 degrees
+int alpha_error_mrad();
+int alpha_velocity(int alpha_mrad);
 
 
 // VELOCITY CONTROL
@@ -106,10 +155,18 @@ double KpL = 0, KiL = 0, KdL = 0;
 double KpR = 0, KiR = 0, KdR = 0;
 PID PID_LEFT(&pid_actual_left, &pid_output_left, &pid_goal_left, KpL, KiL, KdL, DIRECT);
 PID PID_RIGHT(&pid_actual_right, &pid_output_right, &pid_goal_right, KpR, KiR, KdR, DIRECT);
+void velocity_control();
 
 
 // POWER CONTROL
+#define ENA 0
+#define IN1 0
+#define IN2 0
+#define ENB 0
+#define IN3 0
+#define IN4 0
 int target_powers[2] = {0, 0}; // left, right
+void send_motor_powers();
 
 void setup() {
     Serial.begin(9600);
@@ -150,7 +207,7 @@ void loop() {
 
     // handle serial commands
     if (millis() - last_serial_time >= SERIAL_CONTROL_INTERVAL) {
-        handle_serial()
+        handle_serial();
         last_serial_time = millis();
     }
 
@@ -187,7 +244,12 @@ void stop_motors() {
     target_powers[0] = 0;
     target_powers[1] = 0;
     send_motor_powers();
+    target_robot_velocities_m[0] = 0;
+    target_robot_velocities_m[1] = 0;
+    target_robot_position_m.reset();
+    target_position_queue.reset();
 }
+
 long normalize_angle_urad(long angle) {
     return ((angle + PI_URAD) % TWO_PI_URAD) - PI_URAD;
 }
@@ -195,65 +257,113 @@ long normalize_angle_mrad(long angle) {
     return ((angle + PI_MRAD) % TWO_PI_MRAD) - PI_MRAD;
 }
 
+Position::Position() {
+    this->x = 0;
+    this->y = 0;
+    this->th = 0;
+}
+Position::reset() {
+    this->x = 0;
+    this->y = 0;
+    this->th = 0;
+}
+
 // SERIAL
 void handle_serial() {
-    if (Serial1.available() >= 3) {
+    while (Serial1.available() >= 3) {
         char command[4];
         command[4] = '\0';
         Serial1.readBytes(command, 3);
 
         if (strcmp(command, "STP") == 0) {
+            // stop motors
+            // "STP"
             stop_motors();
 
         } else if (strcmp(command, "PWR") == 0) {
             // power control
-            if (Serial1.available() < 5) return;
+            // "PWR <pow_l> <pow_r>" 
+            // if (Serial1.available() < 2) return;
             target_powers[0] = Serial1.parseInt();
             target_powers[1] = Serial1.parseInt();
             control_state = POWER_CONTROL;
 
         } else if (strcmp(command, "VEL") == 0) {
             // velocity control
-            if (Serial1.available() < 5) return;
+            // "VEL <vx> <vt>" 
+            // if (Serial1.available() < 3) return;
             target_robot_velocities_m[0] = Serial1.parseInt();
             target_robot_velocities_m[1] = Serial1.parseInt();
             calculate_inverse_kinematic();
             control_state = VELOCITY_CONTROL;
 
         } else if (strcmp(command, "PID") == 0) {
-            // odometry request
+            // pid values change
+            // "PID <kpl> <kdl> <kil> <kpr> <kdr> <kir>"
+            // if (Serial1.available() < 6) return;
+            KpL = Serial1.parseFloat();
+            KdL = Serial1.parseFloat();
+            KiL = Serial1.parseFloat();
+            KpR = Serial1.parseFloat();
+            KdR = Serial1.parseFloat();
+            KiR = Serial1.parseFloat();
 
         } else if (strcmp(command, "ORQ") == 0) {
             // odometry request
+            // "ORQ" -> "ODM <x> <y> <theta> <vl> <va>"
+            Serial1.print("ODM ");
+            Serial1.print(actual_robot_position_u.x/1000.0); // x
+            Serial1.print(" ");
+            Serial1.print(actual_robot_position_u.y/1000.0); // y
+            Serial1.print(" ");
+            Serial1.print(actual_robot_position_u.th/1000.0); // theta
+            Serial1.print(" ");
+            Serial1.print(actual_robot_velocities_m[0]); // vx
+            Serial1.print(" ");
+            Serial1.println(actual_robot_velocities_m[1]); // vt
 
         } else if (strcmp(command, "ORS") == 0) {
             // odometry reset
+            // "ORS"
             reset_odometry();
 
         } else if (strcmp(command, "OST") == 0) {
             // odometry set
+            // "OST <x> <y> <theta>"
+            // TODO
 
         } else if (strcmp(command, "PTH") == 0) {
             // set path to follow
-            if (Serial1.available() < 1) return;
-            points_to_follow = Serial1.parseInt();
+            // "PTH <n> <x1> <y1> <th1> ... <xn> <yn> <thn>"
+            target_position_queue.reset();
+            int n = Serial1.parseInt();
+            for (int i = 0; i < n; i++) {
+                long x_mm = Serial1.parseInt();
+                long y_mm = Serial1.parseInt();
+                long th_mrad = Serial1.parseInt();
+                target_position_queue.push(Position(x, y, th));
+            }
 
         } else if (strcmp(command, "APP") == 0) {
-            // set path to follow
-            if (Serial1.available() < 1) return;
-            points_to_follow = Serial1.parseInt();
-            if (Serial1.available() < 3*points_to_follow) return;
-            for (int i = 0; i < points_to_follow; i++) {
-                target_robot_position_m[0] = Serial1.parseInt();
-                target_robot_position_m[1] = Serial1.parseInt();
-                
+            int n = Serial1.parseInt();
+            for (int i = 0; i < n; i++) {
+                long x_mm = Serial1.parseInt();
+                long y_mm = Serial1.parseInt();
+                long th_mrad = Serial1.parseInt();
+                target_position_queue.push(Position(x, y, th));
             }
-        // flush input
+
+        } else {
+            // invalid command
+            // ignore
         }
+
+        // read until END
+        while (Serial1.avalable() > 0 && Serial1.read() != END_CHAR) {};
     }
 }
 
-// ENCODERS
+// ODOMETRY
 void left_tick() { 
     if (digitalRead(LB_encoder) == HIGH) ticks_l++;  // Forward
     else ticks_l--;  // Backward
@@ -272,9 +382,8 @@ void reset_odometry() {
     actual_wheel_velocities[1] = 0;
     actual_robot_velocities[0] = 0; 
     actual_robot_velocities[1] = 0;
-    actual_robot_position[0] = 0; 
-    actual_robot_position[1] = 0;
-    actual_robot_position[2] = 0;
+    actual_robot_position_u.reset();
+    // reset point follow
 }
 void update_odometry() {
     /*
@@ -310,12 +419,12 @@ void update_odometry() {
     actual_robot_velocities_m[1] = (dT_urad * 1000) / d_time_us;
     
     // robot position
-    actual_robot_position_u[2] += dT_urad; // urad
+    actual_robot_position_u.th += dT_urad; // urad
     // normalize theta
-    actual_robot_position_u[2] = normalize_angle_urad(actual_robot_position_u[2]);
+    actual_robot_position_u.th = normalize_angle_urad(actual_robot_position_u.th);
     // update x, y
-    actual_robot_position_u[0] += dS_um * cos(actual_robot_position_u[2]/1000000.0); // um
-    actual_robot_position_u[1] += dS_um * sin(actual_robot_position_u[2]/1000000.0); // um
+    actual_robot_position_u.x += dS_um * cos(actual_robot_position_u.th/1000000.0); // um
+    actual_robot_position_u.y += dS_um * sin(actual_robot_position_u.th/1000000.0); // um
 
     // DEBUG
     if (Serial) {
@@ -336,46 +445,139 @@ void update_odometry() {
 }
 
 // POSITION CONTROL
+PositionQueue::PositionQueue() { 
+    front = 0; rear = 0; count = 0;
+}
+Position PositionQueue::pop() {
+    /*
+        Returns the next point to follow
+        requires: !is_empty()
+    */
+    if (is_empty()) return Position();
+    Position p = queue[front];
+    front = (front + 1) % QUEUE_SIZE;
+    count--;
+    return p;
+}
+void PositionQueue::push(Position p) {
+    /*
+        Adds a new point to the queue
+        requires: count < QUEUE_SIZE
+    */
+    if (count == QUEUE_SIZE) return;
+    queue[rear] = p;
+    rear = (rear + 1) % QUEUE_SIZE;
+    count++;
+}
+void PositionQueue::is_empty() {
+    return count == 0;
+}
+void PositionQueue::reset() {
+    front = 0; rear = 0; count = 0;
+}
 void position_control() {
     /*
         Computes the target velocities based on the target position
         reads: target_robot_position_m[3]
         writes: target_robot_velocities_m[2]
-        requires: (d_mm < 1000), (|h_mrad| < pi)
+        requires: distance between targets > CHANGE THRESH  
+                  heading between targets: 0 < heading < pi
     */
-   // calculate distance 
-   int dx_mm = target_robot_position_m[0] - (actual_robot_position_u[0]/1000);
-   int dy_mm = target_robot_position_m[1] - (actual_robot_position_u[1]/1000);
-   int d_mm = sqrt(dx_mm*dx_mm + dy_mm*dy_mm);
+    // calculate distance 
+    int dist_mm = distance_error_mm();
+    if (dist_mm < CHANGE_THRESH_MM) { // inside change threshold
+        if (target_position_queue.is_empty()) { // no more points to follow
+            // adjust heading and distance difference
+            int alpha_mrad = alpha_error_mrad();
+            bool distance_ok = dist_mm < DIST_THRESH_MM;
+            bool heading_ok = abs(alpha_mrad) < H_THRESH_MRAD;
+            // if position reached
+            if (distance_ok && heading_ok) { 
+                stop_motors();
+                return;
+            }
 
-   if (d_mm < D_THRESH_MM) {
-        // inside threshold
-        // calculate alpha (heading difference)
-        int delta_heading_mrad = target_robot_position_m[2] - actual_robot_position_u[2]/1000;
-        int alpha_mrad = normalize_angle_mrad(delta_heading_mrad);
-        if (alpha_mrad < A_THRESH_MRAD) {
-            // position reached
-            // if there are more points to follow
-                // exit
-            // else
-                // continue with next point
-    
-        } else {
-            // calculate target velocity
-            target_robot_velocities_m[0] = 0;
-            target_robot_velocities_m[1] = alpha_velocity(alpha_mrad);
+            // adjust distance and heading
+            target_robot_velocities_m[0] = distance_ok ? 0 : distance_velocity(dist_mm);
+            target_robot_velocities_m[1] = heading_ok ? 0 : alpha_velocity(alpha_mrad);
             return;
         }
-   } else {
-        // calculate heading 
-        int heading_mrad = normalize_angle_mrad(atan2(dy_mm, dx_mm) * 1000);
-        target_robot_velocities_m[0] = distance_velocity(d_mm);
-        target_robot_velocities_m[1] = heading_velocity(heading_mrad);
-        return;
-   }
 
+        // follow next point
+        target_robot_position_m = target_position_queue.pop();
+        dist_mm = distance_error_mm();
+   } 
+
+    // calculate heading 
+    int heading_mrad = heading_error_mrad();
+    target_robot_velocities_m[0] = distance_velocity(dist_mm);
+    target_robot_velocities_m[1] = heading_velocity(heading_mrad);
+    return;
 }
 
+int distance_error_mm() {
+    /*
+        Returns the distance error (mm) between target and actual position
+        reads: target_robot_position_m, actual_robot_position_u
+    */
+   int dx_mm = target_robot_position_m.x - (actual_robot_position_u.x/1000);
+   int dy_mm = target_robot_position_m.y - (actual_robot_position_u.y/1000);
+   return sqrt(dx_mm*dx_mm + dy_mm*dy_mm);
+}
+int heading_error_mrad() {
+    /*
+        Returns the angle between target and actual position (mrad)
+        reads: target_robot_position_m, actual_robot_position_u
+    */
+    int dx_mm = target_robot_position_m.x - (actual_robot_position_u.x/1000);
+    int dy_mm = target_robot_position_m.y - (actual_robot_position_u.y/1000);
+    return normalize_angle_mrad(atan2(dy_mm, dx_mm) * 1000);
+    // return normalize_angle_mrad(target_robot_position_m[2] - actual_robot_position_u[2]/1000);
+}
+int alpha_error_mrad() {
+    /*
+        Returns the heading difference (mrad) between target and actual position
+        reads: target_robot_position_m, actual_robot_position_u
+    */
+    return normalize_angle_mrad(target_robot_position_m.th - actual_robot_position_u.th/1000);
+}
+
+int distance_velocity(int dist_mm) {
+    /*
+        Returns the target velocity based on the distance error
+        reads: d_mm
+        returns:
+            0                                           dist < TRESHOLD
+            slope * (dist - MIN_DIST) + MIN_VEL         where MIN_DIST < dist < MAX_DIST
+            staturated at MIN/MAX                       elsewhere
+    */
+    if (dist_mm < DIST_THRESH_MM) return 0;
+    if (dist_mm < MIN_LIN_SPEED_DIST_MM) return MIN_LIN_SPEED_MMS;
+    if (dist_mm > MAX_LIN_SPEED_DIST_MM) return MAX_LIN_SPEED_MMS;
+    return (dist_mm - MIN_LIN_SPEED_DIST_MM) * LIN_SPEED_SLOPE + MIN_LIN_SPEED_MMS;
+}
+int heading_velocity(int heading_mrad) {
+    /*
+        Returns the target angular velocity based on the heading error
+        reads: heading_mrad
+        returns:
+            0                                           heading < TRESHOLD
+            slope * (heading - MIN_ANG) + MIN_VEL        where MIN_ANG < heading < MAX_ANG
+            staturated at MIN/MAX                       elsewhere
+    */
+    if (abs(heading_mrad) < H_THRESH_MRAD) return 0;
+    if (abs(heading_mrad) < MIN_ANG_SPEED_DIST_MRAD) return MIN_ANG_SPEED_MRADS;
+    if (abs(heading_mrad) > MAX_ANG_SPEED_DIST_MRAD) return MAX_ANG_SPEED_MRADS;
+    return (heading_mrad - MIN_ANG_SPEED_DIST_MRAD) * ANG_SPEED_SLOPE + MIN_ANG_SPEED_MRADS;
+}
+int alpha_velocity(int alpha_mrad) {
+    /*
+        Returns the target angular velocity based on the heading difference
+        reads: alpha_mrad
+        fixed speed cut of at A_THRESH_MRAD
+    */
+    return (abs(alpha_mrad) < A_THRESH_MRAD) ? 0 : ALPHA_SPEED_MRADS; 
+}
 void calculate_inverse_kinematic() {
     /*
         Computes the target wheel velocities based on the target robot velocities
@@ -386,7 +588,7 @@ void calculate_inverse_kinematic() {
     target_wheel_velocities_m[1] = target_robot_velocities_m[0] + target_robot_velocities_m[1] * WHEEL_DISTANCE_MM / 2;
 }
 
-// MOTOR CONTROL
+// VELOCITY CONTROL
 void velocity_control() {
     /*
         Computes the motor powers based on the target velocities
@@ -407,7 +609,7 @@ void velocity_control() {
     target_powers[1] = (int) pid_output_right;
 }
 
-
+// POWER CONTROL
 void send_motor_powers() {
     /*  
         Sends the motor powers to the motors
