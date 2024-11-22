@@ -3,7 +3,6 @@
 #include <math.h>
 #include <PID_v1.h>
 
-
 /*
     REQUIREMENTS    
     INPUTS (Serial1 115200) 
@@ -56,12 +55,13 @@
 #define SERIAL_CONTROL_INTERVAL 100 // ms
 
 // STATE
-enum control_state = {
+enum State {
     STALL,
     POWER_CONTROL,
     VELOCITY_CONTROL,
     POSITION_CONTROL
 };
+State control_state = STALL;
 
 // SERIAL
 #define END_CHAR '\n'
@@ -73,14 +73,15 @@ class Position {
     public:
         int x, y, th;
         Position();
+        Position(int x, int y, int th);
         void reset();
-}
+};
 
 // ENCODERS
-#define LA_ENCODER_PIN 0
-#define LB_ENCODER_PIN 0
-#define RA_ENCODER_PIN 0
-#define RB_ENCODER_PIN 0
+#define LA_ENCODER_PIN 11 // LEFT GREEN
+#define LB_ENCODER_PIN 10 // LEFT YELLOW
+#define RA_ENCODER_PIN 9  // RIGHT GREEN
+#define RB_ENCODER_PIN 8  // RIGHT YELLOW
 #define WHEEL_RADIUS_MM 34      // mm
 #define WHEEL_CIRCUMFERENCE_UM 213628   // um  
 #define WHEEL_DISTANCE_MM 240   // mm
@@ -106,12 +107,12 @@ class PositionQueue {
         PositionQueue();
         Position pop();
         void push(Position p);
-        void is_empty();
+        bool is_empty();
         void reset();
     private:
         Position queue[QUEUE_SIZE];
         int front, rear, count;
-}
+};
 long last_position_control_time = 0;
 Position target_robot_position_m = Position(); // x, y (mm), theta (mrad)
 PositionQueue target_position_queue = PositionQueue();
@@ -159,12 +160,12 @@ void velocity_control();
 
 
 // POWER CONTROL
-#define ENA 0
-#define IN1 0
-#define IN2 0
-#define ENB 0
-#define IN3 0
-#define IN4 0
+#define ENA 4   // BROWN
+#define IN1 2   // RED
+#define IN2 3   // ORANGE
+#define ENB 5   // BLUE
+#define IN3 6   // YELLOW
+#define IN4 7   // GREEN
 int target_powers[2] = {0, 0}; // left, right
 void send_motor_powers();
 
@@ -186,19 +187,19 @@ void setup() {
     pinMode(LB_ENCODER_PIN, INPUT);
     pinMode(RA_ENCODER_PIN, INPUT);
     pinMode(RB_ENCODER_PIN, INPUT);
-    attachInterrupt(digitalPinToInterrupt(RA_encoder), right_tick, RISING);
-    attachInterrupt(digitalPinToInterrupt(LA_encoder), left_tick, RISING);
+    attachInterrupt(digitalPinToInterrupt(RA_ENCODER_PIN), right_tick, RISING);
+    attachInterrupt(digitalPinToInterrupt(LA_ENCODER_PIN), left_tick, RISING);
 
     // PID
     PID_LEFT.SetMode(AUTOMATIC);
     PID_LEFT.SetOutputLimits(-MAX_POW, MAX_POW);
-    PID_LEFT.SetSampleTime(MOTOR_CONTROL_INTERVAL);
+    PID_LEFT.SetSampleTime(BASE_CONTROL_INTERVAL);
     PID_RIGHT.SetMode(AUTOMATIC);
     PID_RIGHT.SetOutputLimits(-MAX_POW, MAX_POW);
-    PID_RIGHT.SetSampleTime(MOTOR_CONTROL_INTERVAL);
+    PID_RIGHT.SetSampleTime(BASE_CONTROL_INTERVAL);
 
     stop_motors();
-    reset_encoders();
+    reset_odometry();
 }
 
 
@@ -218,7 +219,7 @@ void loop() {
         // position control
         if (control_state == POSITION_CONTROL && (millis() - last_position_control_time) >= POSITION_CONTROL_INTERVAL) {
             // calculate target robot velocities
-            position_control() 
+            position_control();
             calculate_inverse_kinematic(); // calculate target wheels velocity
             last_position_control_time = millis();
         }
@@ -227,6 +228,8 @@ void loop() {
             // compute motor powers
             velocity_control();
         }
+
+        if (target_powers[0] == 0 && target_powers[1] == 0) { stop_motors(); }
 
         // send motor powers
         send_motor_powers();
@@ -251,10 +254,10 @@ void stop_motors() {
 }
 
 long normalize_angle_urad(long angle) {
-    return ((angle + PI_URAD) % TWO_PI_URAD) - PI_URAD;
+    return ((angle + (int) PI_URAD) % (int) TWO_PI_URAD) - PI_URAD;
 }
 long normalize_angle_mrad(long angle) {
-    return ((angle + PI_MRAD) % TWO_PI_MRAD) - PI_MRAD;
+    return ((angle + (int) PI_MRAD) % (int) TWO_PI_MRAD) - PI_MRAD;
 }
 
 Position::Position() {
@@ -262,7 +265,12 @@ Position::Position() {
     this->y = 0;
     this->th = 0;
 }
-Position::reset() {
+Position::Position(int x, int y, int th) {
+    this->x = x;
+    this->y = y;
+    this->th = th;
+}
+void Position::reset() {
     this->x = 0;
     this->y = 0;
     this->th = 0;
@@ -341,7 +349,7 @@ void handle_serial() {
                 long x_mm = Serial1.parseInt();
                 long y_mm = Serial1.parseInt();
                 long th_mrad = Serial1.parseInt();
-                target_position_queue.push(Position(x, y, th));
+                target_position_queue.push(Position(x_mm, y_mm, th_mrad));
             }
 
         } else if (strcmp(command, "APP") == 0) {
@@ -350,7 +358,7 @@ void handle_serial() {
                 long x_mm = Serial1.parseInt();
                 long y_mm = Serial1.parseInt();
                 long th_mrad = Serial1.parseInt();
-                target_position_queue.push(Position(x, y, th));
+                target_position_queue.push(Position(x_mm, y_mm, th_mrad));
             }
 
         } else {
@@ -359,17 +367,17 @@ void handle_serial() {
         }
 
         // read until END
-        while (Serial1.avalable() > 0 && Serial1.read() != END_CHAR) {};
+        while (Serial1.available() > 0 && Serial1.read() != END_CHAR) {};
     }
 }
 
 // ODOMETRY
 void left_tick() { 
-    if (digitalRead(LB_encoder) == HIGH) ticks_l++;  // Forward
+    if (digitalRead(LB_ENCODER_PIN) == HIGH) ticks_l++;  // Forward
     else ticks_l--;  // Backward
 }
 void right_tick() {
-    if (digitalRead(RB_encoder) == HIGH) ticks_r++;  // Forward
+    if (digitalRead(RB_ENCODER_PIN) == HIGH) ticks_r++;  // Forward
     else ticks_r--;  // Backward
 } 
 void reset_odometry() {
@@ -378,12 +386,14 @@ void reset_odometry() {
     prev_ticks_l = 0;
     prev_ticks_r = 0;
     prev_time_encoder_us = micros();
-    actual_wheel_velocities[0] = 0;
-    actual_wheel_velocities[1] = 0;
-    actual_robot_velocities[0] = 0; 
-    actual_robot_velocities[1] = 0;
+    actual_wheel_velocities_m[0] = 0;
+    actual_wheel_velocities_m[1] = 0;
+    actual_robot_velocities_m[0] = 0; 
+    actual_robot_velocities_m[1] = 0;
     actual_robot_position_u.reset();
-    // reset point follow
+    target_robot_position_m.reset();
+    target_position_queue.reset();
+
 }
 void update_odometry() {
     /*
@@ -427,21 +437,21 @@ void update_odometry() {
     actual_robot_position_u.y += dS_um * sin(actual_robot_position_u.th/1000000.0); // um
 
     // DEBUG
-    if (Serial) {
-        Serial.print("TICKS TOT "); Serial.println(ticks_r); Serial.print("Ticks: L "); Serial.print(d_ticks_l); Serial.print(", R"); Serial.println(d_ticks_r);
+    // if (Serial) {
+    //     Serial.print("TICKS TOT "); Serial.println(ticks_r); Serial.print("Ticks: L "); Serial.print(d_ticks_l); Serial.print(", R"); Serial.println(d_ticks_r);
 
-        Serial.print("Time: "); Serial.print(d_time_us/1000); Serial.println("ms");
+    //     Serial.print("Time: "); Serial.print(d_time_us/1000); Serial.println("ms");
 
-        Serial.print("dL "); Serial.print(dL_um); Serial.print(", dR "); Serial.println(dR_um);
+    //     Serial.print("dL "); Serial.print(dL_um); Serial.print(", dR "); Serial.println(dR_um);
 
-        Serial.print(" dS ");Serial.print(dS_um);Serial.print(", dT ");Serial.println(dT_urad);
+    //     Serial.print(" dS ");Serial.print(dS_um);Serial.print(", dT ");Serial.println(dT_urad);
 
-        Serial.print("Wheels (mm/s): L ");Serial.print(wheel_velocities[0]);Serial.print(", R");Serial.println(wheel_velocities[1]);
+    //     Serial.print("Wheels (mm/s): L ");Serial.print(wheel_velocities[0]);Serial.print(", R");Serial.println(wheel_velocities[1]);
 
-        Serial.print("Velocity: VX ");Serial.print(robot_velocities[0]);Serial.print(", VTHETA (mrad/s) ");Serial.println(robot_velocities[1]);
+    //     Serial.print("Velocity: VX ");Serial.print(robot_velocities[0]);Serial.print(", VTHETA (mrad/s) ");Serial.println(robot_velocities[1]);
 
-        Serial.print("Position (mm): X "); Serial.print(robot_position[0]/1000.0); Serial.print(", Y "); Serial.print(robot_position[1]/1000.0); Serial.print(", TH "); Serial.println(robot_position[2]/1000.0);
-    }
+    //     Serial.print("Position (mm): X "); Serial.print(robot_position[0]/1000.0); Serial.print(", Y "); Serial.print(robot_position[1]/1000.0); Serial.print(", TH "); Serial.println(robot_position[2]/1000.0);
+    // }
 }
 
 // POSITION CONTROL
@@ -453,7 +463,7 @@ Position PositionQueue::pop() {
         Returns the next point to follow
         requires: !is_empty()
     */
-    if (is_empty()) return Position();
+    if (this->is_empty()) return Position();
     Position p = queue[front];
     front = (front + 1) % QUEUE_SIZE;
     count--;
@@ -469,7 +479,7 @@ void PositionQueue::push(Position p) {
     rear = (rear + 1) % QUEUE_SIZE;
     count++;
 }
-void PositionQueue::is_empty() {
+bool PositionQueue::is_empty() {
     return count == 0;
 }
 void PositionQueue::reset() {
