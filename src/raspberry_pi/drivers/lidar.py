@@ -1,10 +1,56 @@
-# Import necessary libraries
+"""
+    LIDAR class
+    handles communication with lidar
+
+    Public Methods:
+    - get_health()
+        returns status code
+    - start_scan()
+        starts scan thread
+    - stop_scan()
+        stops scan thread
+    - get_scan()
+        returns scan copy
+
+    
+
+"""
+
 import serial
 import time
 import threading
 import struct
 from enum import Enum
 
+from raspberry_pi.structures.maps import LocalMap
+
+
+class Scan:
+    def __init__(self):
+        """ SCAN: 360 elements array? or something else? """
+        self._scan = [0 for _ in range(360)] 
+
+    def add_sample(self, angle_deg: float, dist_mm: int, scan_n: int) -> None:
+        """
+        Add Sample
+        Adds sample to the scan
+
+        Args:
+            angle_deg (float): angle of the sample
+            dist_mm (int): distance of the obstacle
+            scan_n (int): number of the scan
+        """
+        pass
+
+    def get_local_map(self) -> LocalMap:
+        """
+        Gat Local Map
+        Generates local map based on the scan
+
+        Returns:
+            LocalMap: local map based on the scan
+        """
+        pass
 
 class Lidar:
     PORT = '/dev/ttyUSB0'  
@@ -20,53 +66,93 @@ class Lidar:
         self.scanning = False
         self.scan_thread = None
 
-        self._scan = []
+        self._scan = Scan()
         self._sample_index = 0
         self.scan_number = 0
         # self.get_health()
 
     
     def get_health(self):
+        """
+        Get Health
+        Sends health request and returns status code
+            
+        Returns:
+            int: status code (see lidar docs)
+        """
         self.ser.write(self.HEALTH_COMMAND)
         response_descriptor = self.ser.read(7)
         ok, l, m, t = self._unpack_descriptor(response_descriptor)
         if not ok:
-            print("Health response descriptor not OK")
+            print("ERROR LIDAR (get_health()) Response descriptor not OK")
             return
-        print(f"l: {l}, m: {m}, t: {t}")
+        # print(f"l: {l}, m: {m}, t: {t}")
 
         data = self.ser.read(3)
-        status = data[0]
-        print(f"Status: {status}")
+        return int(data[0])
 
     def start_scan(self):
+        """
+        Starts scan thread
+        """
         # start scanning thread
         self.scan_thread = threading.Thread(target=self._scan_handler)
         self.scan_thread.start()
 
+    def stop_scan(self):
+        """
+        Stops scan thread and send lidar stop
+        """
+        print("Stopping LIDAR")
+        self.scanning = False
+        self.scan_thread.join()
+        self.ser.flushInput()
+        self.ser.write(self.STOP_COMMAND)
+        time.sleep(0.01)
+    
+    def get_local_map(self) -> LocalMap:
+        """
+        Get Local Map
+        Returns the local map based on the last scan
+
+        Returns:
+            LocalMap: local map based on the last scan
+        """
+        return self._scan.get_local_map() if self.scanning else None
+
     def _scan_handler(self): # THREAD
-        # print("THREAD START")
+        """
+        Scan Thread
+        Receives lidar data and puts them in _scan
+        
+        Modifies:
+            _scan
+        """
         # send start command
         self.ser.flushInput()
         self.ser.write(self.START_COMMAND)
+
+        # receive and check descriptor
         response_descriptor = self.ser.read(7)
         ok, l, _, _, = self._unpack_descriptor(response_descriptor)
         if not ok:
-            print("Response descriptor not OK")
+            print("ERROR LIDAR Response descriptor not OK")
             self.scanning = False
             return
         
+        # delay for lidar
         time.sleep(0.1)
         self.scanning = True
 
+        # receiver loop
         sample_n = 0
         last_angle = 360.0
         while self.scanning:
             if self.ser.in_waiting < l:
                 continue
 
+            # flush to avoid full buffer 
             if self.ser.in_waiting > (510*5 + 5):
-                # print(f"FLUSHING: {self.ser.in_waiting}")
                 self.ser.read(510*5)
                 continue
 
@@ -96,8 +182,9 @@ class Lidar:
                 self._sample_index = 0
                 self.scan_number += 1
             
+            #  save sample to the scan 
+            self._scan.add_sample(angle_deg, dist_mm, self.scan_number)
             last_angle = angle_deg
-            self._add_sample_to_scan((angle_deg, dist_mm, self.scan_number))
 
             # print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
 
@@ -106,6 +193,19 @@ class Lidar:
 
     
     def _unpack_data(self, data):
+        """ 
+        Unpacks lidar data
+
+        Args:
+            data:   raw data
+        Returns:
+            s:          start flag
+            ns:         not start flag
+            q:          quality
+            c:          check bit
+            angle_deg:  angle in degrees
+            dist_mm:    distance in mm
+        """
         s = bool((data[0] & 0b00000001))  # Start flag (0-1)
         ns = bool((data[0] & 0b00000010) >> 1)  # Inverted start flag (1-2)
         q = int((data[0] >> 2) & 0b00111111)  # Quality (2-8)
@@ -125,6 +225,18 @@ class Lidar:
         return s, ns, q, c, angle_deg, dist_mm
 
     def _unpack_descriptor(self, descriptor):
+        """
+        Unpacks descriptor
+
+        Args:
+            descriptor:    raw data
+
+        Returns:
+            ok (bool):     descriptor ok
+            data_len,
+            data_mode,
+            data_type
+        """
         flag1 = descriptor[0]
         flag2 = descriptor[1]
         if flag1 != 0xA5 or flag2 != 0x5A:
@@ -142,6 +254,13 @@ class Lidar:
         return True, data_len, data_mode, data_type
     
     def _add_sample_to_scan(self, sample): # sample_index, sample
+        """
+        Adds sample to the scan
+
+        Args:
+            sample: [angle, dist, number]
+
+        """
         # als cen be pun in a fixed size queue
         # one element per degree
         angle = sample[0]
@@ -169,16 +288,7 @@ class Lidar:
 
 
 
-    def stop_scan(self):
-        print("Stopping LIDAR")
-        self.scanning = False
-        self.scan_thread.join()
-        self.ser.flushInput()
-        self.ser.write(self.STOP_COMMAND)
-        time.sleep(0.01)
-    
-    def get_scan(self):
-        return self._scan.copy()
+
 
         # self.ser.close()
     

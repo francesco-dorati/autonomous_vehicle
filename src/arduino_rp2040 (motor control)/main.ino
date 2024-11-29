@@ -3,8 +3,10 @@
 #include <math.h>
 #include <PID_v1.h>
 
-/*
-    REQUIREMENTS    
+/*    
+    Motor Controller 
+    Handles motor control, path following and encoders odometry calculations
+
     INPUTS (Serial1 115200) 
     ALL INPUTS ENDS WITH '\n'
 

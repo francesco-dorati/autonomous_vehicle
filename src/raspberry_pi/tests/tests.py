@@ -14,7 +14,7 @@ class PowerTest:
     """
     def __init__(self):
         import time
-        from rp2040 import RP2040
+        from raspberry_pi.drivers.rp2040 import RP2040
         self.rp2040 = RP2040()
     
     def test_1(self):

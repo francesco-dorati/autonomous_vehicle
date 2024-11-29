@@ -1,299 +1,220 @@
+"""
+    Robot Main Class
+
+    INPUTS
+
+    Main Connection - (TCP Socket)
+    
+        PING
+        ping command
+        "PNG" -> "P <status> <battery_mv>"
+        status: status code (to be defined)
+        battery_mv: battery voltage in millivolts
+
+        MANUAL
+        activate/deactivate manual control
+        "MAN <code>" -> "OK <manual_port>"
+        code:   0   off
+                1   on
+        manual_port: manual receiver port
+
+        MAPPING
+        activate/deactivate mapping
+        "MAP <code>" -> "OK"
+        code:   0 off
+                1 on
+
+
+
+        MAPPING
+            AUTONOMOUS
+            MANUAL
+
+        LOCALIZE
+            AUTONOMOUS
+            MANUAL
+        
+        MOVE
+            AUTONOMOUS
+                - go to goal
+                - follow path
+            MANUAL
+
+
+    
+
+
+
+
+
+"""
+
+
+
 import time
 import socket
-import os
 from enum import Enum
+from threading import Thread, Lock
+
+from raspberry_pi.drivers.rp2040 import RP2040
+from raspberry_pi.drivers.nano import NANO
+from raspberry_pi.drivers.lidar import Lidar
+from raspberry_pi.structures.state import Position
+from raspberry_pi.perception import Perception
+from raspberry_pi.planning import Planning
 
 
-from raspberry_pi.rp2040_old import RP2040
-from nano import NANO
-from manual import ManualController
-from camera import CameraTransmitter
-
-class Main:
-    # CONST
-    # host
+class Robot: 
     HOST = '172.20.10.3'
     MAIN_PORT = 5500
     MANUAL_PORT = 5501
     CAMERA_PORT = 5503
 
-    # delays
-    BATTERY_CHECK_INTERVAL = 5 # s
-    MAIN_SERVER_INTERVAL = 0.4 # s
-    MANUAL_TRANSMITTER_INTERVAL = 0.2 # s
-    MANUAL_LOOP_INTERVAL = 0.02 # s
-    CAMERA_TRANSMITTER_INTERVAL = 0.04 # s
+    BATTERY_CHECK_DELAY = 3
+    WAITING_DELAY = 1
 
+    class OdometryType(Enum):
+        OFF = 0,
+        ENCODERS_ONLY = 1,
+        VISUAL_ONLY = 2
+        FILTERED = 3
 
-    class Mode(Enum):
-        NOT_CONNECTED = -1
-        IDLE = 0
-        MANUAL = 1
+    class MappingType(Enum):
+        OFF = 0,
+        MAPPING = 1
+
+    class ControlType(Enum):
+        OFF = 0,
+        MANUAL = 1,
+        AUTONOMOUS = 2,
     
-    def __init__(self):
-        self.mode = self.Mode.NOT_CONNECTED
+    # Devices
+    nano = NANO()
+    lidar = Lidar()
 
-        self.main_server = MainServer(self.HOST, self.MAIN_PORT) # handles main connection to the user
-        
-        self.rp2040 = RP2040() # handles communication with the rp2040 (SENSOR DATA)
-        self.nano = NANO() # handles communication with the nano (ACTION EXECUTION)
+    # Settings and High Level states
+    waiting = True
+    odometry_type = OdometryType.OFF
+    mapping_type = MappingType.OFF
+    control_type = ControlType.OFF
 
-        self.last_battery_check = 0
-        self.last_main_server_check = 0
-        self.last_camera_transmitted = 0
-        
-        self.manual_controller = None
-        self.camera_transmitter = None
-        
-        self.distance_sensing = False
-        self.rp2040.set_battery(True)
-        # self.rp2040.set_encoders(False)
-        # self.rp2040.set_encoders(False)
+    # Threads
+    battery_thread = None
+    connection_thread = None
+    command_lock = Lock()
 
-        print("Main Server started.")
+    # Low Level states
+    actual_pos = None
+    goal_pos = None
 
-    def loop(self):
-        print("Start Loop")
+    manual_receiver = None
 
-        # start battery sensing
+    @staticmethod
+    def start():
+        # start threads
+        Robot.battery_thread = Thread(target=Robot.check_battery)
+        Robot.battery_thread.start()
+
+        Robot.connection_thread = Thread(target=Robot.connection_handler)
+        Robot.connection_thread.start()
 
         while True:
-            t_start = time.time()
-            self.rp2040.updated = False
+            if Robot.waiting:
+                time.sleep(Robot.WAITING_DELAY)
+                continue
+            
+            # acquire command lock
+            Robot.command_lock.acquire()
 
-            #1 BATTERY CHECK
-            t_battery = time.time()
-            if self.rp2040.battery_on and (t_start - self.last_battery_check) >= self.BATTERY_CHECK_INTERVAL: 
-                self.last_battery_check = t_start
-                self.rp2040.request_data()
-                print(f"Battery Check <{'on' if self.rp2040.battery_on else 'off'}>: {self.rp2040.battery.voltage} V ({self.rp2040.battery.level().name})")
-                if self.rp2040.battery_on and self.rp2040.battery.is_critical():
-                    self.shutdown()
-            dt_battery = time.time() - t_battery
+            ## LIDAR
+            Robot.local_map = Robot.lidar.get_local_map()
+            
+            ## ODOMETRY
+            if Robot.odometry_type == Robot.OdometryType.ENCODERS_ONLY: # only encoders odometry
+                Robot.actual_pos = RP2040.get_position()
 
-            # 2 MAIN CONNECTION HANDLING
-            t_main = time.time()
-            if (t_start - self.last_main_server_check) >= self.MAIN_SERVER_INTERVAL:
-                self.last_main_server_check = t_start
-                if self.mode == self.Mode.NOT_CONNECTED: # not connected
-                    ok = self.main_server.check_connection()
-                    if ok:
-                        self.mode = self.Mode.IDLE
-                        print("Connection established.")
-                    continue
-                
-                try: # receive request
-                    req = self.main_server.get_request()
-                    if req != None:
-                        self.handle_request(req)
+            elif Robot.odometry_type == Robot.OdometryType.VISUAL_ONLY: # only visual odometry
+                Robot.actual_pos = Perception.visual_odometry()
 
-                except ConnectionResetError:
-                    self.main_server.close()
-                    self.mode = self.Mode.NOT_CONNECTED
-                    continue
-            dt_main = time.time() - t_main
+            elif Robot.odometry_type == Robot.OdometryType.FILTERED:    # position filtering
+                encoder_pos = RP2040.request_odometry()
+                visual_pos = Perception.visual_odometry()
+                Robot.actual_pos = Perception.position_filter(visual_pos, encoder_pos) # merge the positions
+                RP2040.set_position(Robot.actual_pos) # update the encoders position to meet the merged position
+
+            ## MAPPING
+            if Robot.mapping_type == Robot.MappingType.MAPPING:
+                Robot.global_map = Perception.map_construction(Robot.actual_pos, Robot.local_map, Robot.global_map)
 
 
-            # 3 CONTROL
-            t_control = time.time()
-            if self.mode == self.Mode.MANUAL:
-                self.manual_controller.compute()
-            dt_control = time.time() - t_control
+            ## PLANNING
+            if Robot.control_type == Robot.ControlType.AUTONOMOUS:
+                    if goal_pos == None:
+                        goal_pos = Planning.choose_exploration_goal(Robot.global_map, Robot.actual_pos)
 
-            # 4 update camera
-            t_camera = time.time()
-            if self.camera_transmitter != None and (t_start - self.last_camera_transmitted) >= self.CAMERA_TRANSMITTER_INTERVAL:
-                self.last_camera_transmitted = t_start
-                self.camera_transmitter.send_frame()
-            dt_camera = time.time() - t_camera
+                    path = Planning.path_planner(Robot.global_map, Robot.local_map, Robot.actual_pos, goal_pos)
+                    RP2040.follow_path(path)
 
+            elif Robot.control_type == Robot.ControlType.MANUAL:
+                    vl, vth = manual_receiver.get_command() # TODO
+                    vl, vth = Planning.obstacle_avoidance(vl, vth, Robot.local_map)
+                    RP2040.set_target_velocity(vl, vth)
+            
+            # release command lock
+            Robot.command_lock.release()
 
-            # 5 set delay
-            print(f"bat: {dt_battery*1000:.1f}\tmain:{dt_main*1000:.1f}\tmanual:{dt_control*1000:.1f}\tcam:{dt_camera*1000:.1f}")
-            dt = time.time() - t_start
-            dt_max = 0
-            if (self.mode == self.Mode.NOT_CONNECTED or self.mode == self.Mode.IDLE):
-                if (self.camera_transmitter != None):
-                    dt_max = self.CAMERA_TRANSMITTER_INTERVAL
-                else:
-                    dt_max = self.MAIN_SERVER_INTERVAL
-            elif self.mode == self.Mode.MANUAL:
-                if self.manual_controller != None:
-                    dt_max = self.MANUAL_LOOP_INTERVAL
-                else:
-                    dt_max = min(self.MANUAL_LOOP_INTERVAL, self.CAMERA_TRANSMITTER_INTERVAL)
-            over = dt >= dt_max
-            print(f"dt: {(dt*1000):.1f} ms,    ", end='')
-            print(f"delay: {(dt_max*1000):.1f} ms {'OVER' if over else ''}")
-            time.sleep(dt_max - dt) if not over else None
-
+            # delay
+            
             
 
+    @staticmethod
+    def check_battery():
+        while True:
+            # check battery # TODO
+            time.sleep(Robot.BATTERY_CHECK_DELAY)
 
-    
-        
-    def handle_request(self, data):
-        if data == b'':
-            return
+    @staticmethod
+    def connection_handler():
+        # start server
+        connection = None
+        connection_addr = None
 
-        print("Main Request", data)
-        data = data.decode().split('\n')[:-1]
-        for d in data:
-            d = d.strip().split(' ')
-            print("command: ", d)
+        main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        main_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        main_socket.bind((Robot.HOST, Robot.MAIN_PORT))
+        main_socket.setblocking(False)
+        main_socket.listen(1)
 
-            if d[0] == 'P': # PING
-                self.rp2040.request_data()
-                self.main_server.send('P ' + str(self.rp2040.battery.voltage) + ' ' + self.rp2040.battery.level().name)
+        while True:
+            # not connected
+            if connection == None:  
+                try:
+                    connection, connection_addr = main_socket.accept()
+                    connection.setblocking(False)
+                except BlockingIOError:
+                    continue
+            
+            # connected
+            else:       
+                try:
+                    received_data = connection.recv(32)
+                except BlockingIOError:
+                    continue
 
-            elif d[0] == 'M': # MANUAL
-                if d[1] == '1': # start manual mode
-                    if self.mode != self.Mode.IDLE:
-                        self.main_server.send('KO')
-                        return
-                    self.manual_controller = ManualController(self.rp2040, self.nano, self.HOST, self.MANUAL_PORT)
-                    self.mode = self.Mode.MANUAL
-                    self.main_server.send(f'OK {self.MANUAL_PORT}')
-                    print("MANUAL START")
-
-                elif d[1] == '0': # stop manual mode
-                    if self.mode != self.Mode.MANUAL:
-                        self.main_server.send('KO')
-                        return
-                    self.manual_controller.stop()
-                    self.manual_controller = None
-                    self.mode = self.Mode.IDLE
-                    self.main_server.send('OK')
-                    print("MANUAL STOP")
+                if received_data == b'':
+                    continue
                 
-                # elif d[1] == 'S': 
-                #     if self.mode != self.Mode.MANUAL:
-                #         self.main_server.send('KO')
-                #         return
+                # command lock
+                with Robot.command_lock:
+                    # handle all commands
+                    commands = received_data.decode().split('\n')[:-1]
+                    for c in commands:
+                        c = c.strip().split(' ')
 
-                #     # enable/disable sensors
-                #     # add distance sensing
-                #     for e in d[2:]:
-                #         if e[0] == 'E':
-                #             # encoders
-                #             set_encoder_odometry(int(e[1]))
-                #             pass
-                #         elif e[0] == 'D':
-                #             # distance
-                #             set_distance_sensing(int(e[1]))
-                #             pass
-                #         else:
-                #             main_server.send(b'KO')
-                #             return
-                        
-            elif d[0] == 'C': # CAMERA
-                if d[1] == '1':
-                    self.camera_transmitter = CameraTransmitter(self.HOST, self.CAMERA_PORT)
-                    self.main_server.send(f'OK {self.CAMERA_PORT}')
-                elif d[1] == '0':
-                    self.camera_transmitter.close()
-                    self.camera_transmitter = None
-                    self.main_server.send('OK')
+                        ## COMMANDS HANDLING
 
-            elif d[0] == 'E': # STOP
-                self.close_all()
-                self.mode = self.Mode.NOT_CONNECTED
-
-            elif d[0] == 'S': # SHUTDOWN
-                self.shutdown()
-        
-    def close_all(self):
-        self.nano.send_power(0, 0)
-        if self.camera_transmitter != None:
-            self.camera_transmitter.close()
-        if self.mode == self.Mode.MANUAL:
-            self.manual_controller.stop()
-            self.manual_controller = None
-        self.main_server.close_connection()
-        self.rp2040.set_encoder(False)
-        self.rp2040.set_distance(False)
-        
-    def shutdown(self):
-        print(f"Shutting down.\n\n")
-        self.close_all()
-        os.system("echo password | sudo -S shutdown now")
-
-class MainServer:
-    def __init__(self, host, main_port):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind((host, main_port))
-        self.socket.setblocking(False)
-        self.socket.listen(1)
-
-        self.connection = None
-        self.connection_addr = None
-
-    def check_connection(self):
-        try:
-            self.connection, self.connection_addr = self.socket.accept()
-            self.connection.setblocking(False)
-            return True
-
-        except BlockingIOError:
-            return False
-        
-    def get_request(self):
-        try:
-            data = self.connection.recv(32)
-            return data
-        except BlockingIOError:
-            return None
-        
-    def send(self, data: str):
-        self.connection.send(data.encode())
-    
-    def close_connection(self):
-        if self.connection:
-            self.connection.close()
-        self.connection = None
-        self.connection_addr = None
-
-
-# class ManualReceiver:
-#     def __init__(self):
-#         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#         self.socket.bind((HOST, M_RECEIVER_PORT))
-#         self.socket.setblocking(False)
-    
-#     def get_command(self):
-#         data, _ = self.socket.recv(32)
-#         d = data.decode().split(' ')
-#         speed = int(d[0])
-#         direction = d[1]
-#         return speed, direction
-    
-#     def close(self):
-#         self.socket.close()
-        
-
-# class ManualTransmitter:
-#     def __init__(self):
-#         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#         self.socket.bind((HOST, M_TRANSMITTER_PORT))
-#         self.socket.setblocking(False)
-#         self.client = None
-#         self.last_time = 0
-
-#     def send_data(self, encoder_odometry, obstacle_distance):
-#         if self.client == None:
-#             _, addr = self.socket.recvfrom(5)
-#             self.client = (addr[0], int(addr[1]))
-#         message = f'P {encoder_odometry.vx} {encoder_odometry.vt} {encoder_odometry.x} {encoder_odometry.y} {encoder_odometry.t}'
-#         message += f' D {obstacle_distance[0]} {obstacle_distance[1]} {obstacle_distance[2]} {obstacle_distance[3]}'
-#         self.socket.sendto(message.encode(), self.client)
-#         self.last_time = time.time()
-
-#     def close(self):
-#         self.socket.close()
 
 
 
 if __name__ == "__main__":
-    main = Main()
-    main.loop()
+    Robot.start()

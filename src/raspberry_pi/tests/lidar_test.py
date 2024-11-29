@@ -1,4 +1,4 @@
-from lidar import Lidar
+from raspberry_pi.drivers.lidar import Lidar
 import time
 import matplotlib.pyplot as plt
 import numpy as np
