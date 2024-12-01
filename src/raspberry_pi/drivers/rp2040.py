@@ -7,7 +7,7 @@
 
 import serial
 
-from raspberry_pi.structures.state import Position
+from raspberry_pi.data_structures.state import Position
 
 
 class RP2040:
@@ -15,7 +15,7 @@ class RP2040:
     
     @staticmethod
     def stop_motors() -> None:
-        RP2040._serial.send("STP\n")
+        RP2040._serial.send("STP\n".encode())
 
     @staticmethod
     def set_target_power(power_left: int, power_right: int) -> None:
@@ -31,7 +31,7 @@ class RP2040:
         if power_left == 0 and power_right == 0:
             RP2040.stop_motors()
 
-        RP2040._serial.write(f"POW {power_left} {power_right}\n")
+        RP2040._serial.write(f"POW {power_left} {power_right}\n".encode())
         
     @staticmethod
     def set_target_velocity(lin_vel: int, ang_vel: int) -> None:
@@ -46,7 +46,7 @@ class RP2040:
         """
         if lin_vel == 0 and ang_vel == 0:
             RP2040.stop_motors()
-        RP2040._serial.write(f"VEL {lin_vel} {ang_vel}\n")
+        RP2040._serial.write(f"VEL {lin_vel} {ang_vel}\n".encode())
 
     @staticmethod
     def set_pid_values(kp: float, ki: float, kd: float) -> None:
@@ -60,7 +60,7 @@ class RP2040:
         Side:
             writes to serial
         """
-        RP2040._serial.write(f"PID {kp} {ki} {kd}\n")
+        RP2040._serial.write(f"PID {kp} {ki} {kd}\n".encode())
 
     @staticmethod
     def get_position() -> Position:
@@ -73,8 +73,9 @@ class RP2040:
         Returns:
             Position: position of the robot
         """
-        RP2040._serial.write("ORQ\n")
+        RP2040._serial.write("ORQ\n".encode())
         line = RP2040._serial.readline().decode().strip().split(" ")
+        print(line)
         x = int(line[0])
         y = int(line[1])
         th = int(line[2])
@@ -96,7 +97,7 @@ class RP2040:
             int: vl position of the robot   [mm/s]
             int: va position of the robot   [mm/s]
         """
-        RP2040._serial.write("ODB\n")
+        RP2040._serial.write("ODB\n".encode())
         line = RP2040._serial.readline().decode().strip().split(" ")
         x = int(line[0])
         y = int(line[1])
@@ -110,11 +111,11 @@ class RP2040:
         """
             Sends odometry reset command
         """
-        RP2040._serial.write("ORS\n")
+        RP2040._serial.write("ORS\n".encode())
 
     @staticmethod
     def set_position(pos: Position) -> None:
-        RP2040._serial.write(f"OST {pos.x} {pos.y} {pos.th}\n")
+        RP2040._serial.write(f"OST {pos.x} {pos.y} {pos.th}\n".encode())
 
         pass
     
