@@ -6,7 +6,7 @@ from enum import Enum
 
 from raspberry_pi.rp2040_old import RP2040
 from nano import NANO
-from manual import ManualController
+from raspberry_pi.manual_old import ManualController
 from camera import CameraTransmitter
 
 class Main:

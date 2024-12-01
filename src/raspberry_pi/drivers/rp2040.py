@@ -15,7 +15,7 @@ class RP2040:
     
     @staticmethod
     def stop_motors() -> None:
-        RP2040._serial.send("STP")
+        RP2040._serial.send("STP\n")
 
     @staticmethod
     def set_target_power(power_left: int, power_right: int) -> None:
@@ -49,7 +49,7 @@ class RP2040:
         RP2040._serial.write(f"VEL {lin_vel} {ang_vel}\n")
 
     @staticmethod
-    def change_pid_values(kp: float, ki: float, kd: float) -> None:
+    def set_pid_values(kp: float, ki: float, kd: float) -> None:
         """
         Change PID values of velocity controller.
 
@@ -74,14 +74,37 @@ class RP2040:
             Position: position of the robot
         """
         RP2040._serial.write("ORQ\n")
-        line = RP2040.serial.readline().decode().strip().split(" ")
-        x = int(line[1])
-        y = int(line[2])
-        th = int(line[3])
-        # vx = int(line[4])
-        # va = int(line[5])
-        return x, y, th
+        line = RP2040._serial.readline().decode().strip().split(" ")
+        x = int(line[0])
+        y = int(line[1])
+        th = int(line[2])
+        p = Position(x, y, th)
+        return p
 
+    @staticmethod
+    def get_debug_odometry() -> tuple[int, int, int, int, int]:
+        """
+        Request debug odometry data from RP2020
+
+        Side:
+            writes to serial
+            awaits response
+        Returns:
+            int: x position of the robot    [mm]
+            int: y position of the robot    [mm]
+            int: theta position of the robot    [??]
+            int: vl position of the robot   [mm/s]
+            int: va position of the robot   [mm/s]
+        """
+        RP2040._serial.write("ODB\n")
+        line = RP2040._serial.readline().decode().strip().split(" ")
+        x = int(line[0])
+        y = int(line[1])
+        th = int(line[2])
+        vl = int(line[3])
+        va = int(line[4])
+        return x, y, th, vl, va
+        
     @staticmethod
     def reset_position() -> None:
         """
@@ -91,6 +114,8 @@ class RP2040:
 
     @staticmethod
     def set_position(pos: Position) -> None:
+        RP2040._serial.write(f"OST {pos.x} {pos.y} {pos.th}\n")
+
         pass
     
     @staticmethod

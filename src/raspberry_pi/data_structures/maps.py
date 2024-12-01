@@ -1,9 +1,33 @@
+import numpy as np
 from raspberry_pi.structures.state import Position
+from raspberry_pi.utils import Utils
 
+# can be extended as localmap as abstarct class and Lidarmap, occupancy map as childs
 class LocalMap:
-    def __init__(self, robot_size):
-        pass
+    def __init__(self, scan):
+        """
+        Local Map
+        A list of position taken at 1° steps
 
+        :
+            _scan (list): list of distances [0, 359]
+        """
+        self._scan = scan
+    
+
+    def get_dist(self, angle: int) -> int:
+        """
+        Get Dist
+        Get the distance at a specified angle
+
+        Args:
+            angle (int): angle where to check distance
+
+        Returns:
+            int: distance in mm
+        """
+        return self._scan[angle]
+    
     def is_position_free(self, pos: Position) -> bool:
         """
         Is Position Free
@@ -47,6 +71,12 @@ class LocalMap:
             bool: if the area is free
         """
         pass
+    
+    def get_scan(self) -> list:
+        return self._scan.copy()
+
+
+
 
 class GlobalMap:
     """
@@ -56,8 +86,13 @@ class GlobalMap:
     Occupancy grid
     (can be extended to a probability map returning what is the chance of a point to be occupied)
     """
+
+    RESOLUTION = 100 # mm
+    INITIAL_SIZE = 10000 # mm
     def __init__(self, robot_size):
-        pass
+        self._grid_size = self.INITIAL_SIZE
+        self._grid = np.full((self.INITIAL_SIZE, self.INITIAL_SIZE), -1, dtype=int)
+        self._origin_offset = (self.INITIAL_SIZE // 2, self.INITIAL_SIZE // 2)
 
     def is_position_free(self, pos: Position) -> bool:
         """
@@ -70,7 +105,8 @@ class GlobalMap:
         Returns:
             bool: if position is free
         """
-        pass
+        gx, gy = self._world_to_grid(pos)
+        return self._grid[gx][gy] == 0
 
     def is_segment_free(self, pos1: Position, pos2: Position) -> bool:
         """
@@ -95,5 +131,41 @@ class GlobalMap:
             position (Position): position of the local map
             local_map (LocalMap): local map of the envoironment
         """
+        # check if local map fits in the current global map
+            # if not expand the map
+
+        scan = local_map.get_scan()
+        for angle, dist in enumerate(scan):
+            global_angle = position.th + angle
+            # normalize angle
+            ox = 0
+            oy = 0
+            obstacle_pos = Position(ox, oy, 0)
     
-        pass
+
+    def _world_to_grid(self, pos: Position) -> tuple[int, int]:
+        """
+        World Position to Grid Position
+        Position (0, 0) world is center of grid
+
+        Args:
+            pos (Position): position reference to the starting point
+
+        Returns:
+            int, int: index of the position
+        """
+        gx = int(pos.x / self.RESOLUTION) + self._origin_offset[0]
+        gy = int(pos.y / self.RESOLUTION) + self._origin_offset[1]
+        return gx, gy
+    
+    def _extention_ray(self, robot_pos: Position, obstacle_pos: Position) -> None:
+        """
+        Obstacle Ray
+        Set the line between robot and obstacle as free, 
+            the obstacle position as occupied, 
+            the rest of the line unknown
+
+        Args:
+            robot_pos (Position): position of the robot
+            obstacle_pos (Position): position of the obstacle
+        """

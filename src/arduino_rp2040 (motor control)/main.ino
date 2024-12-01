@@ -24,7 +24,7 @@
     "PID <kp> <ki> <kd>"
         - change pid values
 
-    "ORQ" -> "ODM <x> <y> <theta> <vl> <va>"
+    "ORQ" -> "<x> <y> <theta>"
         - odometry request
         - (x, y) in [mm], theta in [mrad], 
         - (vl, va) in [mm/s, mrad/s]
@@ -35,6 +35,12 @@
     "OST <x> <y> <theta>"
         - set odometry values
         - (x, y) in [mm], theta in [mrad]
+
+    "ODB" -> "<x> <y> <theta> <vx> <vy>"
+        - get debug odometry values
+        - (x, y) in [mm], theta in [mrad], 
+        - (vl, va) in [mm/s, mrad/s]
+
 
     "PTH <n> <x1> <y1> <th1> ... <xn> <yn> <thn>"
         - set new path to follow
@@ -71,7 +77,7 @@ long last_serial_time = 0;
 void handle_serial();
 
 // GENERAL
-class Position {
+class Position { // general unit
     public:
         int x, y, th;
         Position();
@@ -100,6 +106,7 @@ Position actual_robot_position_u = Position(); // x, y (um), theta (urad)
 void left_tick();
 void right_tick();
 void reset_odometry();
+void set_odometry(Position p_u);
 void update_odometry();
 
 // POSITION CONTROL
@@ -204,6 +211,7 @@ void setup() {
 }
 
 
+//// LOOP ////
 void loop() {
     long t_start = millis();
 
@@ -281,7 +289,7 @@ void Position::reset() {
 void handle_serial() {
     while (Serial1.available() >= 3) {
         char command[4];
-        command[4] = '\0';
+        command[3] = '\0';
         Serial1.readBytes(command, 3);
 
         if (strcmp(command, "STP") == 0) {
@@ -313,22 +321,17 @@ void handle_serial() {
             Kp = Serial1.parseFloat();
             Ki = Serial1.parseFloat();
             Kd = Serial1.parseFloat();
-            PID_LEFT.SetTuinings(Kp, Ki, Kd);
-            PID_RIGHT.SetTuinings(Kp, Ki, Kd);
+            PID_LEFT.SetTunings(Kp, Ki, Kd);
+            PID_RIGHT.SetTunings(Kp, Ki, Kd);
 
         } else if (strcmp(command, "ORQ") == 0) {
             // odometry request
-            // "ORQ" -> "ODM <x> <y> <theta> <vl> <va>"
-            Serial1.print("ODM ");
+            // "ORQ" -> "<x> <y> <theta>"
             Serial1.print(actual_robot_position_u.x/1000.0); // x
             Serial1.print(" ");
             Serial1.print(actual_robot_position_u.y/1000.0); // y
             Serial1.print(" ");
-            Serial1.print(actual_robot_position_u.th/1000.0); // theta
-            Serial1.print(" ");
-            Serial1.print(actual_robot_velocities_m[0]); // vx
-            Serial1.print(" ");
-            Serial1.println(actual_robot_velocities_m[1]); // vt
+            Serial1.println(actual_robot_position_u.th/1000.0); // theta
 
         } else if (strcmp(command, "ORS") == 0) {
             // odometry reset
@@ -338,7 +341,23 @@ void handle_serial() {
         } else if (strcmp(command, "OST") == 0) {
             // odometry set
             // "OST <x> <y> <theta>"
-            // TODO
+            int x_u = Serial1.parseInt()*1000; 
+            int y_u = Serial1.parseInt()*1000; 
+            int th_u = Serial1.parseInt()*1000; 
+            set_odometry(Position(x_u, y_u, th_u));
+
+        } else if (strcmp(command, "ODB") == 0) {
+            // odometry debug
+            // "ORQ" -> "<x> <y> <theta> <vl> <va>"
+            Serial1.print(actual_robot_position_u.x/1000.0); // x
+            Serial1.print(" ");
+            Serial1.print(actual_robot_position_u.y/1000.0); // y
+            Serial1.print(" ");
+            Serial1.println(actual_robot_position_u.th/1000.0); // theta
+            Serial1.print(" ");
+            Serial1.print(actual_robot_velocities_m[0]); // vx
+            Serial1.print(" ");
+            Serial1.println(actual_robot_velocities_m[1]); // vt
 
         } else if (strcmp(command, "PTH") == 0) {
             // set path to follow
@@ -394,6 +413,9 @@ void reset_odometry() {
     target_robot_position_m.reset();
     target_position_queue.reset();
 
+}
+void set_odometry(Position p_u) {
+    actual_robot_position_u = p_u;
 }
 void update_odometry() {
     /*

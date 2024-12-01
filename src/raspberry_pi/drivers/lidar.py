@@ -21,14 +21,17 @@ import time
 import threading
 import struct
 from enum import Enum
+import numpy as np
+import math
 
 from raspberry_pi.structures.maps import LocalMap
 
 
 class Scan:
+    MAX_SCAN_AGE = 5
     def __init__(self):
-        """ SCAN: 360 elements array? or something else? """
-        self._scan = [0 for _ in range(360)] 
+        self._last_scan_id = 0
+        self._scan = np.full(360, (0, self._last_scan_id), dtype=tuple) # tuple: dist_mm, scan_id
 
     def add_sample(self, angle_deg: float, dist_mm: int, scan_n: int) -> None:
         """
@@ -40,9 +43,11 @@ class Scan:
             dist_mm (int): distance of the obstacle
             scan_n (int): number of the scan
         """
-        pass
+        self._last_scan_id = scan_n
+        angle_deg = math.round(angle_deg)
+        self._scan[angle_deg] = (dist_mm, self._last_scan_id)
 
-    def get_local_map(self) -> LocalMap:
+    def create_local_map(self) -> LocalMap:
         """
         Gat Local Map
         Generates local map based on the scan
@@ -50,7 +55,16 @@ class Scan:
         Returns:
             LocalMap: local map based on the scan
         """
-        pass
+        self._clean_scan()
+        scan = self._scan[:, 0]
+        return LocalMap(scan)
+
+
+    def _clean_scan(self) -> None:
+        for i, s in enumerate(self._scan):
+            if s[1] <= self._last_scan_id - self.MAX_SCAN_AGE:
+                self._scan[i] = 0
+
 
 class Lidar:
     PORT = '/dev/ttyUSB0'  
@@ -253,36 +267,36 @@ class Lidar:
         # print(f"Response descriptor OK: \n\tdata len: {data_len}, mode: {data_mode}, type: {data_type}")
         return True, data_len, data_mode, data_type
     
-    def _add_sample_to_scan(self, sample): # sample_index, sample
-        """
-        Adds sample to the scan
+    # def _add_sample_to_scan(self, sample): # sample_index, sample
+    #     """
+    #     Adds sample to the scan
 
-        Args:
-            sample: [angle, dist, number]
+    #     Args:
+    #         sample: [angle, dist, number]
 
-        """
-        # als cen be pun in a fixed size queue
-        # one element per degree
-        angle = sample[0]
-        dist = sample[1]
-        scan_n = sample[2]
-        end = lambda: self._sample_index >= len(self._scan)
+    #     """
+    #     # als cen be pun in a fixed size queue
+    #     # one element per degree
+    #     angle = sample[0]
+    #     dist = sample[1]
+    #     scan_n = sample[2]
+    #     end = lambda: self._sample_index >= len(self._scan)
 
-        # find correct place
-        while not end() and self._scan[self._sample_index][0] < angle: 
-            # set to 0 if sample is old
-            if self._scan[self._sample_index][2] < scan_n - 5:
-                self._scan[self._sample_index] = (self._scan[self._sample_index][0], 0, scan_n)
-            self._sample_index += 1
+    #     # find correct place
+    #     while not end() and self._scan[self._sample_index][0] < angle: 
+    #         # set to 0 if sample is old
+    #         if self._scan[self._sample_index][2] < scan_n - 5:
+    #             self._scan[self._sample_index] = (self._scan[self._sample_index][0], 0, scan_n)
+    #         self._sample_index += 1
 
-        # add sample
-        if dist != 0.0:
-            if end():
-                self._scan.append(sample)
-            else:
-                self._scan[self._sample_index] = sample
+    #     # add sample
+    #     if dist != 0.0:
+    #         if end():
+    #             self._scan.append(sample)
+    #         else:
+    #             self._scan[self._sample_index] = sample
         
-        self._sample_index += 1
+    #     self._sample_index += 1
             
 
 

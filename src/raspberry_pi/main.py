@@ -99,15 +99,18 @@ class Robot:
     control_type = ControlType.OFF
 
     # Threads
+    control_lock = Lock()
     battery_thread = None
     connection_thread = None
-    command_lock = Lock()
 
     # Low Level states
     actual_pos = None
     goal_pos = None
 
+    # Socket
     manual_receiver = None
+    odometry_transmitter = None
+    
 
     @staticmethod
     def start():
@@ -124,10 +127,10 @@ class Robot:
                 continue
             
             # acquire command lock
-            Robot.command_lock.acquire()
+            Robot.control_lock.acquire()
 
             ## LIDAR
-            Robot.local_map = Robot.lidar.get_local_map()
+            Robot.local_map = Robot.lidar.create_local_map()
             
             ## ODOMETRY
             if Robot.odometry_type == Robot.OdometryType.ENCODERS_ONLY: # only encoders odometry
@@ -161,7 +164,7 @@ class Robot:
                     RP2040.set_target_velocity(vl, vth)
             
             # release command lock
-            Robot.command_lock.release()
+            Robot.control_lock.release()
 
             # delay
             
@@ -205,13 +208,15 @@ class Robot:
                     continue
                 
                 # command lock
-                with Robot.command_lock:
+                with Robot.control_lock:
                     # handle all commands
                     commands = received_data.decode().split('\n')[:-1]
                     for c in commands:
                         c = c.strip().split(' ')
 
                         ## COMMANDS HANDLING
+        
+
 
 
 
