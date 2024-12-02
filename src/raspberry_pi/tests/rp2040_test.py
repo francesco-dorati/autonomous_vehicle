@@ -4,6 +4,7 @@ from raspberry_pi.drivers.rp2040 import RP2040
 
 
 def main():
+    print("OK:", RP2040.ping())
     PositionTester.test_time_position()
 
 def stop():

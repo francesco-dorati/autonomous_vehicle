@@ -181,7 +181,7 @@ int target_powers[2] = {0, 0}; // left, right
 void send_motor_powers();
 
 void setup() {
-    Serial.begin(9600);
+    // Serial.begin(9600);
     Serial1.begin(115200);
 
     // Left Motor

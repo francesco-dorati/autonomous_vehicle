@@ -14,8 +14,20 @@ class RP2040:
     _serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.05)
     
     @staticmethod
+    def ping() -> bool:
+        RP2040._serial.flush()
+        RP2040._serial.write("PNGG\n".encode())
+        png = RP2040._serial.read_until("\n")
+        print(png)
+        png = png.decode()
+        print(png)
+        png = png.strip()
+        print(png)
+        return True if png == "PNG" else False
+
+    @staticmethod
     def stop_motors() -> None:
-        RP2040._serial.send("STP\n".encode())
+        RP2040._serial.write("STP\n".encode())
 
     @staticmethod
     def set_target_power(power_left: int, power_right: int) -> None:
