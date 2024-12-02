@@ -10,6 +10,9 @@
     INPUTS (Serial1 115200) 
     ALL INPUTS ENDS WITH '\n'
 
+    "PNG" -> "PNG"
+        - ping
+
     "STP" 
         - stop motors
 
@@ -292,7 +295,11 @@ void handle_serial() {
         command[3] = '\0';
         Serial1.readBytes(command, 3);
 
-        if (strcmp(command, "STP") == 0) {
+        if (strcmp(command, "PNG") == 0) {
+            // ping
+            Serial1.println("PNG");
+
+        } else if (strcmp(command, "STP") == 0) {
             // stop motors
             // "STP"
             stop_motors();

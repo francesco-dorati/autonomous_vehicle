@@ -11,7 +11,7 @@ from raspberry_pi.data_structures.state import Position
 
 
 class RP2040:
-    _serial = serial.Serial('/dev/ttyAMA2', 115200, timeout=0.05)
+    _serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.05)
     
     @staticmethod
     def stop_motors() -> None:
@@ -74,7 +74,11 @@ class RP2040:
             Position: position of the robot
         """
         RP2040._serial.write("ORQ\n".encode())
-        line = RP2040._serial.readline().decode().strip().split(" ")
+        line = RP2040._serial.readline()
+        if not line:
+            return None
+        
+        line = line.decode().strip().split(" ")
         print(line)
         x = int(line[0])
         y = int(line[1])

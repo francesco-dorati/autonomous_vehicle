@@ -4,7 +4,7 @@ from raspberry_pi.drivers.rp2040 import RP2040
 
 
 def main():
-    PositionTester.test_static()
+    PositionTester.test_time_position()
 
 def stop():
     RP2040.stop_motors()
@@ -93,9 +93,10 @@ class PositionTester(Tester):
     def test_time_position():
         """ Test the time it takes to get position """
         t_start = time.time()
-        RP2040.get_position()
+        p = RP2040.get_position()
         dt = (time.time() - t_start)*1000
         print(f"Get Position takes {dt} ms") 
+        print(p)
 
     @staticmethod
     def test_time_debug():

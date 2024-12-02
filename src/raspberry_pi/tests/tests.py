@@ -1,8 +1,6 @@
 import time
 
 def main():
-    p = PowerTest()
-    p.test_1()
 
 
 
