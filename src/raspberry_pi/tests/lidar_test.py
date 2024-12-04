@@ -3,6 +3,14 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
+def main():
+    Lidar.get_health()
+
+    Lidar.start_scan()
+    time.sleep(3)
+    Lidar.stop_scan()
+
+
 def print_scan(scan):
     print("SCAN:")
     for i in range(0, len(scan)):
@@ -49,39 +57,42 @@ def draw_scan(scan, name="test"):
     plt.savefig(path_name, format='png')
     plt.close()
 
-l = Lidar()
-l.start_scan()
+if __name__ == "__main__":
+    main()
+    
+# l = Lidar()
+# l.start_scan()
 
 
-time.sleep(5)
-l1 = l.get_scan()
-print("scan 1")
+# time.sleep(5)
+# l1 = l.get_scan()
+# print("scan 1")
 
-time.sleep(1)
-l2 = l.get_scan()
-print("scan 2")
+# time.sleep(1)
+# l2 = l.get_scan()
+# print("scan 2")
 
-time.sleep(1)
-l3 = l.get_scan()
-print("scan 3")
+# time.sleep(1)
+# l3 = l.get_scan()
+# print("scan 3")
 
-time.sleep(1)
-l4 = l.get_scan()
-print("scan 4")
+# time.sleep(1)
+# l4 = l.get_scan()
+# print("scan 4")
 
-time.sleep(1)
-l5 = l.get_scan()
-print("scan 5")
+# time.sleep(1)
+# l5 = l.get_scan()
+# print("scan 5")
 
-l.stop_scan()
+# l.stop_scan()
 
-print_scan(l1)
-print_scan(l2)
-print_scan(l3)
-draw_scan(l1, "test1")
-draw_scan(l2, "test2")
-draw_scan(l3, "test3")
-draw_scan(l4, "test4")
-draw_scan(l5, "test5")
+# print_scan(l1)
+# print_scan(l2)
+# print_scan(l3)
+# draw_scan(l1, "test1")
+# draw_scan(l2, "test2")
+# draw_scan(l3, "test3")
+# draw_scan(l4, "test4")
+# draw_scan(l5, "test5")
 
         
