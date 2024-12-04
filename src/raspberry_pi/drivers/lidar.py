@@ -217,17 +217,15 @@ class Lidar:
             _scan
         """
         with open("output.txt", "w") as f:
-
             while Lidar._scanning:
-                if Lidar._serial.in_waiting == 4095:
-                    break
-                print(Lidar._serial.in_waiting)
-                f.write(str(Lidar._serial.in_waiting) + "\n")
-
-
+                # if Lidar._serial.in_waiting == 4095:
+                #     break
+                # print(Lidar._serial.in_waiting)
                 bytes_to_read = Lidar.SCAN_PACKET_SIZE*Lidar.SCAN_PACKETS_PER_TIME
                 if Lidar._serial.in_waiting < bytes_to_read:
                     continue
+
+                f.write("\nin waiting: " + str(Lidar._serial.in_waiting) + "\n")
 
                 # read 5*n bytes
                 bytes_receaved = Lidar._serial.read(bytes_to_read)
@@ -240,6 +238,9 @@ class Lidar:
                 if not samples:
                     print("ERROR LIDAR process_bytes error")
                     return
+                
+                for s in samples:
+                    f.write(f"{s[0]} {s[1]}\n")
 
             # check if the head is correct
             # divide in packets
@@ -301,19 +302,34 @@ class Lidar:
         # print("THREAD END")
 
     @staticmethod
-    def _process_scan_bytes(bytes):
+    def _process_scan_bytes(bytes_received):
         # check if order correct
         
-        while 
-        s, ns, q, c, angle, _ = Lidar._unpack_sample(bytes[:5])
-        while s == ns or c == 0:
-            # WRONG ORDER
+        
+        i = 0
+        packets_number = math.floor(len(bytes_received)/Lidar.SCAN_PACKET_SIZE)
+        scan = []
+        while i < packets_number:
+            from_byte = i*Lidar.SCAN_PACKET_SIZE
+            to_byte = (i+1)*Lidar.SCAN_PACKET_SIZE
+            s, ns, q, c, angle, dist = Lidar._unpack_sample(bytes_received[from_byte:to_byte])
+            if s == ns or c == 0:
+                print(f"error at packet {i}")
+                break
+            scan.append(angle, dist)
+            i += 1
+
+
+
+        
+                # WRONG ORDER
             
 
         
         # 
         
-    def _unpack_sample(data):
+    @staticmethod
+    def _unpack_packet(data):
         """ 
         Unpacks lidar data
 
