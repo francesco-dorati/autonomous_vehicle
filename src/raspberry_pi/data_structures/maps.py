@@ -1,7 +1,8 @@
 import numpy as np
 import math
+
 from raspberry_pi.structures.state import Position
-from raspberry_pi.utils import Utils
+from raspberry_pi.utils import Utils, timing_decorator
 
 # can be extended as localmap as abstarct class and Lidarmap, occupancy map as childs
 class LocalMap:
@@ -15,7 +16,7 @@ class LocalMap:
         """
         self._scan = scan
     
-
+    @timing_decorator
     def get_dist(self, angle: int) -> int:
         """
         Get Dist
@@ -29,6 +30,7 @@ class LocalMap:
         """
         return self._scan[angle]
     
+    @timing_decorator
     def is_position_free(self, pos: Position) -> bool:
         """
         Is Position Free
@@ -43,6 +45,7 @@ class LocalMap:
         """
         pass
 
+    @timing_decorator
     def is_segment_free(self, pos1: Position, pos2: Position) -> bool:
         """
         Is Segment Free
@@ -58,6 +61,7 @@ class LocalMap:
         """
         pass
 
+    @timing_decorator
     def is_area_free(self, angle1, angle2, dist_mm) -> bool:
         """
         Is Area Free
@@ -73,6 +77,7 @@ class LocalMap:
         """
         pass
     
+    @timing_decorator
     def get_scan(self) -> list:
         return self._scan.copy()
 
@@ -95,6 +100,7 @@ class GlobalMap:
         self._grid = np.full((self.INITIAL_SIZE, self.INITIAL_SIZE), -1, dtype=int)
         self._origin_offset = (self.INITIAL_SIZE // 2, self.INITIAL_SIZE // 2)
 
+    @timing_decorator
     def is_position_free(self, pos: Position) -> bool:
         """
         Is Position Free
@@ -109,6 +115,7 @@ class GlobalMap:
         gx, gy = self._world_to_grid(pos)
         return self._grid[gx][gy] == 0
 
+    @timing_decorator
     def is_segment_free(self, pos1: Position, pos2: Position) -> bool:
         """
         Is Segment Free
@@ -123,6 +130,7 @@ class GlobalMap:
         """
         pass
 
+    @timing_decorator
     def expand(self, position: Position, local_map: LocalMap) -> None:
         """
         Expand
@@ -146,7 +154,7 @@ class GlobalMap:
     
     # get grid:  position, size -> array
     # get grid:  position, size -> 01110110101
-
+    
     def _world_to_grid(self, pos: Position) -> tuple[int, int]:
         """
         World Position to Grid Position

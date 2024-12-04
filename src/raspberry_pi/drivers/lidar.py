@@ -12,7 +12,23 @@
     - get_scan()
         returns scan copy
 
+    LIDAR info:
+    response descriptor:
+    1 byte          A5
+    1 byte          5A
+    30 bits         data response length (SCAN_LEN_BYTES???)
+    2 bits          send mode
+    1 byte          data type
     
+    scan data packets: 
+    S               (1 bit)
+    !S              (1 bit)
+    Quality         (6 bit)
+    C (checksum)    (1 bit)
+    angle           (15 bit)
+    distance        (16 bit)
+        total: 5 byte
+
 
 """
 
@@ -39,7 +55,7 @@ class Scan:
         Adds sample to the scan
 
         Args:
-            angle_deg (float): angle of the sample
+            angle_deg (float): angle of the sample, 
             dist_mm (int): distance of the obstacle
             scan_n (int): number of the scan
         """
@@ -74,19 +90,41 @@ class Lidar:
     STOP_COMMAND = b'\xA5\x25'
     HEALTH_COMMAND = b'\xA5\x52'
     MAX_IN_WAITING = 4095
+    SCAN_PACKET_SIZE = 5 # bytes
 
-    def __init__(self):
-        self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
-        self.scanning = False
-        self.scan_thread = None
+    _serial = None
+    _scanning = False
+    _thread = None
 
-        self._scan = Scan()
-        self._sample_index = 0
-        self.scan_number = 0
+    _scan = None
+    
+    @staticmethod
+    def start():
+        Lidar._serial = serial.Serial(Lidar.PORT, Lidar.BAUD_RATE, 
+                                      timeout=Lidar.TIMEOUT, 
+                                      parity=serial.PARITY_NONE, 
+                                      stopbits=serial.STOPBITS_ONE)
+    @staticmethod   
+    def stop():
+        if Lidar._scanning:
+            Lidar.stop_scan()
+        Lidar._thread = None
+
+        Lidar._serial.close()
+        Lidar._serial = None
+
+    # def __init__(self):
+    #     self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
+    #     self.scanning = False
+    #     self.scan_thread = None
+
+    #     self._scan = Scan()
+    #     self._sample_index = 0
+    #     self.scan_number = 0
         # self.get_health()
 
-    
-    def get_health(self):
+    @staticmethod
+    def get_health():
         """
         Get Health
         Sends health request and returns status code
@@ -94,46 +132,74 @@ class Lidar:
         Returns:
             int: status code (see lidar docs)
         """
-        self.ser.write(self.HEALTH_COMMAND)
-        response_descriptor = self.ser.read(7)
-        ok, l, m, t = self._unpack_descriptor(response_descriptor)
+        Lidar._serial.write(Lidar.HEALTH_COMMAND)
+        response_descriptor = Lidar._serial.read(7)
+        ok, l, m, t = Lidar._unpack_descriptor(response_descriptor)
         if not ok:
             print("ERROR LIDAR (get_health()) Response descriptor not OK")
             return
-        # print(f"l: {l}, m: {m}, t: {t}")
 
-        data = self.ser.read(3)
+        data = Lidar._serial.read(3)
         return int(data[0])
+    
+    @staticmethod
+    def start_scan():
+        """
+        Initializes scan and starts scan thread 
+        """
+        Lidar._thread = threading.Thread(target=Lidar._scan_handler)
 
-    def start_scan(self):
-        """
-        Starts scan thread
-        """
+        Lidar._scan = Scan()
+        Lidar._scanning = True
+
+        # send start command
+        Lidar._serial.flushInput()
+        Lidar._serial.write(Lidar.START_COMMAND)
+
+        # receive and check descriptor
+        response_descriptor = Lidar._serial.read(7)
+        ok, l, _, _, = Lidar._unpack_descriptor(response_descriptor)
+        if not ok or l != Lidar.SCAN_PACKET_SIZE:
+            s1 = "ERROR LIDAR Response descriptor not OK"
+            s2 = "ERROR LIDAR Length mismatch"
+            print(s1 if not ok else s2)
+            Lidar._scanning = False
+            return
+        time.sleep(0.1)
+
         # start scanning thread
-        self.scan_thread = threading.Thread(target=self._scan_handler)
-        self.scan_thread.start()
+        Lidar._thread.start()
 
-    def stop_scan(self):
+    @staticmethod
+    def stop_scan():
         """
         Stops scan thread and send lidar stop
         """
-        print("Stopping LIDAR")
-        self.scanning = False
-        self.scan_thread.join()
-        self.ser.flushInput()
-        self.ser.write(self.STOP_COMMAND)
+        if Lidar._scanning:
+            Lidar._scanning = False
+            Lidar._thread.join()
+        Lidar._scan = None
+        
+        Lidar._serial.flushInput()
+        Lidar._serial.write(Lidar.STOP_COMMAND)
         time.sleep(0.01)
     
-    def get_local_map(self) -> LocalMap:
+    @staticmethod
+    def is_scanning():
+        return Lidar._scanning
+    
+    @staticmethod
+    def create_local_map() -> LocalMap:
         """
-        Get Local Map
+        Create Local Map
         Returns the local map based on the last scan
 
         Returns:
             LocalMap: local map based on the last scan
         """
-        return self._scan.get_local_map() if self.scanning else None
+        return Lidar._scan.create_local_map() if Lidar._scanning else None
 
+    @staticmethod
     def _scan_handler(self): # THREAD
         """
         Scan Thread
@@ -142,21 +208,22 @@ class Lidar:
         Modifies:
             _scan
         """
-        # send start command
-        self.ser.flushInput()
-        self.ser.write(self.START_COMMAND)
 
-        # receive and check descriptor
-        response_descriptor = self.ser.read(7)
-        ok, l, _, _, = self._unpack_descriptor(response_descriptor)
-        if not ok:
-            print("ERROR LIDAR Response descriptor not OK")
-            self.scanning = False
-            return
+        while Lidar._scanning:
+            print(Lidar._serial.in_waiting)
+
+            # read 5*n bytes
+            # check if the head is correct
+            # divide in packets
+            # read each packet
+            
+            # add to scan 
+
         
-        # delay for lidar
-        time.sleep(0.1)
-        self.scanning = True
+        
+        return
+
+
 
         # receiver loop
         sample_n = 0

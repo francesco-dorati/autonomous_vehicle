@@ -175,6 +175,7 @@ class Robot:
     @staticmethod
     def check_battery():
         while True:
+            NANO.get_battery
             # check battery # TODO
             time.sleep(Robot.BATTERY_CHECK_DELAY)
 

@@ -1,8 +1,10 @@
+from raspberry_pi.utils import timing_decorator
 from raspberry_pi.structures.maps import GlobalMap, LocalMap
 from raspberry_pi.structures.state import Position
 
 class Planning:
     @staticmethod
+    @timing_decorator
     def choose_exploration_goal(global_map: GlobalMap, position: Position):
         """
         Chooses goal position for mapping
@@ -10,6 +12,7 @@ class Planning:
         pass
 
     @staticmethod
+    @timing_decorator
     def path_planner(global_map: GlobalMap, local_map: LocalMap, current_pos: Position, goal_pos: Position) -> list[Position]:
         """
         Path Planner
@@ -29,6 +32,7 @@ class Planning:
 
 
     @staticmethod
+    @timing_decorator
     def obstacle_avoidance(v_lin: int, v_th: int) -> tuple[int, int]:
         """
         Obstacle Avoidance

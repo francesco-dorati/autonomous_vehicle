@@ -8,7 +8,7 @@
     battery request
     battery_mv: battery level mv
 
-    "S":
+    "S": // TODO
         "SR" -> "<d_fl> <d_fr> <d_rl> <d_rr>"
         sensor request
         d_*: distance mm

@@ -1,8 +1,10 @@
+from raspberry_pi.utils import timing_decorator
 from raspberry_pi.structures.state import Position, State, Velocity
 from raspberry_pi.structures.maps import LocalMap, GlobalMap
 
 class Perception:
     @staticmethod
+    @timing_decorator
     def visual_odometry(prev_position: Position, lidar_data) -> Position:
         """
         Visual odometry
@@ -19,6 +21,7 @@ class Perception:
         pass
 
     @staticmethod
+    @timing_decorator
     def position_filter(visual_pos: Position, encoder_pos: Position) -> Position:
         """
         Position filter
@@ -34,6 +37,7 @@ class Perception:
         pass
 
     @staticmethod
+    @timing_decorator
     def map_construction(position: Position, local_map: LocalMap, global_map: GlobalMap) -> GlobalMap:
         """
         Map Construction

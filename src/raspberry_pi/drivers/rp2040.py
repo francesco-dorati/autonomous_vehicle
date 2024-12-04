@@ -7,6 +7,7 @@
 
 import serial
 
+from raspberry_pi.utils import timing_decorator
 from raspberry_pi.data_structures.state import Position
 
 
@@ -14,6 +15,7 @@ class RP2040:
     _serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.05)
     
     @staticmethod
+    @timing_decorator
     def ping() -> bool:
         RP2040._serial.flush()
         RP2040._serial.write("PNGG\n".encode())
@@ -26,10 +28,12 @@ class RP2040:
         return True if png == "PNG" else False
 
     @staticmethod
+    @timing_decorator
     def stop_motors() -> None:
         RP2040._serial.write("STP\n".encode())
 
     @staticmethod
+    @timing_decorator
     def set_target_power(power_left: int, power_right: int) -> None:
         """
         Set the motor power.
@@ -46,6 +50,7 @@ class RP2040:
         RP2040._serial.write(f"POW {power_left} {power_right}\n".encode())
         
     @staticmethod
+    @timing_decorator
     def set_target_velocity(lin_vel: int, ang_vel: int) -> None:
         """
         Set the robot velocity.
@@ -61,6 +66,7 @@ class RP2040:
         RP2040._serial.write(f"VEL {lin_vel} {ang_vel}\n".encode())
 
     @staticmethod
+    @timing_decorator
     def set_pid_values(kp: float, ki: float, kd: float) -> None:
         """
         Change PID values of velocity controller.
@@ -75,9 +81,10 @@ class RP2040:
         RP2040._serial.write(f"PID {kp} {ki} {kd}\n".encode())
 
     @staticmethod
+    @timing_decorator
     def get_position() -> Position:
         """
-        Request odometry data from RP2020
+        Request odometry data from RP2040
 
         Side:
             writes to serial
@@ -99,6 +106,7 @@ class RP2040:
         return p
 
     @staticmethod
+    @timing_decorator
     def get_debug_odometry() -> tuple[int, int, int, int, int]:
         """
         Request debug odometry data from RP2020
@@ -123,6 +131,7 @@ class RP2040:
         return x, y, th, vl, va
         
     @staticmethod
+    @timing_decorator
     def reset_position() -> None:
         """
             Sends odometry reset command
@@ -130,15 +139,17 @@ class RP2040:
         RP2040._serial.write("ORS\n".encode())
 
     @staticmethod
+    @timing_decorator
     def set_position(pos: Position) -> None:
         RP2040._serial.write(f"OST {pos.x} {pos.y} {pos.th}\n".encode())
-
         pass
     
     @staticmethod
-    def follow_path(path):
+    @timing_decorator
+    def follow_path(path): # TODO
         pass
     
     @staticmethod
-    def append_path(path):
+    @timing_decorator
+    def append_path(path): # TODO
         pass
