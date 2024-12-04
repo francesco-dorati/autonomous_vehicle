@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
-    Lidar.get_health()
-
     Lidar.start()
+    Lidar.get_health()
+    time.sleep(0.5)
     Lidar.start_scan()
-    time.sleep(3)
+    time.sleep(10)
     Lidar.stop_scan()
     Lidar.stop()
 

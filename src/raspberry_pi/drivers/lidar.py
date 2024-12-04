@@ -41,6 +41,7 @@ import numpy as np
 import math
 
 from raspberry_pi.data_structures.maps import LocalMap
+from raspberry_pi.utils import timing_decorator
 
 """ FIX SCAN ANGLE -> POSITIVE NEGATIVE ARE DIFFERENT FROM ROBOT'S """
 class Scan:
@@ -92,7 +93,7 @@ class Lidar:
     HEALTH_COMMAND = b'\xA5\x52'
     BUFFER_SIZE = 4095
     SCAN_PACKET_SIZE = 5 # bytes
-    SCAN_PACKETS_PER_TIME = 200
+    SCAN_PACKETS_PER_TIME = 600
 
     _serial = None
     _scanning = False
@@ -101,12 +102,14 @@ class Lidar:
     _scan = None
     
     @staticmethod
+    @timing_decorator
     def start():
         Lidar._serial = serial.Serial(Lidar.PORT, Lidar.BAUD_RATE, 
                                       timeout=Lidar.TIMEOUT, 
                                       parity=serial.PARITY_NONE, 
                                       stopbits=serial.STOPBITS_ONE)
     @staticmethod   
+    @timing_decorator
     def stop():
         if Lidar._scanning:
             Lidar.stop_scan()
@@ -126,6 +129,7 @@ class Lidar:
         # self.get_health()
 
     @staticmethod
+    @timing_decorator
     def get_health():
         """
         Get Health
@@ -148,6 +152,7 @@ class Lidar:
         return int(data[0])
     
     @staticmethod
+    @timing_decorator
     def start_scan():
         """
         Initializes scan and starts scan thread 
@@ -179,6 +184,7 @@ class Lidar:
         Lidar._thread.start()
 
     @staticmethod
+    @timing_decorator
     def stop_scan():
         """
         Stops scan thread and send lidar stop
@@ -193,10 +199,12 @@ class Lidar:
         time.sleep(0.01)
     
     @staticmethod
+    @timing_decorator
     def is_scanning():
         return Lidar._scanning
     
     @staticmethod
+    @timing_decorator
     def create_local_map() -> LocalMap:
         """
         Create Local Map
@@ -216,6 +224,7 @@ class Lidar:
         Modifies:
             _scan
         """
+        scan_n = 0
         with open("output.txt", "w") as f:
             while Lidar._scanning:
                 # if Lidar._serial.in_waiting == 4095:
@@ -226,6 +235,7 @@ class Lidar:
                     continue
 
                 f.write("\nin waiting: " + str(Lidar._serial.in_waiting) + "\n")
+                f.write("scan number: " + str(scan_n) + "\n")
 
                 # read 5*n bytes
                 bytes_receaved = Lidar._serial.read(bytes_to_read)
@@ -236,11 +246,15 @@ class Lidar:
                 # interpret data -> check if correct order
                 samples = Lidar._process_scan_bytes(bytes_receaved)
                 if not samples:
+                    print(samples)
                     print("ERROR LIDAR process_bytes error")
                     return
                 
                 for s in samples:
-                    f.write(f"{s[0]} {s[1]}\n")
+                    f.write(f"{int(s[0])} {int(s[1])}\n")
+                scan_n += 1
+
+                Lidar._scan.add_sample()
 
             # check if the head is correct
             # divide in packets
@@ -304,21 +318,20 @@ class Lidar:
     @staticmethod
     def _process_scan_bytes(bytes_received):
         # check if order correct
-        
-        
         i = 0
         packets_number = math.floor(len(bytes_received)/Lidar.SCAN_PACKET_SIZE)
         scan = []
         while i < packets_number:
             from_byte = i*Lidar.SCAN_PACKET_SIZE
             to_byte = (i+1)*Lidar.SCAN_PACKET_SIZE
-            s, ns, q, c, angle, dist = Lidar._unpack_sample(bytes_received[from_byte:to_byte])
+            s, ns, q, c, angle, dist = Lidar._unpack_packet(bytes_received[from_byte:to_byte])
             if s == ns or c == 0:
-                print(f"error at packet {i}")
+                print(f"ERROR {i}")
                 break
-            scan.append(angle, dist)
+            scan.append((angle, dist))
             i += 1
-
+        return scan
+    
 
 
         
