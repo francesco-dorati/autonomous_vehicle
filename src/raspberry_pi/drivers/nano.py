@@ -1,28 +1,35 @@
 import serial
+import threading
 
 class NANO:
     _serial = None
+    _request_lock = None
 
     @staticmethod
     def start():
-        NANO._serial = serial.Serial('/dev/ttyAMA2', 9600, timeout=0.05)
+        NANO._serial = serial.Serial('/dev/ttyAMA2', 9600, timeout=1)
+        NANO._request_lock = threading.Lock()
 
     @staticmethod
     def stop():
         NANO._serial.close()
         NANO._serial = None
+        NANO._request_lock = None
+
 
     @staticmethod
     def ping() -> bool:
-        NANO._serial.write("B\n".encode())
-        line = NANO._serial.readline()
-        res = line.strip()
+        with NANO._request_lock:
+            NANO._serial.write("P\n".encode())
+            line = NANO._serial.readline()
+        res = line.decode().strip()
         return res == 'P'
     
     @staticmethod
     def get_battery() -> int:
-        NANO._serial.write("B\n".encode())
-        line = NANO._serial.readline()
+        with NANO._request_lock:
+            NANO._serial.write("B\n".encode())
+            line = NANO._serial.readline()
         if not line:
             return None
         battery_mv = int(line.strip())
@@ -38,8 +45,9 @@ class NANO:
 
     @staticmethod
     def get_distances() -> list:
-        NANO._serial.write("SR\n".encode())
-        line = NANO._serial.readline()
+        with NANO._request_lock:
+            NANO._serial.write("SR\n".encode())
+            line = NANO._serial.readline()
         if not line:
             return None
         fl, fr, rl, rr = map(int, line.strip().split(" "))
