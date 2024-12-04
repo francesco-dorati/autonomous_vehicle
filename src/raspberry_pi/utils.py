@@ -14,11 +14,11 @@ class Utils:
 
 def timing_decorator(func):
     def wrapper(*args, **kwargs):
-        print(f"Calling '{func.__name__}' with arguments {args} and {kwargs}")
+        print(f"\n> Calling '{func.__qualname__}{args}'")
         ts = time.time()
         res = func(*args, **kwargs)
         dt = (time.time() - ts)*1000
-        print(f"'{func.__name__}' returned {res}")
-        print(f"took: {dt} ms\n")
+        print(f"> returned {res}")
+        print(f"> took: {dt:.2f} ms")
         return res
     return wrapper

@@ -40,14 +40,15 @@ from enum import Enum
 import numpy as np
 import math
 
-from raspberry_pi.structures.maps import LocalMap
+from raspberry_pi.data_structures.maps import LocalMap
 
 """ FIX SCAN ANGLE -> POSITIVE NEGATIVE ARE DIFFERENT FROM ROBOT'S """
 class Scan:
     MAX_SCAN_AGE = 5
     def __init__(self):
         self._last_scan_id = 0
-        self._scan = np.full(360, (0, self._last_scan_id), dtype=tuple) # tuple: dist_mm, scan_id
+        self._scan = np.full(360, 0, dtype=tuple) # tuple: dist_mm, scan_id
+        self._scan_n = np.full(360, 0, dtype=tuple) # tuple: dist_mm, scan_id
 
     def add_sample(self, angle_deg: float, dist_mm: int, scan_n: int) -> None:
         """
@@ -89,8 +90,9 @@ class Lidar:
     START_COMMAND = b'\xA5\x20'
     STOP_COMMAND = b'\xA5\x25'
     HEALTH_COMMAND = b'\xA5\x52'
-    MAX_IN_WAITING = 4095
+    BUFFER_SIZE = 4095
     SCAN_PACKET_SIZE = 5 # bytes
+    SCAN_PACKETS_PER_TIME = 200
 
     _serial = None
     _scanning = False
@@ -132,6 +134,9 @@ class Lidar:
         Returns:
             int: status code (see lidar docs)
         """
+        if not Lidar._serial:
+            print("ERROR LIDAR must run Lidar.start()")
+            return
         Lidar._serial.write(Lidar.HEALTH_COMMAND)
         response_descriptor = Lidar._serial.read(7)
         ok, l, m, t = Lidar._unpack_descriptor(response_descriptor)
@@ -147,7 +152,9 @@ class Lidar:
         """
         Initializes scan and starts scan thread 
         """
-        Lidar._thread = threading.Thread(target=Lidar._scan_handler)
+        if not Lidar._serial:
+            print("ERROR LIDAR must run Lidar.start()")
+            return
 
         Lidar._scan = Scan()
         Lidar._scanning = True
@@ -168,6 +175,7 @@ class Lidar:
         time.sleep(0.1)
 
         # start scanning thread
+        Lidar._thread = threading.Thread(target=Lidar._scan_handler)
         Lidar._thread.start()
 
     @staticmethod
@@ -200,7 +208,7 @@ class Lidar:
         return Lidar._scan.create_local_map() if Lidar._scanning else None
 
     @staticmethod
-    def _scan_handler(self): # THREAD
+    def _scan_handler(): # THREAD
         """
         Scan Thread
         Receives lidar data and puts them in _scan
@@ -208,11 +216,31 @@ class Lidar:
         Modifies:
             _scan
         """
+        with open("output.txt", "w") as f:
 
-        while Lidar._scanning:
-            print(Lidar._serial.in_waiting)
+            while Lidar._scanning:
+                if Lidar._serial.in_waiting == 4095:
+                    break
+                print(Lidar._serial.in_waiting)
+                f.write(str(Lidar._serial.in_waiting) + "\n")
 
-            # read 5*n bytes
+
+                bytes_to_read = Lidar.SCAN_PACKET_SIZE*Lidar.SCAN_PACKETS_PER_TIME
+                if Lidar._serial.in_waiting < bytes_to_read:
+                    continue
+
+                # read 5*n bytes
+                bytes_receaved = Lidar._serial.read(bytes_to_read)
+                if len(bytes_receaved) != bytes_to_read:
+                    print("ERROR LIDAR read different bytes than expected")
+                    return
+
+                # interpret data -> check if correct order
+                samples = Lidar._process_scan_bytes(bytes_receaved)
+                if not samples:
+                    print("ERROR LIDAR process_bytes error")
+                    return
+
             # check if the head is correct
             # divide in packets
             # read each packet
@@ -272,8 +300,20 @@ class Lidar:
 
         # print("THREAD END")
 
-    
-    def _unpack_data(self, data):
+    @staticmethod
+    def _process_scan_bytes(bytes):
+        # check if order correct
+        
+        while 
+        s, ns, q, c, angle, _ = Lidar._unpack_sample(bytes[:5])
+        while s == ns or c == 0:
+            # WRONG ORDER
+            
+
+        
+        # 
+        
+    def _unpack_sample(data):
         """ 
         Unpacks lidar data
 
@@ -284,7 +324,7 @@ class Lidar:
             ns:         not start flag
             q:          quality
             c:          check bit
-            angle_deg:  angle in degrees
+            angle_deg:  angle in degrees (left positive)
             dist_mm:    distance in mm
         """
         s = bool((data[0] & 0b00000001))  # Start flag (0-1)
@@ -296,7 +336,7 @@ class Lidar:
         angle_q6_low = (data[1] & 0b11111110) >> 1  # angle_q6[6:0] 
         angle_q6_high = data[2]  # angle_q6[14:7]
         angle_q6 = (angle_q6_high << 7) | angle_q6_low
-        angle_deg = angle_q6 / 64.0  # Convert to degrees
+        angle_deg = 360 - (angle_q6 / 64.0)  # Convert to degrees and 
 
         distance_low = data[3]  # distance_q2[7:0] 
         distance_high = data[4]  # distance_q2[15:8]
@@ -305,7 +345,8 @@ class Lidar:
 
         return s, ns, q, c, angle_deg, dist_mm
 
-    def _unpack_descriptor(self, descriptor):
+    @staticmethod
+    def _unpack_descriptor(descriptor):
         """
         Unpacks descriptor
 

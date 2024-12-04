@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from raspberry_pi.structures.state import Position
+from raspberry_pi.data_structures.state import Position
 from raspberry_pi.utils import Utils, timing_decorator
 
 # can be extended as localmap as abstarct class and Lidarmap, occupancy map as childs

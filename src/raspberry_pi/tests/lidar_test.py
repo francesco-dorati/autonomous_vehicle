@@ -6,9 +6,11 @@ import numpy as np
 def main():
     Lidar.get_health()
 
+    Lidar.start()
     Lidar.start_scan()
     time.sleep(3)
     Lidar.stop_scan()
+    Lidar.stop()
 
 
 def print_scan(scan):
