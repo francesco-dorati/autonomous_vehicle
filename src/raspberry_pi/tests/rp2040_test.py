@@ -10,7 +10,7 @@ def main():
 def stop():
     RP2040.stop_motors()
 
-class Tester:
+class RP2040Tester:
     @staticmethod
     def set_power(l, r, time):
         RP2040.set_target_power(l, r)
@@ -20,7 +20,7 @@ class Tester:
 
 
 
-class PowerTester(Tester):
+class PowerTester(RP2040Tester):
     @staticmethod
     def test_motors():
         """ Test correct directions """
@@ -74,22 +74,22 @@ class PowerTester(Tester):
 
     @staticmethod
     def straight(time):
-        Tester.set_power(100, 100, time)
+        RP2040Tester.set_power(100, 100, time)
     
     @staticmethod
     def backwards(time):
-        Tester.set_power(-100, -100, time)
+        RP2040Tester.set_power(-100, -100, time)
 
     @staticmethod
     def rotate_left(time):
-        Tester.set_power(-100, 100, time)
+        RP2040Tester.set_power(-100, 100, time)
     
     @staticmethod
     def rotate_right(time):
-        Tester.set_power(100, -100, time)
+        RP2040Tester.set_power(100, -100, time)
 
 
-class PositionTester(Tester):
+class PositionTester(RP2040Tester):
     @staticmethod
     def test_time_position():
         """ Test the time it takes to get position """
@@ -121,14 +121,14 @@ class PositionTester(Tester):
         RP2040.reset_position()
         print("START")
         print(RP2040.get_position())
-        Tester.set_power(100, 100, 3)
+        RP2040Tester.set_power(100, 100, 3)
         print(RP2040.get_position())
-        Tester.set_power(-100, -100, 3)
+        RP2040Tester.set_power(-100, -100, 3)
         print(RP2040.get_position())
         print("END")
 
 
-class PidTester(Tester):
+class PidTester(RP2040Tester):
     @staticmethod
     def linear_static_test():
         kp = 0

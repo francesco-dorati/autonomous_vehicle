@@ -63,6 +63,8 @@ from raspberry_pi.structures.state import Position
 from raspberry_pi.perception import Perception
 from raspberry_pi.planning import Planning
 
+from raspberry_pi.network.manual_receiver import ManualReceiver
+
 
 class Robot: 
     HOST = '172.20.10.3'
@@ -159,7 +161,7 @@ class Robot:
                     RP2040.follow_path(path)
 
             elif Robot.control_type == Robot.ControlType.MANUAL:
-                    vl, vth = manual_receiver.get_command() # TODO
+                    vl, vth = ManualReceiver.get_command() # TODO
                     vl, vth = Planning.obstacle_avoidance(vl, vth, Robot.local_map)
                     RP2040.set_target_velocity(vl, vth)
             

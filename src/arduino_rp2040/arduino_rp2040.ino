@@ -457,13 +457,15 @@ void update_odometry() {
     actual_robot_velocities_m[0] = (dS_um * 1000)/ d_time_us; 
     actual_robot_velocities_m[1] = (dT_urad * 1000) / d_time_us;
     
+
     // robot position
+    // actual_robot_position_u.x += dS_um * cos(actual_robot_position_u.th/1000000.0); // um
+    // actual_robot_position_u.y += dS_um * sin(actual_robot_position_u.th/1000000.0); // um
+    actual_robot_position_u.x += dS_um * cos((actual_robot_position_u.th + dT_urad/2)/1000000.0); // um
+    actual_robot_position_u.y += dS_um * sin((actual_robot_position_u.th + dT_urad/2)/1000000.0); // um
     actual_robot_position_u.th += dT_urad; // urad
-    // normalize theta
     actual_robot_position_u.th = normalize_angle_urad(actual_robot_position_u.th);
-    // update x, y
-    actual_robot_position_u.x += dS_um * cos(actual_robot_position_u.th/1000000.0); // um
-    actual_robot_position_u.y += dS_um * sin(actual_robot_position_u.th/1000000.0); // um
+
 
     // DEBUG
     // if (Serial) {

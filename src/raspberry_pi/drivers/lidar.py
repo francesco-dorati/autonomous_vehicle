@@ -26,7 +26,7 @@ import math
 
 from raspberry_pi.structures.maps import LocalMap
 
-
+""" FIX SCAN ANGLE -> POSITIVE NEGATIVE ARE DIFFERENT FROM ROBOT'S """
 class Scan:
     MAX_SCAN_AGE = 5
     def __init__(self):

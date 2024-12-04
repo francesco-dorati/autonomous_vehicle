@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from raspberry_pi.structures.state import Position
 from raspberry_pi.utils import Utils
 
@@ -135,13 +136,16 @@ class GlobalMap:
             # if not expand the map
 
         scan = local_map.get_scan()
-        for angle, dist in enumerate(scan):
-            global_angle = position.th + angle
-            # normalize angle
-            ox = 0
-            oy = 0
-            obstacle_pos = Position(ox, oy, 0)
+        for scan_angle_deg, scan_dist in enumerate(scan):
+            scan_angle_mrad = Utils.deg_to_mrad(scan_angle_deg)
+            obstacle_angle_mrad = Utils.normalize_mrad(position.th + scan_angle_mrad)
+            obstacle_x = position.x + math.cos(obstacle_angle_mrad/1000)
+            obstacle_y = position.y + math.sin(obstacle_angle_mrad/1000)
+            obstacle_pos = Position(obstacle_x, obstacle_y, 0)
+            self._expansion_ray(position, obstacle_pos)
     
+    # get grid:  position, size -> array
+    # get grid:  position, size -> 01110110101
 
     def _world_to_grid(self, pos: Position) -> tuple[int, int]:
         """
@@ -158,12 +162,11 @@ class GlobalMap:
         gy = int(pos.y / self.RESOLUTION) + self._origin_offset[1]
         return gx, gy
     
-    def _extention_ray(self, robot_pos: Position, obstacle_pos: Position) -> None:
+    def _expansion_ray(self, robot_pos: Position, obstacle_pos: Position) -> None:
         """
         Obstacle Ray
-        Set the line between robot and obstacle as free, 
-            the obstacle position as occupied, 
-            the rest of the line unknown
+        Set the line between robot and obstacle as free
+            and the obstacle position as occupied
 
         Args:
             robot_pos (Position): position of the robot
