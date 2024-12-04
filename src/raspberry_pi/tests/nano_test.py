@@ -8,12 +8,13 @@ class NANOTester:
     @staticmethod
     def test():
         NANO.start()
-        NANO.start_sensors()
-        time.sleep(1)
         NANOTester.ping_test()
         NANOTester.battery_test()
-        NANOTester.sensors_test()
-        NANO.stop_sensors()
+        # time.sleep(5)
+        # NANO.start_sensors()
+        # time.sleep(3)
+        # NANOTester.sensors_test()
+        # NANO.stop_sensors()
         NANO.stop()
 
 

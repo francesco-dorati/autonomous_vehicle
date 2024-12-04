@@ -1,5 +1,6 @@
 import serial
 import threading
+import time
 
 class NANO:
     _serial = None
@@ -9,9 +10,11 @@ class NANO:
     def start():
         NANO._serial = serial.Serial('/dev/ttyAMA2', 9600, timeout=1)
         NANO._request_lock = threading.Lock()
+        time.sleep(0.2)
 
     @staticmethod
     def stop():
+        time.sleep(0.2)
         NANO._serial.close()
         NANO._serial = None
         NANO._request_lock = None
