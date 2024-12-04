@@ -44,13 +44,13 @@ class NANO:
         NANO._serial.write("S0\n".encode())
 
     @staticmethod
-    def get_distances() -> list:
+    def request_sensors() -> list:
         with NANO._request_lock:
             NANO._serial.write("SR\n".encode())
             line = NANO._serial.readline()
         if not line:
             return None
-        fl, fr, rl, rr = map(int, line.strip().split(" "))
+        fl, fr, rl, rr = map(int, line.decode().strip().split(" "))
         return [fl, fr, rl, rr]
 
 
