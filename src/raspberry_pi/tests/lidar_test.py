@@ -1,14 +1,23 @@
-from raspberry_pi.drivers.lidar import Lidar
 import time
 import matplotlib.pyplot as plt
 import numpy as np
 
+from raspberry_pi.drivers.lidar import Lidar
+from raspberry_pi.data_structures.maps import LocalMap
 def main():
     Lidar.start()
     Lidar.get_health()
-    time.sleep(0.5)
     Lidar.start_scan()
-    time.sleep(10)
+    t_start = time.time()
+    with open("output.txt", "w") as f:
+        while (time.time() - t_start) < 10:
+            local_map = Lidar.create_local_map()
+            m = local_map.get_scan()
+            for angle, dist in enumerate(m):
+                f.write(f"{angle} {dist}\n")
+            
+            time.sleep(0.1)
+
     Lidar.stop_scan()
     Lidar.stop()
 

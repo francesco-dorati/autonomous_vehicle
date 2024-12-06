@@ -48,10 +48,12 @@ class Scan:
     MAX_SCAN_AGE = 5
     def __init__(self):
         self._last_scan_id = 0
-        self._scan = np.full(360, 0, dtype=tuple) # tuple: dist_mm, scan_id
-        self._scan_n = np.full(360, 0, dtype=tuple) # tuple: dist_mm, scan_id
+        self._scan_dist = np.full(360, 0, dtype=tuple) # tuple: dist_mm, scan_id
+        self._scan_id = np.full(360, 0, dtype=tuple) # tuple: dist_mm, scan_id
 
-    def add_sample(self, angle_deg: float, dist_mm: int, scan_n: int) -> None:
+
+    @timing_decorator
+    def add_sample(self, angle_deg: float, dist_mm: int, scan_id: int) -> None:
         """
         Add Sample
         Adds sample to the scan
@@ -59,11 +61,25 @@ class Scan:
         Args:
             angle_deg (float): angle of the sample, 
             dist_mm (int): distance of the obstacle
-            scan_n (int): number of the scan
+            scan_id (int): number of the scan
         """
-        self._last_scan_id = scan_n
+        # MAYBE ADD LOCK
+        
+        if dist_mm == 0:
+            return
+        
+        self._last_scan_id = scan_id
         angle_deg = math.round(angle_deg)
-        self._scan[angle_deg] = (dist_mm, self._last_scan_id)
+
+        new_dist = 0
+        if self._scan_id[angle_deg] == scan_id: # if in the same scan
+            # average value
+            new_dist = (dist_mm + self._scan_dist[angle_deg])/2
+        else:
+            new_dist = dist_mm
+
+        self._scan_dist[angle_deg] = new_dist
+        self._scan_id[angle_deg] = scan_id
 
     def create_local_map(self) -> LocalMap:
         """
@@ -79,6 +95,9 @@ class Scan:
 
 
     def _clean_scan(self) -> None:
+        """
+        Removes the old values from the scan (MAX_SCAN_AGE)
+        """
         for i, s in enumerate(self._scan):
             if s[1] <= self._last_scan_id - self.MAX_SCAN_AGE:
                 self._scan[i] = 0
@@ -233,7 +252,8 @@ class Lidar:
                 bytes_to_read = Lidar.SCAN_PACKET_SIZE*Lidar.SCAN_PACKETS_PER_TIME
                 if Lidar._serial.in_waiting < bytes_to_read:
                     continue
-
+                    
+                # DEBUG
                 f.write("\nin waiting: " + str(Lidar._serial.in_waiting) + "\n")
                 f.write("scan number: " + str(scan_n) + "\n")
 
@@ -250,11 +270,14 @@ class Lidar:
                     print("ERROR LIDAR process_bytes error")
                     return
                 
+                # DEBUG
+                # for s in samples:
+                #     f.write(f"{int(s[0])} {int(s[1])}\n")
+                
                 for s in samples:
-                    f.write(f"{int(s[0])} {int(s[1])}\n")
+                    Lidar._scan.add_sample(s[0], s[1], scan_n)
                 scan_n += 1
 
-                Lidar._scan.add_sample()
 
             # check if the head is correct
             # divide in packets
