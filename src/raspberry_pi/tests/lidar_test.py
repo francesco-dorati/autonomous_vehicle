@@ -5,68 +5,80 @@ import numpy as np
 from raspberry_pi.drivers.lidar import Lidar
 from raspberry_pi.data_structures.maps import LocalMap
 def main():
+    # Lidar.start()
+    # Lidar.stop_scan()
+    # Lidar.stop()
+    # return
+
     Lidar.start()
     Lidar.get_health()
     Lidar.start_scan()
-    t_start = time.time()
-    with open("output.txt", "w") as f:
-        while (time.time() - t_start) < 10:
-            local_map = Lidar.create_local_map()
-            m = local_map.get_scan()
-            for angle, dist in enumerate(m):
-                f.write(f"{angle} {dist}\n")
-            
-            time.sleep(0.1)
+    time.sleep(2)
 
+    i = 0
+    maps = []
+    t_start = time.time()
+    while (time.time() - t_start) < 10:
+        local_map = Lidar.create_local_map()
+        maps.append(local_map.get_scan())
+        i += 1
+        time.sleep(1)
     Lidar.stop_scan()
     Lidar.stop()
 
+    for i, m in enumerate(maps):
+        LidarTester.draw_scan(m, f"lidar{i}")     
 
-def print_scan(scan):
-    print("SCAN:")
-    for i in range(0, len(scan)):
-        angle = scan[i][0]
-        distance = scan[i][1]
-        n = scan[i][2]
-        # print(scan[i])
-        print(f"a: {angle:.1f}°,\t d: {int(distance)} mm,\t n: {n}")
-    print("SCAN END")
-    print(f"size: {len(scan)}")
-    print("\n\n")
 
-def draw_scan(scan, name="test"):
-    path_name = f"../../img/{name}.png"
-    # Convert polar coordinates to Cartesian
-    x_points = []
-    y_points = []
-    
-    for angle, distance, _ in scan:
-        # Convert angle from degrees to radians for trigonometric functions
-        angle_rad = np.radians(angle)
+class LidarTester:
+    @staticmethod
+    def print_scan(scan):
+        print("SCAN:")
+        for i in range(0, len(scan)):
+            angle = scan[i][0]
+            distance = scan[i][1]
+            n = scan[i][2]
+            # print(scan[i])
+            print(f"a: {angle:.1f}°,\t d: {int(distance)} mm,\t n: {n}")
+        print("SCAN END")
+        print(f"size: {len(scan)}")
+        print("\n\n")
+
+    @staticmethod
+    def draw_scan(scan, name="test"):
+        path_name = f"../img/{name}.png"
+        # path_name = f"../../../img/{name}.png"
+        # Convert polar coordinates to Cartesian
+        x_points = []
+        y_points = []
         
-        # Skip points with invalid or zero distance
-        if distance > 0:
-            x = distance * np.cos(angle_rad)
-            y = distance * np.sin(angle_rad)
-            x_points.append(x)
-            y_points.append(y)
+        for angle, distance in enumerate(scan):
+            # Convert angle from degrees to radians for trigonometric functions
+            angle_rad = np.radians(360 - angle)
             
-    # Plotting
-    plt.figure(figsize=(8, 8))
-    plt.scatter(x_points, y_points, s=1, color='blue')  # Smaller marker for a denser plot
+            # Skip points with invalid or zero distance
+            if distance > 0:
+                x = distance * np.cos(angle_rad)
+                y = distance * np.sin(angle_rad)
+                x_points.append(x)
+                y_points.append(y)
+                
+        # Plotting
+        plt.figure(figsize=(8, 8))
+        plt.scatter(x_points, y_points, s=1, color='blue')  # Smaller marker for a denser plot
 
-    # Robot position
-    plt.plot(0, 0, 'ro', label="Robot Position")  # Red dot for robot location
-    plt.arrow(0, 0, 500, 0, head_width=100, head_length=80, fc='red', ec='red', label="Heading")
-    plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
+        # Robot position
+        plt.plot(0, 0, 'ro', label="Robot Position")  # Red dot for robot location
+        plt.arrow(0, 0, 500, 0, head_width=100, head_length=80, fc='red', ec='red', label="Heading")
+        plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
 
-    plt.title("LIDAR Scan")
-    plt.xlabel("X (mm)")
-    plt.ylabel("Y (mm)")
-    plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
-    plt.grid(True)
-    plt.savefig(path_name, format='png')
-    plt.close()
+        plt.title("LIDAR Scan")
+        plt.xlabel("X (mm)")
+        plt.ylabel("Y (mm)")
+        plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
+        plt.grid(True)
+        plt.savefig(path_name, format='png')
+        plt.close() 
 
 if __name__ == "__main__":
     main()
