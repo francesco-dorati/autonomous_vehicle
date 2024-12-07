@@ -16,7 +16,7 @@
     response descriptor:
     1 byte          A5
     1 byte          5A
-    30 bits         data response length (SCAN_LEN_BYTES???)
+    30 bits         data response length (SCAN_PACKET_SIZE)
     2 bits          send mode
     1 byte          data type
     
@@ -35,66 +35,11 @@
 import serial
 import time
 import threading
-import struct
-from enum import Enum
 import numpy as np
 import math
 
 from raspberry_pi.data_structures.maps import LocalMap
 from raspberry_pi.utils import timing_decorator
-
-""" FIX SCAN ANGLE -> POSITIVE NEGATIVE ARE DIFFERENT FROM ROBOT'S """
-class Scan:
-    MAX_SCAN_AGE = 5
-    def __init__(self):
-        self._last_scan_id = 0
-        self._scan_dist = np.full(360, 0, dtype=tuple) # tuple: dist_mm, scan_id
-        self._scan_id = np.full(360, 0, dtype=tuple) # tuple: dist_mm, scan_id
-
-    def add_sample(self, angle_deg: float, dist_mm: int) -> None:
-        """
-        Add Sample
-        Adds sample to the scan
-
-        Args:
-            angle_deg (float): angle of the sample, 
-            dist_mm (int): distance of the obstacle
-            scan_id (int): number of the scan
-        """
-        # MAYBE ADD LOCK
-        # self._last_scan_id = scan_id
-        angle_deg = round(angle_deg) % 360
-
-        # new_dist = 0
-        # if self._scan_id[angle_deg] == scan_id: # if in the same scan
-        #     # average value
-        #     new_dist = (dist_mm + self._scan_dist[angle_deg])/2
-        # else:
-        #     new_dist = dist_mm
-
-        self._scan_dist[angle_deg] = int(dist_mm)
-        # self._scan_id[angle_deg] = scan_id
-
-    def create_local_map(self) -> LocalMap:
-        """
-        Gat Local Map
-        Generates local map based on the scan
-
-        Returns:
-            LocalMap: local map based on the scan
-        """
-        # self._clean_scan()
-        return LocalMap(self._scan_dist.copy())
-
-
-    # def _clean_scan(self) -> None:
-    #     """
-    #     Removes the old values from the scan (MAX_SCAN_AGE)
-    #     """
-    #     for angle, scan_id in enumerate(self._scan_id):
-    #         if scan_id <= (self._last_scan_id - self.MAX_SCAN_AGE):
-    #             self._scan_dist[angle] = 0
-
 
 class Lidar:
     PORT = '/dev/ttyUSB0'  
@@ -108,10 +53,41 @@ class Lidar:
     SCAN_PACKETS_PER_TIME = 600
 
     _serial = None
-    _scanning = False
     _thread = None
-
     _scan = None
+    _scanning = False
+
+    class Scan:
+        def __init__(self):
+            self._last_scan_id = 0
+            self._scan_dist = np.full(360, 0, dtype=tuple)
+            self._scan_lock = threading.Lock()
+
+        def add_sample(self, angle_deg: float, dist_mm: int) -> None:
+            """
+            Add Sample
+            Adds sample to the scan
+
+            Args:
+                angle_deg (float): angle of the sample, 
+                dist_mm (int): distance of the obstacle
+            """
+            with self._scan_lock:
+                angle_deg = round(angle_deg) % 360
+                self._scan_dist[angle_deg] = int(dist_mm)
+
+        def create_local_map(self) -> LocalMap:
+            """
+            Gat Local Map
+            Generates local map based on the scan
+
+            Returns:
+                LocalMap: local map based on the scan
+            """
+            with self._scan_lock:
+                copy = self._scan_dist.copy()
+            return LocalMap(copy)
+        
     
     @staticmethod
     @timing_decorator
@@ -130,25 +106,19 @@ class Lidar:
         Lidar._serial.close()
         Lidar._serial = None
 
-    # def __init__(self):
-    #     self.ser = serial.Serial(self.PORT, self.BAUD_RATE, timeout=self.TIMEOUT, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
-    #     self.scanning = False
-    #     self.scan_thread = None
-
-    #     self._scan = Scan()
-    #     self._sample_index = 0
-    #     self.scan_number = 0
-        # self.get_health()
 
     @staticmethod
     @timing_decorator
-    def get_health():
+    def health():
         """
         Get Health
         Sends health request and returns status code
             
         Returns:
             int: status code (see lidar docs)
+                    0: OK
+                    1: WARNING
+                    2: ERROR
         """
         if not Lidar._serial:
             print("ERROR LIDAR must run Lidar.start()")
@@ -172,8 +142,9 @@ class Lidar:
         if not Lidar._serial:
             print("ERROR LIDAR must run Lidar.start()")
             return
-
-        Lidar._scan = Scan()
+        
+        # initialize variables
+        Lidar._scan = Lidar.Scan()
         Lidar._scanning = True
 
         # send start command
@@ -236,13 +207,13 @@ class Lidar:
         Modifies:
             _scan
         """
-        scan_n = 0
         while Lidar._scanning:
+            # calculate bytes to read
             bytes_to_read = Lidar.SCAN_PACKET_SIZE*Lidar.SCAN_PACKETS_PER_TIME
             if Lidar._serial.in_waiting < bytes_to_read:
                 continue
                 
-            # read 5*n bytes
+            # read bytes
             bytes_receaved = Lidar._serial.read(bytes_to_read)
             if len(bytes_receaved) != bytes_to_read:
                 print("ERROR LIDAR read different bytes than expected")
@@ -254,96 +225,67 @@ class Lidar:
                 print(samples)
                 print("ERROR LIDAR process_bytes error")
                 return
-            # TODO
-            for s in samples:
-                Lidar._scan.add_sample(s[0], s[1], scan_n)
-            scan_n += 1
-
-
-            # check if the head is correct
-            # divide in packets
-            # read each packet
-            
-            # add to scan 
-
-        
-        
-        return
-
-
-
-        # receiver loop
-        sample_n = 0
-        last_angle = 360.0
-        while self.scanning:
-            if self.ser.in_waiting < l:
-                continue
-
-            # flush to avoid full buffer 
-            if self.ser.in_waiting > (510*5 + 5):
-                self.ser.read(510*5)
-                continue
-
-            # read data
-            data = self.ser.read(l)
-            if len(data) != l:
-                continue
-
-            # unpack data
-            s, ns, q, c, angle_deg, dist_mm = self._unpack_data(data)
-            
-            # validity check
-            if not (s ^ ns) or c != 1 or angle_deg > 360.0:
-                print("INVALID DATA RECEIVED")
-                self.ser.flushInput()
-                continue
-                # print(f"ERROR {not (s ^ ns)} {c != 1} {angle_deg > 360} {dist_mm == 0.0}")
-                # print(f"\n    data: {format(data[0], '08b')} {format(data[1], '08b')} {format(data[2], '08b')} {format(data[3], '08b')} {format(data[4], '08b')}\t waiting: {self.ser.in_waiting}")
-                # FIX try to read until it gets a valid data
-
-            # new scan check
-            sample_n += 1
-            if angle_deg < last_angle:
-                # print(f"sample_n: {sample_n}, scan_n: {self.scan_number}, scan_index: {self._sample_index}")
-                # print("\n\nNEW SCAN")
-                sample_n = 0
-                self._sample_index = 0
-                self.scan_number += 1
-            
-            #  save sample to the scan 
-            self._scan.add_sample(angle_deg, dist_mm, self.scan_number)
-            last_angle = angle_deg
-
-            # print(f"    deg: {angle_deg:.2f}°\t\tdist: {dist_mm} mm\t    waiting: {self.ser.in_waiting}")
-
-
-        # print("THREAD END")
+           
+            # add sample to scan
+            for angle, dist in samples:
+                Lidar._scan.add_sample(angle, dist)
 
     @staticmethod
-    def _process_scan_bytes(bytes_received):
-        # check if order correct
-        i = 0
+    def _unpack_descriptor(descriptor):
+        """
+        Unpacks descriptor
+
+        Args:
+            descriptor:    raw data
+
+        Returns:
+            ok (bool):     descriptor ok
+            data_len,
+            data_mode,
+            data_type
+        """
+        flag1 = descriptor[0]
+        flag2 = descriptor[1]
+        if flag1 != 0xA5 or flag2 != 0x5A:
+            print(f"Wrong response descriptor: {hex(flag1)}, {hex(flag2)}")
+            return False, None, None, None
+        
+        data_len = (descriptor[2])
+        data_len |= (descriptor[3]) << 8
+        data_len |= (descriptor[4]) << 16
+        data_len |= (descriptor[5] & 0b00111111) << 24
+        data_len = int(data_len)
+        data_mode = int((descriptor[5] & 0b11000000) >> 6)
+        data_type = int(descriptor[6])
+        return True, data_len, data_mode, data_type
+
+    @staticmethod
+    def _interpret_bytes(bytes_received: bytes) -> list:
+        """
+        Interpret Data
+        Checks data validity and read data
+        # TODO extend to handle data disalinement
+
+        Args:
+            bytes_received (bytes): bytes received from serial
+
+        Returns:
+            list: list of (angle, dist)
+        """
+
+        packet = 0
         packets_number = math.floor(len(bytes_received)/Lidar.SCAN_PACKET_SIZE)
         scan = []
-        while i < packets_number:
-            from_byte = i*Lidar.SCAN_PACKET_SIZE
-            to_byte = (i+1)*Lidar.SCAN_PACKET_SIZE
+        while packet < packets_number:
+            from_byte = packet*Lidar.SCAN_PACKET_SIZE
+            to_byte = (packet+1)*Lidar.SCAN_PACKET_SIZE
             s, ns, q, c, angle, dist = Lidar._unpack_packet(bytes_received[from_byte:to_byte])
             if s == ns or c == 0:
-                print(f"ERROR {i}")
+                print(f"ERROR DATA MISALINED{i}")
                 break
             scan.append((angle, dist))
             i += 1
         return scan
-    
-
-
-        
-                # WRONG ORDER
-            
-
-        
-        # 
         
     @staticmethod
     def _unpack_packet(data):
@@ -378,73 +320,6 @@ class Lidar:
 
         return s, ns, q, c, angle_deg, dist_mm
 
-    @staticmethod
-    def _unpack_descriptor(descriptor):
-        """
-        Unpacks descriptor
 
-        Args:
-            descriptor:    raw data
-
-        Returns:
-            ok (bool):     descriptor ok
-            data_len,
-            data_mode,
-            data_type
-        """
-        flag1 = descriptor[0]
-        flag2 = descriptor[1]
-        if flag1 != 0xA5 or flag2 != 0x5A:
-            print(f"Wrong response descriptor: {hex(flag1)}, {hex(flag2)}")
-            return False, None, None, None
-        
-        data_len = (descriptor[2])
-        data_len |= (descriptor[3]) << 8
-        data_len |= (descriptor[4]) << 16
-        data_len |= (descriptor[5] & 0b00111111) << 24
-        data_len = int(data_len)
-        data_mode = int((descriptor[5] & 0b11000000) >> 6)
-        data_type = int(descriptor[6])
-        # print(f"Response descriptor OK: \n\tdata len: {data_len}, mode: {data_mode}, type: {data_type}")
-        return True, data_len, data_mode, data_type
-    
-    # def _add_sample_to_scan(self, sample): # sample_index, sample
-    #     """
-    #     Adds sample to the scan
-
-    #     Args:
-    #         sample: [angle, dist, number]
-
-    #     """
-    #     # als cen be pun in a fixed size queue
-    #     # one element per degree
-    #     angle = sample[0]
-    #     dist = sample[1]
-    #     scan_n = sample[2]
-    #     end = lambda: self._sample_index >= len(self._scan)
-
-    #     # find correct place
-    #     while not end() and self._scan[self._sample_index][0] < angle: 
-    #         # set to 0 if sample is old
-    #         if self._scan[self._sample_index][2] < scan_n - 5:
-    #             self._scan[self._sample_index] = (self._scan[self._sample_index][0], 0, scan_n)
-    #         self._sample_index += 1
-
-    #     # add sample
-    #     if dist != 0.0:
-    #         if end():
-    #             self._scan.append(sample)
-    #         else:
-    #             self._scan[self._sample_index] = sample
-        
-    #     self._sample_index += 1
-            
-
-
-
-
-
-
-        # self.ser.close()
     
 
