@@ -38,8 +38,9 @@ import threading
 import numpy as np
 import math
 
-from raspberry_pi.data_structures.maps import LocalMap
 from raspberry_pi.utils import timing_decorator
+from raspberry_pi.data_structures.maps import LocalMap
+from raspberry_pi.data_structures.lidar_scan import LidarScan
 
 class Lidar:
     PORT = '/dev/ttyUSB0'  
@@ -57,38 +58,6 @@ class Lidar:
     _scan = None
     _scanning = False
 
-    class Scan:
-        def __init__(self):
-            self._last_scan_id = 0
-            self._scan = np.full(360, 0, dtype=tuple)
-            self._scan_lock = threading.Lock()
-
-        def add_sample(self, angle_deg: float, dist_mm: int) -> None:
-            """
-            Add Sample
-            Adds sample to the scan
-
-            Args:
-                angle_deg (float): angle of the sample, 
-                dist_mm (int): distance of the obstacle
-            """
-            with self._scan_lock:
-                angle_deg = round(angle_deg) % 360
-                self._scan[angle_deg] = int(dist_mm)
-
-        def get_copy(self) -> list:
-            """
-            Gat Local Map
-            Generates local map based on the scan
-
-            Returns:
-                LocalMap: local map based on the scan
-            """
-            with self._scan_lock:
-                copy = self._scan.copy()
-            return copy
-        
-    
     @staticmethod
     @timing_decorator
     def start():
@@ -144,7 +113,7 @@ class Lidar:
             return
         
         # initialize variables
-        Lidar._scan = Lidar.Scan()
+        Lidar._scan = LidarScan()
         Lidar._scanning = True
 
         # send start command
@@ -220,7 +189,7 @@ class Lidar:
                 return
 
             # interpret data -> check if correct order
-            samples = Lidar._process_scan_bytes(bytes_receaved)
+            samples = Lidar._unpack_scan_bytes(bytes_receaved)
             if not samples:
                 print(samples)
                 print("ERROR LIDAR process_bytes error")
@@ -260,7 +229,7 @@ class Lidar:
         return True, data_len, data_mode, data_type
 
     @staticmethod
-    def _interpret_bytes(bytes_received: bytes) -> list:
+    def _unpack_scan_bytes(bytes_received: bytes) -> list:
         """
         Interpret Data
         Checks data validity and read data
@@ -281,10 +250,10 @@ class Lidar:
             to_byte = (packet+1)*Lidar.SCAN_PACKET_SIZE
             s, ns, q, c, angle, dist = Lidar._unpack_packet(bytes_received[from_byte:to_byte])
             if s == ns or c == 0:
-                print(f"ERROR DATA MISALINED{i}")
+                print(f"ERROR DATA MISALINED at packet {packet}")
                 break
             scan.append((angle, dist))
-            i += 1
+            packet += 1
         return scan
         
     @staticmethod
@@ -320,6 +289,4 @@ class Lidar:
 
         return s, ns, q, c, angle_deg, dist_mm
 
-
-    
 

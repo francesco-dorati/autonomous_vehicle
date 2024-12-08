@@ -6,9 +6,10 @@ from raspberry_pi.drivers.lidar import Lidar
 from raspberry_pi.data_structures.maps import LocalMap, GlobalMap
 from raspberry_pi.data_structures.state import Position
 def main():
-    # Lidar.stop_scan()
+    # LidarTester.stop_scan()
     # return
     LidarTester.test_global_map()
+    # LidarTester.test_static_dist()
 
   
 
@@ -22,7 +23,7 @@ class LidarTester:
     @staticmethod
     def test_local_maps():
         Lidar.start()
-        Lidar.get_health()
+        Lidar.health()
         Lidar.start_scan()
         time.sleep(2)
 
@@ -44,7 +45,7 @@ class LidarTester:
     @staticmethod
     def test_global_map():
         Lidar.start()
-        Lidar.get_health()
+        Lidar.health()
         Lidar.start_scan()
 
         global_map = GlobalMap()
@@ -52,10 +53,33 @@ class LidarTester:
         time.sleep(3)
 
         local_map = Lidar.create_local_map()
+
+        Lidar.stop_scan()
+        Lidar.stop()
+
         local_map.draw("local_map")
         global_map.expand(pos, local_map)
         global_map.draw("global_map")
 
+    @staticmethod
+    def test_static_dist():
+        pos0 = Position(0, 0, 0)
+        pos1 = Position(1000, 0, 0)
+        global_map = GlobalMap()
+
+        Lidar.start()
+        Lidar.start_scan()
+        time.sleep(3)
+        l0 = Lidar.create_local_map()
+        global_map.expand(pos0, l0)
+        input("OK\nMove 1m >")
+        l1 = Lidar.create_local_map()
+        global_map.expand(pos1, l1)
+        Lidar.stop_scan()
+        Lidar.stop()
+        l0.draw("local0")
+        l1.draw("local1")
+        global_map.draw("global")
         
     # @staticmethod
     # def _draw_scan(scan, name="test"):

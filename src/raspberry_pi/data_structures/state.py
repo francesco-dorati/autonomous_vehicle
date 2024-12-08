@@ -13,12 +13,15 @@ class Position:
         th (int): mrad
     """
     def __init__(self, x, y, th):
-        self.x = x
-        self.y = y
-        self.th = th
+        self.x = int(x)
+        self.y = int(y)
+        self.th = int(th)
 
     def __str__(self):
         return f"x: {self.x}, y: {self.y}, th: {self.th}"
+    
+    def __repr__(self):
+        return f"pos({self.x}, {self.y}, {self.th})"
     
     
 

@@ -2,13 +2,13 @@ import math
 import numpy as np
 
 from raspberry_pi.data_structures.state import Position
+from raspberry_pi.data_structures.lidar_scan import LidarScan
 from raspberry_pi.utils import Utils, timing_decorator
-from raspberry_pi.drivers.lidar import Lidar
 
 
 # can be extended as localmap as abstarct class and lidarmap, occupancy map as childs
 class LocalMap:
-    def __init__(self, scan: Lidar.Scan):
+    def __init__(self, scan: LidarScan):
         """
         Local Map
         A list of position taken at 1° steps
@@ -18,6 +18,8 @@ class LocalMap:
             Lidar.Scan: scan object 
         """
         self._scan = scan.get_copy()
+    def __repr__(self):
+        return f"local_map()"
 
     @timing_decorator
     def get_iterable(self) -> list: # TODO oppure get list che ritorna una lista ??
@@ -30,6 +32,8 @@ class LocalMap:
         x_points = []
         y_points = []
         for angle, distance in enumerate(self._scan):
+            if distance == 0: 
+                continue
             # Convert angle from degrees to radians for trigonometric functions
             angle_rad = np.radians(360 - angle)
             # Skip points with invalid or zero distance
@@ -126,12 +130,15 @@ class GlobalMap:
     (can be extended to a probability map returning what is the chance of a point to be occupied)
     """
 
-    RESOLUTION = 100 # mm
     INITIAL_SIZE_MM =  10000
+    RESOLUTION = 100 # mm
     def __init__(self):
         self._grid_size = (self.INITIAL_SIZE_MM // self.RESOLUTION)
         self._grid = np.full((self._grid_size, self._grid_size), -1, dtype=int)
         self.origin = lambda: ((self._grid_size // 2), (self._grid_size // 2))
+    
+    def __repr__(self):
+        return f"global_map(size={self._grid_size})"
 
     @timing_decorator
     def is_position_free(self, pos: Position) -> bool:
@@ -175,6 +182,9 @@ class GlobalMap:
         """
         scan = local_map.get_iterable()
         for scan_angle_deg, scan_dist in scan:
+            if scan_dist == 0:
+                continue
+
             scan_angle_mrad = Utils.deg_to_mrad(scan_angle_deg)
 
             obstacle_angle_mrad = Utils.normalize_mrad(position.th + scan_angle_mrad)
@@ -198,11 +208,12 @@ class GlobalMap:
         norm = plt.matplotlib.colors.BoundaryNorm(bounds, cmap.N)
 
         plt.figure(figsize=(8, 8))
-        plt.imshow(self._grid, cmap=cmap, norm=norm, origin='upper')
+        plt.imshow(self._grid.T, cmap=cmap, norm=norm, origin='upper')
         # Robot position
-        x, y = self.origin()
-        plt.plot(x, y, 'ro', label="Robot Position")  # Red dot for robot location
-        plt.arrow(x, y, 500, 0, head_width=100, head_length=80, fc='red', ec='red', label="Heading")
+        y, x = self.origin()
+        plt.plot(y, x, 'ro', label="Robot Position")  # Red dot for robot location
+        plt.arrow(y, x, 3, 0, head_width=1, head_length=1, fc='red', ec='red', label="Heading")
+        plt.arrow(y, x, 0, 3, head_width=1, head_length=1, fc='green', ec='green', label="Heading")
         plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
         plt.title("LIDAR Scan")
         plt.xlabel("X (mm)")
@@ -218,8 +229,8 @@ class GlobalMap:
 
 
     def _expand_grid(self) -> None:
-        new_size = self._grid_size*2
-        new_grid = np.full((self._grid_size, self._grid_size), -1, dtype=int)
+        new_size = (self._grid_size*2)
+        new_grid = np.full((new_size, new_size), -1, dtype=int)
         off = (new_size - self._grid_size) // 2
 
         new_grid[off:off+self._grid_size, off:off+self._grid_size] = self._grid
@@ -243,9 +254,10 @@ class GlobalMap:
     
     def _is_inside(self, p: Position):
         gx, gy = self._world_to_grid(p)
-        outside_x = (gx < 0 or gx >= self._grid_size)
-        outside_y = (gy < 0 or gy >= self._grid_size)
-        return outside_x or outside_y
+        inside_x = (gx >= 0 and gx < self._grid_size)
+        inside_y = (gy >= 0 and gy < self._grid_size)
+        inside = inside_x and inside_y
+        return inside
         
     def _set_unknown(self, gx, gy) -> None:
         self._grid[gx][gy] = -1
