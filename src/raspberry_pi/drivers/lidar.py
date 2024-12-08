@@ -60,7 +60,7 @@ class Lidar:
     class Scan:
         def __init__(self):
             self._last_scan_id = 0
-            self._scan_dist = np.full(360, 0, dtype=tuple)
+            self._scan = np.full(360, 0, dtype=tuple)
             self._scan_lock = threading.Lock()
 
         def add_sample(self, angle_deg: float, dist_mm: int) -> None:
@@ -74,9 +74,9 @@ class Lidar:
             """
             with self._scan_lock:
                 angle_deg = round(angle_deg) % 360
-                self._scan_dist[angle_deg] = int(dist_mm)
+                self._scan[angle_deg] = int(dist_mm)
 
-        def create_local_map(self) -> LocalMap:
+        def get_copy(self) -> list:
             """
             Gat Local Map
             Generates local map based on the scan
@@ -85,8 +85,8 @@ class Lidar:
                 LocalMap: local map based on the scan
             """
             with self._scan_lock:
-                copy = self._scan_dist.copy()
-            return LocalMap(copy)
+                copy = self._scan.copy()
+            return copy
         
     
     @staticmethod
@@ -196,7 +196,7 @@ class Lidar:
         Returns:
             LocalMap: local map based on the last scan
         """
-        return Lidar._scan.create_local_map() if Lidar._scanning else None
+        return LocalMap(Lidar._scan) if Lidar._scanning else None
 
     @staticmethod
     def _scan_handler(): # THREAD
