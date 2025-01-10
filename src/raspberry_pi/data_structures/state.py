@@ -4,7 +4,7 @@
 #         self.vel = velocity
         
 
-
+@dataclass
 class Position:
     """
     Position

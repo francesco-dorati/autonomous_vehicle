@@ -1,3 +1,20 @@
+"""
+    LocalMap
+    ### PUBLIC ###
+    methods:
+        LocalMap(scan: LidarScan)
+            initializes the local map
+            args:
+              scan (LidarScan): LidarScan object
+
+    # TODO finish the docstring
+
+GlobalMap
+
+Returns:
+    _type_: _description_
+"""
+
 import math
 import numpy as np
 
@@ -18,6 +35,7 @@ class LocalMap:
             Lidar.Scan: scan object 
         """
         self._scan = scan.get_copy()
+
     def __repr__(self):
         return f"local_map()"
 
@@ -87,9 +105,9 @@ class LocalMap:
         pass
 
     @timing_decorator
-    def is_segment_free(self, pos1: Position, pos2: Position) -> bool:
+    def is_line_free(self, pos1: Position, pos2: Position) -> bool:
         """
-        Is Segment Free
+        Is Line Free
         Returns if the segment connecting the two points is free
         Positions are relative to the local map
 
@@ -194,7 +212,7 @@ class GlobalMap:
             if not self._is_inside(obstacle_pos):
                 self._expand_grid()
 
-            self._expansion_ray(position, obstacle_pos)
+            self._ray_cast(position, obstacle_pos)
     
     @timing_decorator
     def draw(self, filename) -> None:
@@ -268,9 +286,9 @@ class GlobalMap:
     def _set_occupied(self, gx, gy) -> None:
         self._grid[gx][gy] = 1 
 
-    def _expansion_ray(self, robot_pos: Position, obstacle_pos: Position) -> None:
+    def _ray_cast(self, robot_pos: Position, obstacle_pos: Position) -> None:
         """
-        Obstacle Ray
+        Ray Cast
         Set the line between robot and obstacle as free
             and the obstacle position as occupied
 

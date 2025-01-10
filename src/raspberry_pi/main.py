@@ -3,34 +3,132 @@
 
     INPUTS
 
-    Main Connection - (TCP Socket)
+    ### MAIN SOCKET CONNECTION ###
+    TCP Socket
+    all commands end with '\n'
+
+    command types:
+    - SYSTEM:
+        - ping [pure]      
+            "SYS PNG" -> "OK"
+
+        - battery [pure]
+            "SYS BAT" -> "OK <battery_mv>"
+            battery_mv: battery voltage in millivolts
+
+        - stop_motors   
+            "SYS STM" -> "OK"
+            stops motors and resets control??
+            ensures:
+                - control_type = OFF 
+                ...
+        - stop          
+            "SYS STP" -> "OK"
+            stops connections and motors
+            ensures:
+                no running processes after calling
+
+        - shutdown  
+            "SYS SHD" -> "OK"
+            closes connections and shutdowns the robot
+            ensures:
+                raspberry pi is shutdown
+
+    - CONTROL:
+        - manual 
+            - start [thread]
+                "CTL MAN STR" -> "OK <manual_port>"
+                starts manual control thread and server
+            - stop
+                "CTL MAN STP" -> "OK"
+                stops manual control thread and server
+        - autonomous
+            - start
+                "CTL AUT STR" -> "OK"
+                starts autonomous control
+            - stop
+                "CTL AUT STP" -> "OK"
+                stops autonomous control
+            - set_goal
+                "CTL AUT SET <x> <y>" -> "OK"
+                sets the goal position
+                "KO" if not in autonomous control mode
+        - stop
+            "CTL STP" -> "OK"
+            sets control type to OFF
+            ensures:
+                no power to motors
+                odometry and mapping may still running
+
+    - MAPPING:
+        - start_mapping
+            "MAP STR" -> "OK"
+            starts mapping
+            ensures:
+                global map exists => it expands it
+                alredy scanning => continues
+
+        - finish_mapping
+            "MAP FIN" -> "OK" 
+            finishes mapping and keeps the map as global map
+            "KO" if not in mapping mode
+
+        - save_map
+            "MAP SAV <filename??>" -> "OK"
+            saves the global map to the given file
+            ensures:
+                in mapping mode => continues mapping
+                not in mapping mode => stops mapping
+
+        - discard
+            "MAP DIS" -> "OK"
+            discards the global map
+            ensures:
+                in mapping mode => stops mapping
+        
+        - use_map
+            "MAP USE <filename>" -> "OK"
+            sets global map to the given map
+
+    - LOCALIZATION ??
+        - set_mode 
+            "LOC SET <mode>" -> "OK"
+            mode:   0   off ?? remove and allow only if in autonomous mode??
+                    1   encoders
+                    2   visual
+                    3   filtered    
+    - DATA
+        - environment 
+            ?? do i need another thread/server, how do i devide the commands
+            ?? maybe i use a thread and server only for the stream of data
+            - start [thread]
+                "DTA ENV STR <delay_ms>" -> "OK"
+                starts environment data thread
+                sends data with the given delay
+                data:
+                    - odometry
+                    - lidar scan
+                    - subsection of global map
+            - stop
+                "DTA ENV STP" -> "OK"
+                stops environment data thread
+
+            - get_map ???
+                "DTA ENV MAP" -> "OK <map>"
+                returns the global map
+            
+        - camera [thread]
+        - logs 
+    - SETTINGS ("SET")
+        ...
     
-        PING
-        ping command
-        "PNG" -> "P <status> <battery_mv>"
-        status: status code (to be defined)
-        battery_mv: battery voltage in millivolts
 
-        MANUAL
-        activate/deactivate manual control
-        "MAN <code>" -> "OK <manual_port>"
-        code:   0   off
-                1   on
-        manual_port: manual receiver port
-
-        MAPPING
-        activate/deactivate mapping
-        "MAP <code>" -> "OK"
-        code:   0 off
-                1 on
-
-
-
+    high level functions:
         MAPPING
             AUTONOMOUS
             MANUAL
 
-        LOCALIZE
+        LOCALIZE (in given map)
             AUTONOMOUS
             MANUAL
         
@@ -39,12 +137,6 @@
                 - go to goal
                 - follow path
             MANUAL
-
-
-    
-
-
-
 
 
 """
@@ -72,14 +164,21 @@ class Robot:
     MANUAL_PORT = 5501
     CAMERA_PORT = 5503
 
+    # delays
     BATTERY_CHECK_DELAY = 3
     WAITING_DELAY = 1
 
+    BATTERY_MIN_MV = 10500
+
+    class Status(Enum):
+        DISCONNECTED = 0,
+        IDLE = 1,
+        ACTIVE = 2,
+    
     class OdometryType(Enum):
         OFF = 0,
         ENCODERS_ONLY = 1,
-        VISUAL_ONLY = 2
-        FILTERED = 3
+        FILTERED = 2
 
     class MappingType(Enum):
         OFF = 0,
@@ -90,10 +189,6 @@ class Robot:
         MANUAL = 1,
         AUTONOMOUS = 2,
     
-    # Devices
-    nano = NANO()
-    lidar = Lidar()
-
     # Settings and High Level states
     waiting = True
     odometry_type = OdometryType.OFF
@@ -108,21 +203,31 @@ class Robot:
     # Low Level states
     actual_pos = None
     goal_pos = None
+    local_map = None
+    global_map = None
 
     # Socket
     manual_receiver = None
     odometry_transmitter = None
+
+    
     
 
     @staticmethod
     def start():
+        # start drivers
+        RP2040.start()
+        NANO.start()
+        Lidar.start()
+        
         # start threads
-        Robot.battery_thread = Thread(target=Robot.check_battery)
+        Robot.battery_thread = Thread(target=Robot.check_battery, daemon=True)
         Robot.battery_thread.start()
 
-        Robot.connection_thread = Thread(target=Robot.connection_handler)
+        Robot.connection_thread = Thread(target=Robot.connection_handler, daemon=True)
         Robot.connection_thread.start()
 
+        # control loop
         while True:
             if Robot.waiting:
                 time.sleep(Robot.WAITING_DELAY)
@@ -132,14 +237,11 @@ class Robot:
             Robot.control_lock.acquire()
 
             ## LIDAR
-            Robot.local_map = Robot.lidar.create_local_map()
+            Robot.local_map = Lidar.create_local_map()
             
             ## ODOMETRY
             if Robot.odometry_type == Robot.OdometryType.ENCODERS_ONLY: # only encoders odometry
                 Robot.actual_pos = RP2040.get_position()
-
-            elif Robot.odometry_type == Robot.OdometryType.VISUAL_ONLY: # only visual odometry
-                Robot.actual_pos = Perception.visual_odometry()
 
             elif Robot.odometry_type == Robot.OdometryType.FILTERED:    # position filtering
                 encoder_pos = RP2040.request_odometry()
@@ -170,21 +272,30 @@ class Robot:
 
             # delay
             
-            
+    def stop():
+        # TODO
+        pass
 
     @staticmethod
     def check_battery():
         while True:
-            NANO.get_battery
-            # check battery # TODO
+            battery_mv = NANO.get_battery()
+            if battery_mv < Robot.BATTERY_MIN_MV:
+                Robot.stop()
+                Robot.shutdown()
+                return
             time.sleep(Robot.BATTERY_CHECK_DELAY)
 
     @staticmethod
     def connection_handler():
+        """THREAD
+        Handles the main connection
+        """
         # start server
         connection = None
         connection_addr = None
 
+        # setup socket
         main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         main_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         main_socket.bind((Robot.HOST, Robot.MAIN_PORT))
@@ -198,22 +309,75 @@ class Robot:
                     connection, connection_addr = main_socket.accept()
                     connection.setblocking(False)
                 except BlockingIOError:
+                    connection = None
                     continue
             
             # connected
-            else:       
+            else: 
                 try:
+                    # receive data
                     received_data = connection.recv(32)
-                except BlockingIOError:
+                except BlockingIOError: # no data
+                    continue
+                if received_data == b'': # no data
                     continue
 
-                if received_data == b'':
-                    continue
+                # divide commands
+                commands = received_data.decode().split('\n')
+                for c in commands:
+                    # handle single command
+                    c = c.strip().split(' ')
+
+                    if c[0] == "SYS":
+                        if c[1] == "PNG":
+                            # Ping
+                            # "SYS PNG" -> "OK" 
+                            pass
+
+                        elif c[1] == "BAT":
+                            # Battery
+                            # "SYS BAT" -> "OK <battery_mv>"
+                            pass
+
+                        elif c[1] == "STM":
+                            # Stop Motors
+                            # "SYS STM" -> "OK"
+                            # TODO
+                            pass
+
+                        elif c[1] == "STP":
+                            # Stop All
+                            # "SYS STP" -> "OK"
+                            # TODO
+                            pass
+
+                        elif c[1] == "SHD":
+                            # Shutdown
+                            # "SYS SHD" -> "OK"
+                            # TODO
+                            pass
+
+                    elif c[0] == "CTL":
+                        # manual control
+                        if c[1] == "MAN":
+                            if c[2] == "STR":
+                                # Start Manual Control
+                                # "CTL MAN STR" -> "OK <manual_port>"
+                                # TODO
+                                pass
+                            elif c[2] == "STP":
+                                # Stop Manual Control
+                                # "CTL MAN STP" -> "OK <manual_port>"
+                                # TODO
+                                pass
+                        
+
+
+
                 
                 # command lock
                 with Robot.control_lock:
                     # handle all commands
-                    commands = received_data.decode().split('\n')[:-1]
                     for c in commands:
                         c = c.strip().split(' ')
 

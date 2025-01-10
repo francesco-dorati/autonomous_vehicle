@@ -7,13 +7,15 @@ class Perception:
     @timing_decorator
     def visual_odometry(prev_position: Position, lidar_data) -> Position:
         """
-        Visual odometry
+        Visual odometry 
+        USE ICP
         Compares two lidar frames to compute their distance
         The distance is then applied to the previous position to compute a new position
 
         Args:
             prev_position (Position): position of the previous frame
             lidar_data (_type_): _description_
+            global map
 
         Returns:
             Position: position of the new frame

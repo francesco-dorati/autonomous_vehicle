@@ -30,7 +30,6 @@
     "ORQ" -> "<x> <y> <theta>"
         - odometry request
         - (x, y) in [mm], theta in [mrad], 
-        - (vl, va) in [mm/s, mrad/s]
 
     "ORS"
         - reset odometry values
@@ -61,9 +60,9 @@
 
 */
 
-#define BASE_CONTROL_INTERVAL 20 // ms
+#define BASE_INTERVAL 20 // ms
 #define POSITION_CONTROL_INTERVAL 100 // ms
-#define SERIAL_CONTROL_INTERVAL 100 // ms
+#define SERIAL_INTERVAL 100 // ms
 
 // STATE
 enum State {
@@ -87,6 +86,8 @@ class Position { // general unit
         Position(int x, int y, int th);
         void reset();
 };
+bool is_over(long last_time, int interval);
+void sleep(long t_start);
 
 // ENCODERS
 #define LA_ENCODER_PIN 11 // LEFT GREEN
@@ -131,8 +132,8 @@ PositionQueue target_position_queue = PositionQueue();
 void position_control();
 void calculate_inverse_kinematic();
 // dist
-#define DIST_THRESH_MM 25   // mm   distance where target is reached
-#define CHANGE_THRESH_MM 50 // mm    distance where target is changed
+#define THRESH_DIST_MM 25   // mm   distance where target is reached
+#define CHANGE_DIST_MM 50 // mm    distance where target is changed
 #define MIN_LIN_SPEED_DIST_MM 100 // mm     distance where minimum speed is reached 
 #define MIN_LIN_SPEED_MMS 0         // mm/s    minimum speed
 #define MAX_LIN_SPEED_DIST_MM 500 // mm     distance where maximum speed is reached
@@ -141,19 +142,20 @@ const int LIN_SPEED_SLOPE = (MAX_LIN_SPEED_MMS - MIN_LIN_SPEED_MMS)/(MAX_LIN_SPE
 int distance_error_mm();
 int distance_velocity(int dist_mm);
 // heading
-#define H_THRESH_MRAD 100 // 5 degrees    angle where target is reached
-#define MIN_ANG_SPEED_DIST_MRAD 0 // mrad/s  angle where minimum speed is reached
+#define THRESH_HEAD_MRAD 100 // 5 degrees    angle where target is reached
+#define START_HEAD_MRAD 600 
+#define MIN_ANG_SPEED_HEAD_MRAD 0 // mrad/s  angle where minimum speed is reached
 #define MIN_ANG_SPEED_MRADS 0 // mrad/s        minimum speed
-#define MAX_ANG_SPEED_DIST_MRAD 0 // mrad/s     angle where maximum speed is reached
+#define MAX_ANG_SPEED_HEAD_MRAD 0 // mrad/s     angle where maximum speed is reached
 #define MAX_ANG_SPEED_MRADS 100 // mrad/s      maximum speed
-const int ANG_SPEED_SLOPE = (MAX_ANG_SPEED_MRADS - MIN_ANG_SPEED_MRADS)/(MAX_ANG_SPEED_DIST_MRAD - MIN_ANG_SPEED_DIST_MRAD);
+const int ANG_SPEED_SLOPE = (MAX_ANG_SPEED_MRADS - MIN_ANG_SPEED_MRADS)/(MAX_ANG_SPEED_HEAD_MRAD - MIN_ANG_SPEED_HEAD_MRAD);
 int heading_error_mrad();
 int heading_velocity(int heading_mrad);
 // alpha
-#define A_THRESH_MRAD 200 // 10 degrees
-#define ALPHA_SPEED_MRADS 0 // 5 degrees
-int alpha_error_mrad();
-int alpha_velocity(int alpha_mrad);
+#define THRESH_ALIGN_MRAD 200 // 10 degrees
+#define VEL_ALIGN_MRADS 0 // 5 degrees
+int align_error_mrad();
+int align_velocity(int alpha_mrad);
 
 
 // VELOCITY CONTROL
@@ -180,6 +182,7 @@ void velocity_control();
 int target_powers[2] = {0, 0}; // left, right
 void send_motor_powers();
 
+
 void setup() {
     // Serial.begin(9600);
     Serial1.begin(115200);
@@ -204,10 +207,10 @@ void setup() {
     // PID
     PID_LEFT.SetMode(AUTOMATIC);
     PID_LEFT.SetOutputLimits(-MAX_POW, MAX_POW);
-    PID_LEFT.SetSampleTime(BASE_CONTROL_INTERVAL);
+    PID_LEFT.SetSampleTime(BASE_INTERVAL);
     PID_RIGHT.SetMode(AUTOMATIC);
     PID_RIGHT.SetOutputLimits(-MAX_POW, MAX_POW);
-    PID_RIGHT.SetSampleTime(BASE_CONTROL_INTERVAL);
+    PID_RIGHT.SetSampleTime(BASE_INTERVAL);
 
     stop_motors();
     reset_odometry();
@@ -219,7 +222,7 @@ void loop() {
     long t_start = millis();
 
     // handle serial commands
-    if (millis() - last_serial_time >= SERIAL_CONTROL_INTERVAL) {
+    if (is_over(last_serial_time, SERIAL_INTERVAL)) {
         handle_serial();
         last_serial_time = millis();
     }
@@ -227,31 +230,44 @@ void loop() {
     // update odometry
     update_odometry();
 
-    if (control_state != STALL) {
-        // position control
-        if (control_state == POSITION_CONTROL && (millis() - last_position_control_time) >= POSITION_CONTROL_INTERVAL) {
-            // calculate target robot velocities
-            position_control();
-            calculate_inverse_kinematic(); // calculate target wheels velocity
-            last_position_control_time = millis();
-        }
-
-        if (control_state == POSITION_CONTROL || control_state == VELOCITY_CONTROL) {
-            // compute motor powers
-            velocity_control();
-        }
-
-        if (target_powers[0] == 0 && target_powers[1] == 0) { stop_motors(); }
-
-        // send motor powers
-        send_motor_powers();
+    // stall
+    if (control_state == STALL) {
+        // stop motors???
+        sleep(t_start);
+        return;
     }
 
-    // delay
-    int dt = millis() - t_start;
-    if (dt < BASE_CONTROL_INTERVAL) 
-        delay(BASE_CONTROL_INTERVAL - dt);
+    // position control
+    if (control_state == POSITION_CONTROL && is_over(last_position_control_time, POSITION_CONTROL_INTERVAL)) {
+        // calculate target robot velocities
+        position_control(); 
+        calculate_inverse_kinematic(); // calculate target wheels velocity
+        last_position_control_time = millis();
+    }
+
+    // velocity control
+    if (control_state == POSITION_CONTROL || control_state == VELOCITY_CONTROL) {
+        // compute motor powers
+        velocity_control();
+    }
+
+    if (target_powers[0] == 0 && target_powers[1] == 0) { stop_motors(); }
+
+    // send motor powers
+    send_motor_powers();
     
+    // delay
+    sleep(t_start);
+    
+}
+
+bool is_over(long last_time, int interval) {
+    return (millis() - last_time) >= interval;
+}
+void sleep(long t_start) {
+    int dt = millis() - t_start;
+    if (dt < BASE_INTERVAL) 
+        delay(BASE_INTERVAL - dt);
 }
 
 void stop_motors() {
@@ -519,41 +535,48 @@ void PositionQueue::reset() {
 void position_control() {
     /*
         Computes the target velocities based on the target position
-        reads: target_robot_position_m[3]
+        reads: target_robot_position_m[3], target_position_queue
         writes: target_robot_velocities_m[2]
         requires: distance between targets > CHANGE THRESH  
                   heading between targets: 0 < heading < pi
     */
-    // calculate distance 
-    int dist_mm = distance_error_mm();
-    if (dist_mm < CHANGE_THRESH_MM) { // inside change threshold
-        if (target_position_queue.is_empty()) { // no more points to follow
-            // adjust heading and distance difference
-            int alpha_mrad = alpha_error_mrad();
-            bool distance_ok = dist_mm < DIST_THRESH_MM;
-            bool heading_ok = abs(alpha_mrad) < H_THRESH_MRAD;
-            // if position reached
-            if (distance_ok && heading_ok) { 
-                stop_motors();
-                return;
-            }
-
-            // adjust distance and heading
-            target_robot_velocities_m[0] = distance_ok ? 0 : distance_velocity(dist_mm);
-            target_robot_velocities_m[1] = heading_ok ? 0 : alpha_velocity(alpha_mrad);
-            return;
-        }
-
-        // follow next point
+    
+    int dist_mm = distance_error_mm();// calculate distance
+    while (dist_mm <= CHANGE_DIST_MM && !target_position_queue.is_empty()) { 
+        // change target
         target_robot_position_m = target_position_queue.pop();
         dist_mm = distance_error_mm();
-   } 
+    }
 
-    // calculate heading 
-    int heading_mrad = heading_error_mrad();
-    target_robot_velocities_m[0] = distance_velocity(dist_mm);
-    target_robot_velocities_m[1] = heading_velocity(heading_mrad);
-    return;
+    if (dist_mm > THRESH_DIST_MM) { 
+        // outside distance threashold
+        // calculate heading error
+        int heading_error = heading_error_mrad();
+        if (heading_error > START_HEAD_MRAD) {
+            // rotate
+            target_robot_velocities_m[0] = 0;
+            target_robot_velocities_m[1] = heading_velocity(heading_error);
+        } else {
+            // follow
+            target_robot_velocities_m[0] = distance_velocity(dist_mm);
+            target_robot_velocities_m[1] = heading_velocity(heading_error);
+        }
+
+    } else { 
+        // inside distance threshold
+        // check alignment
+        int align_error = align_error_mrad();
+        if (align_error < THRESH_ALIGN_MRAD) {
+            // not aligned
+            // rotate
+            target_robot_velocities_m[0] = 0;
+            target_robot_velocities_m[1] = align_velocity(align_error);
+        } else {
+            // aligned
+            stop_motors();
+        }
+    }
+
 }
 
 int distance_error_mm() {
@@ -575,7 +598,7 @@ int heading_error_mrad() {
     return normalize_angle_mrad(atan2(dy_mm, dx_mm) * 1000);
     // return normalize_angle_mrad(target_robot_position_m[2] - actual_robot_position_u[2]/1000);
 }
-int alpha_error_mrad() {
+int align_error_mrad() {
     /*
         Returns the heading difference (mrad) between target and actual position
         reads: target_robot_position_m, actual_robot_position_u
@@ -592,7 +615,7 @@ int distance_velocity(int dist_mm) {
             slope * (dist - MIN_DIST) + MIN_VEL         where MIN_DIST < dist < MAX_DIST
             staturated at MIN/MAX                       elsewhere
     */
-    if (dist_mm < DIST_THRESH_MM) return 0;
+    if (dist_mm < THRESH_DIST_MM) return 0;
     if (dist_mm < MIN_LIN_SPEED_DIST_MM) return MIN_LIN_SPEED_MMS;
     if (dist_mm > MAX_LIN_SPEED_DIST_MM) return MAX_LIN_SPEED_MMS;
     return (dist_mm - MIN_LIN_SPEED_DIST_MM) * LIN_SPEED_SLOPE + MIN_LIN_SPEED_MMS;
@@ -606,18 +629,18 @@ int heading_velocity(int heading_mrad) {
             slope * (heading - MIN_ANG) + MIN_VEL        where MIN_ANG < heading < MAX_ANG
             staturated at MIN/MAX                       elsewhere
     */
-    if (abs(heading_mrad) < H_THRESH_MRAD) return 0;
-    if (abs(heading_mrad) < MIN_ANG_SPEED_DIST_MRAD) return MIN_ANG_SPEED_MRADS;
-    if (abs(heading_mrad) > MAX_ANG_SPEED_DIST_MRAD) return MAX_ANG_SPEED_MRADS;
-    return (heading_mrad - MIN_ANG_SPEED_DIST_MRAD) * ANG_SPEED_SLOPE + MIN_ANG_SPEED_MRADS;
+    if (abs(heading_mrad) < THRESH_HEAD_MRAD) return 0;
+    if (abs(heading_mrad) < MIN_ANG_SPEED_HEAD_MRAD) return MIN_ANG_SPEED_MRADS;
+    if (abs(heading_mrad) > MAX_ANG_SPEED_HEAD_MRAD) return MAX_ANG_SPEED_MRADS;
+    return (heading_mrad - MIN_ANG_SPEED_HEAD_MRAD) * ANG_SPEED_SLOPE + MIN_ANG_SPEED_MRADS;
 }
-int alpha_velocity(int alpha_mrad) {
+int align_velocity(int alpha_mrad) {
     /*
         Returns the target angular velocity based on the heading difference
         reads: alpha_mrad
-        fixed speed cut of at A_THRESH_MRAD
+        fixed speed cut of at THRESH_ALIGN_MRAD
     */
-    return (abs(alpha_mrad) < A_THRESH_MRAD) ? 0 : ALPHA_SPEED_MRADS; 
+    return (abs(alpha_mrad) < THRESH_ALIGN_MRAD) ? 0 : VEL_ALIGN_MRADS; 
 }
 void calculate_inverse_kinematic() {
     /*

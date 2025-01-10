@@ -4,8 +4,12 @@ from raspberry_pi.drivers.rp2040 import RP2040
 
 
 def main():
-    print("OK:", RP2040.ping())
-    PositionTester.test_time_position()
+    RP2040.start()
+    try:
+        print("RP2040 running: ", RP2040.ping())
+        
+    finally:
+        RP2040.stop()
 
 def stop():
     RP2040.stop_motors()

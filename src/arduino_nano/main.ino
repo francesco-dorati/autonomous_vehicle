@@ -24,9 +24,11 @@
 
 #include <Arduino.h>
 
+// GENERAL
 #define DELAY 20  // ms
 #define END_CHAR '\n'
 
+// PINS
 #define BATTERY_PIN A0
 #define FL_TRIG_PIN 2
 #define FL_ECHO_PIN 3
@@ -37,6 +39,7 @@
 #define RR_TRIG_PIN 8
 #define RR_ECHO_PIN 9
 
+// GLOBAL VARIABLES
 bool sensors_running = false;
 int battery_mv = 0;
 int distances_mm[4] = {0, 0, 0, 0};
@@ -45,6 +48,7 @@ int current_sensor = 0;
 void setup() {
     Serial.begin(9600);
     pinMode(BATTERY_PIN, INPUT);
+    // TODO setup sensors
 }
 
 void loop() {

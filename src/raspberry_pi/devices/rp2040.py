@@ -6,19 +6,39 @@
 """
 
 import serial
+import time
 
+from raspberry_pi.devices.device import Device
 from raspberry_pi.utils import timing_decorator
 from raspberry_pi.data_structures.state import Position
 
 
-class RP2040:
-    _serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.05)
+class RP2040(Device):
     
+    @staticmethod
+    @timing_decorator
+    def start() -> None:
+        try:
+            RP2040._serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.05)
+        except serial.SerialException:
+            raise Device.ConnectionFailed
+        time.sleep(1)
+        if not RP2040.ping(): # check connection
+            RP2040.stop()
+            raise Device.ConnectionFailed
+
+    @staticmethod
+    @timing_decorator
+    def stop() -> None:
+        if RP2040._serial:
+            RP2040._serial.close()
+        RP2040._serial = None
+
     @staticmethod
     @timing_decorator
     def ping() -> bool:
         RP2040._serial.flush()
-        RP2040._serial.write("PNGG\n".encode())
+        RP2040._serial.write("PNG\n".encode())
         png = RP2040._serial.read_until("\n")
         print(png)
         png = png.decode()
