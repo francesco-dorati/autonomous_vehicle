@@ -74,7 +74,7 @@ enum State {
 State control_state = STALL;
 
 // SERIAL
-#define END_CHAR '\n'
+const char END_CHAR = '\n';
 long last_serial_time = 0;
 void handle_serial();
 
@@ -138,29 +138,27 @@ void calculate_inverse_kinematic();
 #define MIN_LIN_SPEED_MMS 0         // mm/s    minimum speed
 #define MAX_LIN_SPEED_DIST_MM 500 // mm     distance where maximum speed is reached
 #define MAX_LIN_SPEED_MMS 0       // mm/s    maximum speed
-const int LIN_SPEED_SLOPE = (MAX_LIN_SPEED_MMS - MIN_LIN_SPEED_MMS)/(MAX_LIN_SPEED_DIST_MM - MIN_LIN_SPEED_DIST_MM); 
+const double LIN_SPEED_SLOPE = (MAX_LIN_SPEED_MMS - MIN_LIN_SPEED_MMS)/(MAX_LIN_SPEED_DIST_MM - MIN_LIN_SPEED_DIST_MM); 
 int distance_error_mm();
 int distance_velocity(int dist_mm);
 // heading
 #define THRESH_HEAD_MRAD 100 // 5 degrees    angle where target is reached
 #define START_HEAD_MRAD 600 
-#define MIN_ANG_SPEED_HEAD_MRAD 0 // mrad/s  angle where minimum speed is reached
+#define MIN_ANG_SPEED_HEAD_MRAD 1 // mrad/s  angle where minimum speed is reached
 #define MIN_ANG_SPEED_MRADS 0 // mrad/s        minimum speed
-#define MAX_ANG_SPEED_HEAD_MRAD 0 // mrad/s     angle where maximum speed is reached
+#define MAX_ANG_SPEED_HEAD_MRAD 10 // mrad/s     angle where maximum speed is reached
 #define MAX_ANG_SPEED_MRADS 100 // mrad/s      maximum speed
 const int ANG_SPEED_SLOPE = (MAX_ANG_SPEED_MRADS - MIN_ANG_SPEED_MRADS)/(MAX_ANG_SPEED_HEAD_MRAD - MIN_ANG_SPEED_HEAD_MRAD);
 int heading_error_mrad();
 int heading_velocity(int heading_mrad);
-// alpha
+// // alpha
 #define THRESH_ALIGN_MRAD 200 // 10 degrees
 #define VEL_ALIGN_MRADS 0 // 5 degrees
 int align_error_mrad();
 int align_velocity(int alpha_mrad);
 
 
-// VELOCITY CONTROL
-#define MAX_POW 250
-#define MIN_POW 0
+// // VELOCITY CONTROL
 int target_robot_velocities_m[2] = {0, 0}; // vx (mm/s), vt (mrad/s)
 int target_wheel_velocities_m[2] = {0, 0}; // vl, vr (mm/s)
 double pid_goal_left = 0, pid_goal_right = 0; // PID goal
@@ -173,6 +171,8 @@ void velocity_control();
 
 
 // POWER CONTROL
+#define MAX_POW 250
+#define MIN_POW 0
 #define ENA 4   // BROWN
 #define IN1 2   // RED
 #define IN2 3   // ORANGE
@@ -181,10 +181,11 @@ void velocity_control();
 #define IN4 7   // GREEN
 int target_powers[2] = {0, 0}; // left, right
 void send_motor_powers();
+void stop_motors();
 
 
 void setup() {
-    // Serial.begin(9600);
+    Serial.begin(9600);
     Serial1.begin(115200);
 
     // Left Motor
@@ -220,9 +221,14 @@ void setup() {
 //// LOOP ////
 void loop() {
     long t_start = millis();
-
+    // Serial.println("ok");
+    // delay(1000);
+    // Serial.println("OK B");
+    // delay(1000);
     // handle serial commands
+    
     if (is_over(last_serial_time, SERIAL_INTERVAL)) {
+        // Serial1.write("HEllO!!\n");
         handle_serial();
         last_serial_time = millis();
     }
@@ -233,6 +239,7 @@ void loop() {
     // stall
     if (control_state == STALL) {
         // stop motors???
+        // Serial.println("Stall");
         sleep(t_start);
         return;
     }
@@ -310,6 +317,10 @@ void handle_serial() {
         char command[4];
         command[3] = '\0';
         Serial1.readBytes(command, 3);
+        if (Serial) {
+          Serial.print("received: ");
+          Serial.println(command);
+        }
 
         if (strcmp(command, "PNG") == 0) {
             // ping
@@ -435,8 +446,8 @@ void reset_odometry() {
     actual_robot_position_u.reset();
     target_robot_position_m.reset();
     target_position_queue.reset();
-
 }
+
 void set_odometry(Position p_u) {
     actual_robot_position_u = p_u;
 }

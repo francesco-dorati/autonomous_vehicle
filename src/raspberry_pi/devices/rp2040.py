@@ -19,10 +19,12 @@ class RP2040(Device):
     @timing_decorator
     def start() -> None:
         try:
-            RP2040._serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.05)
+            RP2040._serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.1)
         except serial.SerialException:
             raise Device.ConnectionFailed
+        
         time.sleep(1)
+
         if not RP2040.ping(): # check connection
             RP2040.stop()
             raise Device.ConnectionFailed
@@ -37,14 +39,12 @@ class RP2040(Device):
     @staticmethod
     @timing_decorator
     def ping() -> bool:
-        RP2040._serial.flush()
+        # RP2040._serial.flush()
         RP2040._serial.write("PNG\n".encode())
-        png = RP2040._serial.read_until("\n")
-        print(png)
-        png = png.decode()
-        print(png)
-        png = png.strip()
-        print(png)
+        # png = RP2040._serial.read_util('\n')
+        png = RP2040._serial.readline()
+        # png = RP2040._serial.read(32)
+        png = png.decode().strip()
         return True if png == "PNG" else False
 
     @staticmethod

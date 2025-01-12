@@ -1,5 +1,5 @@
 import time
-from raspberry_pi.drivers.nano import NANO
+from raspberry_pi.devices.nano import NANO
 
 def main():
     NANOTester.test()

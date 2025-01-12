@@ -1,12 +1,17 @@
 import time
 import matplotlib.pyplot as plt
-from raspberry_pi.drivers.rp2040 import RP2040
+from raspberry_pi.devices.rp2040 import RP2040
 
 
 def main():
     RP2040.start()
+    RP2040.stop()
+    return
     try:
-        print("RP2040 running: ", RP2040.ping())
+        print("\nRP2040 running: ", RP2040.ping())
+        print()
+        # time.sleep(2)
+        # PowerTester.test_motors()
         
     finally:
         RP2040.stop()
@@ -21,8 +26,6 @@ class RP2040Tester:
         time.sleep(time)
         RP2040.stop_motors()
     
-
-
 
 class PowerTester(RP2040Tester):
     @staticmethod

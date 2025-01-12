@@ -9,7 +9,6 @@ class Device(ABC):
         pass
 
     @abstractmethod
-    @staticmethod
     def start():
         """
         Must start the device
@@ -19,7 +18,6 @@ class Device(ABC):
         pass
 
     @abstractmethod
-    @staticmethod
     def stop():
         """
         Must stop the device
@@ -27,7 +25,6 @@ class Device(ABC):
         pass
 
     @abstractmethod
-    @staticmethod
     def ping() -> bool:
         """ Must return if device is running"""
         pass
