@@ -5,15 +5,18 @@ from raspberry_pi.devices.rp2040 import RP2040
 
 def main():
     RP2040.start()
-    RP2040.stop()
-    return
+    # RP2040.stop()
+
     try:
-        print("\nRP2040 running: ", RP2040.ping())
-        print()
+        # print("\nRP2040 running: ", RP2040.ping())
+        # print()
         # time.sleep(2)
-        # PowerTester.test_motors()
+        PowerTester.test_velocity()
+        # RP2040.set_target_power(120, 120)
+        # time.sleep(10)
         
     finally:
+        RP2040.stop_motors()
         RP2040.stop()
 
 def stop():
@@ -21,9 +24,9 @@ def stop():
 
 class RP2040Tester:
     @staticmethod
-    def set_power(l, r, time):
+    def set_power(l, r, t):
         RP2040.set_target_power(l, r)
-        time.sleep(time)
+        time.sleep(t)
         RP2040.stop_motors()
     
 
@@ -56,7 +59,7 @@ class PowerTester(RP2040Tester):
 
             print("Check if in starting position")
 
-        except _ as e:
+        except Exception as e:
             print(e)
             RP2040.stop_motors()
 
@@ -80,20 +83,20 @@ class PowerTester(RP2040Tester):
             RP2040.stop_motors()
 
     @staticmethod
-    def straight(time):
-        RP2040Tester.set_power(100, 100, time)
+    def straight(t):
+        RP2040Tester.set_power(100, 100, t)
     
     @staticmethod
-    def backwards(time):
-        RP2040Tester.set_power(-100, -100, time)
+    def backwards(t):
+        RP2040Tester.set_power(-100, -100, t)
 
     @staticmethod
-    def rotate_left(time):
-        RP2040Tester.set_power(-100, 100, time)
+    def rotate_left(t):
+        RP2040Tester.set_power(-100, 100, t)
     
     @staticmethod
-    def rotate_right(time):
-        RP2040Tester.set_power(100, -100, time)
+    def rotate_right(t):
+        RP2040Tester.set_power(100, -100, t)
 
 
 class PositionTester(RP2040Tester):

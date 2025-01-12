@@ -22,9 +22,7 @@ class RP2040(Device):
             RP2040._serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.1)
         except serial.SerialException:
             raise Device.ConnectionFailed
-        
-        time.sleep(1)
-
+        time.sleep(2)
         if not RP2040.ping(): # check connection
             RP2040.stop()
             raise Device.ConnectionFailed
@@ -67,7 +65,7 @@ class RP2040(Device):
         if power_left == 0 and power_right == 0:
             RP2040.stop_motors()
 
-        RP2040._serial.write(f"POW {power_left} {power_right}\n".encode())
+        RP2040._serial.write(f"PWR {power_left} {power_right}\n".encode())
         
     @staticmethod
     @timing_decorator
@@ -143,6 +141,7 @@ class RP2040(Device):
         """
         RP2040._serial.write("ODB\n".encode())
         line = RP2040._serial.readline().decode().strip().split(" ")
+        print(line)
         x = int(line[0])
         y = int(line[1])
         th = int(line[2])

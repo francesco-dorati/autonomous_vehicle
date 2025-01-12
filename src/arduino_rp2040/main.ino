@@ -325,11 +325,13 @@ void handle_serial() {
         if (strcmp(command, "PNG") == 0) {
             // ping
             Serial1.println("PNG");
+            if (Serial) Serial.println("OK");
 
         } else if (strcmp(command, "STP") == 0) {
             // stop motors
             // "STP"
             stop_motors();
+            if (Serial) Serial.println("MOTORS STOPPED");
 
         } else if (strcmp(command, "PWR") == 0) {
             // power control
@@ -338,6 +340,7 @@ void handle_serial() {
             target_powers[0] = Serial1.parseInt();
             target_powers[1] = Serial1.parseInt();
             control_state = POWER_CONTROL;
+            if (Serial) {Serial.print("SET POWER TO "); Serial.print(target_powers[0]); Serial.println(target_powers[1]);}
 
         } else if (strcmp(command, "VEL") == 0) {
             // velocity control
@@ -361,11 +364,15 @@ void handle_serial() {
         } else if (strcmp(command, "ORQ") == 0) {
             // odometry request
             // "ORQ" -> "<x> <y> <theta>"
-            Serial1.print(actual_robot_position_u.x/1000.0); // x
+            int x_mm = actual_robot_position_u.x/1000;
+            int y_mm = actual_robot_position_u.y/1000;
+            int th_mm = actual_robot_position_u.th/1000;
+            Serial1.print(x_mm); // x
             Serial1.print(" ");
-            Serial1.print(actual_robot_position_u.y/1000.0); // y
+            Serial1.print(y_mm); // y
             Serial1.print(" ");
-            Serial1.println(actual_robot_position_u.th/1000.0); // theta
+            Serial1.println(th_mm); // theta
+            if (Serial) {Serial.print("ODOM REQUEST: "); Serial.print(x_mm); Serial.print(y_mm);Serial.println(th_mm);}
 
         } else if (strcmp(command, "ORS") == 0) {
             // odometry reset
@@ -383,15 +390,21 @@ void handle_serial() {
         } else if (strcmp(command, "ODB") == 0) {
             // odometry debug
             // "ORQ" -> "<x> <y> <theta> <vl> <va>"
-            Serial1.print(actual_robot_position_u.x/1000.0); // x
+            int x_mm = actual_robot_position_u.x/1000;
+            int y_mm = actual_robot_position_u.y/1000;
+            int th_mm = actual_robot_position_u.th/1000;
+            int v_lin = actual_robot_velocities_m[0];
+            int v_ang = actual_robot_velocities_m[1];
+            Serial1.print(x_mm); // x
             Serial1.print(" ");
-            Serial1.print(actual_robot_position_u.y/1000.0); // y
+            Serial1.print(y_mm); // y
             Serial1.print(" ");
-            Serial1.println(actual_robot_position_u.th/1000.0); // theta
+            Serial1.println(th_mm); // theta
             Serial1.print(" ");
-            Serial1.print(actual_robot_velocities_m[0]); // vx
+            Serial1.print(v_lin); // vx
             Serial1.print(" ");
-            Serial1.println(actual_robot_velocities_m[1]); // vt
+            Serial1.println(v_ang); // vt
+            if (Serial) {Serial.println("DEBUG ODOM REQUEST: "); Serial.print(x_mm); Serial.print(y_mm);Serial.println(th_mm);Serial.print(v_lin); Serial.println(v_ang)}
 
         } else if (strcmp(command, "PTH") == 0) {
             // set path to follow
