@@ -229,6 +229,7 @@ void loop() {
     
     if (is_over(last_serial_time, SERIAL_INTERVAL)) {
         // Serial1.write("HEllO!!\n");
+        if (!Serial) Serial.begin(9600);
         handle_serial();
         last_serial_time = millis();
     }
@@ -399,12 +400,12 @@ void handle_serial() {
             Serial1.print(" ");
             Serial1.print(y_mm); // y
             Serial1.print(" ");
-            Serial1.println(th_mm); // theta
+            Serial1.print(th_mm); // theta
             Serial1.print(" ");
             Serial1.print(v_lin); // vx
             Serial1.print(" ");
             Serial1.println(v_ang); // vt
-            if (Serial) {Serial.println("DEBUG ODOM REQUEST: "); Serial.print(x_mm); Serial.print(y_mm);Serial.println(th_mm);Serial.print(v_lin); Serial.println(v_ang)}
+            if (Serial) {Serial.println("DEBUG ODOM REQUEST: "); Serial.print(x_mm); Serial.print(y_mm);Serial.println(th_mm);Serial.print(v_lin); Serial.println(v_ang);}
 
         } else if (strcmp(command, "PTH") == 0) {
             // set path to follow
@@ -507,22 +508,22 @@ void update_odometry() {
     actual_robot_position_u.th = normalize_angle_urad(actual_robot_position_u.th);
 
 
-    // DEBUG
-    // if (Serial) {
-    //     Serial.print("TICKS TOT "); Serial.println(ticks_r); Serial.print("Ticks: L "); Serial.print(d_ticks_l); Serial.print(", R"); Serial.println(d_ticks_r);
+    //DEBUG
+    if (Serial) {
+        Serial.print("TICKS TOT "); Serial.println(ticks_r); Serial.print("Ticks: L "); Serial.print(d_ticks_l); Serial.print(", R"); Serial.println(d_ticks_r);
 
-    //     Serial.print("Time: "); Serial.print(d_time_us/1000); Serial.println("ms");
+        Serial.print("Time: "); Serial.print(d_time_us/1000); Serial.println("ms");
 
-    //     Serial.print("dL "); Serial.print(dL_um); Serial.print(", dR "); Serial.println(dR_um);
+        Serial.print("dL "); Serial.print(dL_um); Serial.print(", dR "); Serial.println(dR_um);
 
-    //     Serial.print(" dS ");Serial.print(dS_um);Serial.print(", dT ");Serial.println(dT_urad);
+        Serial.print(" dS ");Serial.print(dS_um);Serial.print(", dT ");Serial.println(dT_urad);
 
-    //     Serial.print("Wheels (mm/s): L ");Serial.print(wheel_velocities[0]);Serial.print(", R");Serial.println(wheel_velocities[1]);
+        Serial.print("Wheels (mm/s): L ");Serial.print(actual_wheel_velocities_m[0]);Serial.print(", R");Serial.println(actual_wheel_velocities_m[1]);
 
-    //     Serial.print("Velocity: VX ");Serial.print(robot_velocities[0]);Serial.print(", VTHETA (mrad/s) ");Serial.println(robot_velocities[1]);
+        Serial.print("Velocity: VX ");Serial.print(actual_robot_velocities_m[0]);Serial.print(", VTHETA (mrad/s) ");Serial.println(actual_robot_velocities_m[1]);
 
-    //     Serial.print("Position (mm): X "); Serial.print(robot_position[0]/1000.0); Serial.print(", Y "); Serial.print(robot_position[1]/1000.0); Serial.print(", TH "); Serial.println(robot_position[2]/1000.0);
-    // }
+        Serial.print("Position (mm): X "); Serial.print(actual_robot_position_u.x/1000.0); Serial.print(", Y "); Serial.print(actual_robot_position_u.y/1000.0); Serial.print(", TH "); Serial.println(actual_robot_position_u.th/1000.0);
+    }
 }
 
 // POSITION CONTROL
