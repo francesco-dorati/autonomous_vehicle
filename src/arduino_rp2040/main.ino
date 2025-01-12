@@ -63,6 +63,7 @@
 #define BASE_INTERVAL 20 // ms
 #define POSITION_CONTROL_INTERVAL 100 // ms
 #define SERIAL_INTERVAL 100 // ms
+#define DEBUG_INTERVAL 500 // ms
 
 // STATE
 enum State {
@@ -113,6 +114,30 @@ void reset_odometry();
 void set_odometry(Position p_u);
 void update_odometry();
 
+// POWER CONTROL
+#define MAX_POW 250
+#define MIN_POW 0
+#define ENA 4   // BROWN
+#define IN1 2   // RED
+#define IN2 3   // ORANGE
+#define ENB 5   // BLUE
+#define IN3 6   // YELLOW
+#define IN4 7   // GREEN
+int target_powers[2] = {0, 0}; // left, right
+void send_motor_powers();
+void stop_motors();
+
+// // VELOCITY CONTROL
+int target_robot_velocities_m[2] = {0, 0}; // vx (mm/s), vt (mrad/s)
+int target_wheel_velocities_m[2] = {0, 0}; // vl, vr (mm/s)
+double pid_goal_left = 0, pid_goal_right = 0; // PID goal
+double pid_actual_left = 0, pid_actual_right = 0; // PID actual
+double pid_output_left = 0, pid_output_right = 0; // PID output
+double Kp = 0, Ki = 0, Kd = 0;
+PID PID_LEFT(&pid_actual_left, &pid_output_left, &pid_goal_left, Kp, Ki, Kd, DIRECT);
+PID PID_RIGHT(&pid_actual_right, &pid_output_right, &pid_goal_right, Kp, Ki, Kd, DIRECT);
+void velocity_control();
+
 // POSITION CONTROL
 #define QUEUE_SIZE 20
 class PositionQueue {
@@ -157,33 +182,33 @@ int heading_velocity(int heading_mrad);
 int align_error_mrad();
 int align_velocity(int alpha_mrad);
 
+// DEBUG
+class Debug { // handle serial inside, check serial to be run every start of turn
+    public:
+        // bool is_on;
+        long last_check_time;
+        Debug(); // setup serial
+        void check_serial();
+        bool serial;
+        void serial_received(char command[]); // chech serial and set it up
+        void serial_ping();
+        void serial_stop_motors();
+        void serial_powers(int left, int right);
+        bool odometry; 
+        long last_odometry_time;
+        void odometry_update(long ticks_l, long ticks_r, long d_ticks_l, long d_ticks_r, long d_time_us, 
+                            long dL_um, long dR_um, long dS_um, long dT_urad,
+                            int actual_wheel_velocities_m[], int actual_robot_velocities_m[]
+                            Position actual_robot_position_u);
+    private:
+        bool is_time;
 
-// // VELOCITY CONTROL
-int target_robot_velocities_m[2] = {0, 0}; // vx (mm/s), vt (mrad/s)
-int target_wheel_velocities_m[2] = {0, 0}; // vl, vr (mm/s)
-double pid_goal_left = 0, pid_goal_right = 0; // PID goal
-double pid_actual_left = 0, pid_actual_right = 0; // PID actual
-double pid_output_left = 0, pid_output_right = 0; // PID output
-double Kp = 0, Ki = 0, Kd = 0;
-PID PID_LEFT(&pid_actual_left, &pid_output_left, &pid_goal_left, Kp, Ki, Kd, DIRECT);
-PID PID_RIGHT(&pid_actual_right, &pid_output_right, &pid_goal_right, Kp, Ki, Kd, DIRECT);
-void velocity_control();
-
-
-// POWER CONTROL
-#define MAX_POW 250
-#define MIN_POW 0
-#define ENA 4   // BROWN
-#define IN1 2   // RED
-#define IN2 3   // ORANGE
-#define ENB 5   // BLUE
-#define IN3 6   // YELLOW
-#define IN4 7   // GREEN
-int target_powers[2] = {0, 0}; // left, right
-void send_motor_powers();
-void stop_motors();
+};
+Debug debug_serial = Debug();
 
 
+
+// SETUP
 void setup() {
     Serial.begin(9600);
     Serial1.begin(115200);
@@ -229,10 +254,12 @@ void loop() {
     
     if (is_over(last_serial_time, SERIAL_INTERVAL)) {
         // Serial1.write("HEllO!!\n");
-        if (!Serial) Serial.begin(9600);
         handle_serial();
         last_serial_time = millis();
     }
+
+    // Debug
+    debug_serial.check_serial();
 
     // update odometry
     update_odometry();
@@ -461,7 +488,6 @@ void reset_odometry() {
     target_robot_position_m.reset();
     target_position_queue.reset();
 }
-
 void set_odometry(Position p_u) {
     actual_robot_position_u = p_u;
 }
@@ -524,6 +550,66 @@ void update_odometry() {
 
         Serial.print("Position (mm): X "); Serial.print(actual_robot_position_u.x/1000.0); Serial.print(", Y "); Serial.print(actual_robot_position_u.y/1000.0); Serial.print(", TH "); Serial.println(actual_robot_position_u.th/1000.0);
     }
+}
+
+// POWER CONTROL
+void send_motor_powers() {
+    /*  
+        Sends the motor powers to the motors
+        target_powers[0] -> left motor [-255, 255]
+        target_powers[1] -> right motor [-255, 255]
+    */
+
+    // saturation
+    // left
+    if (abs(target_powers[0]) > MAX_POW) target_powers[0] = (target_powers[0] > 0) ? MAX_POW : -MAX_POW;
+    if (abs(target_powers[0]) < MIN_POW) target_powers[0] = 0;
+    // right
+    if (abs(target_powers[1]) > MAX_POW) target_powers[1] = (target_powers[1] > 0) ? MAX_POW : -MAX_POW;
+    if (abs(target_powers[1]) < MIN_POW) target_powers[1] = 0;
+
+    // update motors
+    // left
+    if (target_powers[0] == 0){
+        analogWrite(ENB, 0);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, LOW);
+    } else {
+        analogWrite(ENB, abs(target_powers[0]));
+        digitalWrite(IN3, (target_powers[0] > 0) ? LOW : HIGH);
+        digitalWrite(IN4, (target_powers[0] > 0) ? HIGH : LOW);
+    }
+    // right
+    if (target_powers[1] == 0){
+        analogWrite(ENA, 0);
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, LOW);
+    } else{
+        analogWrite(ENA, abs(target_powers[1]));
+        digitalWrite(IN1, (target_powers[1] > 0) ? LOW : HIGH);
+        digitalWrite(IN2, (target_powers[1] > 0) ? HIGH : LOW);
+    }
+}
+
+// VELOCITY CONTROL
+void velocity_control() {
+    /*
+        Computes the motor powers based on the target velocities
+        (wheels velocities are already calculated)
+        reads: target_wheel_velocities_m[2]
+        writes: target_powers[2] 
+    */
+    // update pid variables 
+    pid_actual_left = actual_wheel_velocities_m[0];
+    pid_actual_right = actual_wheel_velocities_m[1];
+    pid_goal_left = target_wheel_velocities_m[0];
+    pid_goal_right = target_wheel_velocities_m[1];
+    // compute PID
+    PID_LEFT.Compute();
+    PID_RIGHT.Compute();
+    // update target powers
+    target_powers[0] = (int) pid_output_left;
+    target_powers[1] = (int) pid_output_right;
 }
 
 // POSITION CONTROL
@@ -677,62 +763,61 @@ void calculate_inverse_kinematic() {
     target_wheel_velocities_m[1] = target_robot_velocities_m[0] + target_robot_velocities_m[1] * WHEEL_DISTANCE_MM / 2;
 }
 
-// VELOCITY CONTROL
-void velocity_control() {
-    /*
-        Computes the motor powers based on the target velocities
-        (wheels velocities are already calculated)
-        reads: target_wheel_velocities_m[2]
-        writes: target_powers[2] 
-    */
-    // update pid variables 
-    pid_actual_left = actual_wheel_velocities_m[0];
-    pid_actual_right = actual_wheel_velocities_m[1];
-    pid_goal_left = target_wheel_velocities_m[0];
-    pid_goal_right = target_wheel_velocities_m[1];
-    // compute PID
-    PID_LEFT.Compute();
-    PID_RIGHT.Compute();
-    // update target powers
-    target_powers[0] = (int) pid_output_left;
-    target_powers[1] = (int) pid_output_right;
+// DEBUG
+Debug::Debug() {
+    is_time = false
+    last_check_time = millis();
 }
 
-// POWER CONTROL
-void send_motor_powers() {
-    /*  
-        Sends the motor powers to the motors
-        target_powers[0] -> left motor [-255, 255]
-        target_powers[1] -> right motor [-255, 255]
-    */
-
-    // saturation
-    // left
-    if (abs(target_powers[0]) > MAX_POW) target_powers[0] = (target_powers[0] > 0) ? MAX_POW : -MAX_POW;
-    if (abs(target_powers[0]) < MIN_POW) target_powers[0] = 0;
-    // right
-    if (abs(target_powers[1]) > MAX_POW) target_powers[1] = (target_powers[1] > 0) ? MAX_POW : -MAX_POW;
-    if (abs(target_powers[1]) < MIN_POW) target_powers[1] = 0;
-
-    // update motors
-    // left
-    if (target_powers[0] == 0){
-        analogWrite(ENB, 0);
-        digitalWrite(IN3, LOW);
-        digitalWrite(IN4, LOW);
+void Debug::check_serial() {
+    if (is_over(last_check_time, DEBUG_INTERVAL)) {
+        last_check_time = millis();
+        if (!Serial) Serial.begin(9600);
+        if (Serial) {
+            is_time = true;
+            // check for debug instructions
+        }
     } else {
-        analogWrite(ENB, abs(target_powers[0]));
-        digitalWrite(IN3, (target_powers[0] > 0) ? LOW : HIGH);
-        digitalWrite(IN4, (target_powers[0] > 0) ? HIGH : LOW);
+        is_time = false;
     }
-    // right
-    if (target_powers[1] == 0){
-        analogWrite(ENA, 0);
-        digitalWrite(IN1, LOW);
-        digitalWrite(IN2, LOW);
-    } else{
-        analogWrite(ENA, abs(target_powers[1]));
-        digitalWrite(IN1, (target_powers[1] > 0) ? LOW : HIGH);
-        digitalWrite(IN2, (target_powers[1] > 0) ? HIGH : LOW);
+}
+
+void Debug::odometry_update(
+    long ticks_l, long ticks_r, long d_ticks_l, long d_ticks_r, long d_time_us, 
+    long dL_um, long dR_um, long dS_um, long dT_urad,
+    int wheels_m[], int velocities_m[]
+    Position position_u) 
+{
+    if (Serial && is_time && odometry) {
+        Serial.println("### ODOMETRY ###")
+        Serial.println("TICKS TOT "); 
+        Serial.print("L: ")
+        Serial.print(ticks_l); 
+        Serial.print(", R: ")
+        Serial.println(ticks_r); 
+
+        Serial.println("DELTA TICKS:"); 
+        Serial.print("L: ")
+        Serial.print(d_ticks_l); 
+        Serial.print(", R: ")
+        Serial.println(d_ticks_r);
+
+        Serial.print("TIME: "); 
+        Serial.print(d_time_us/1000); 
+        Serial.println("ms");
+
+        Serial.print("dL "); Serial.print(dL_um); 
+        Serial.print(", dR "); Serial.println(dR_um);
+
+        Serial.print("dS ");Serial.print(dS_um);
+        Serial.print(", dT ");Serial.println(dT_urad);
+
+        Serial.print("Wheels (mm/s): L ");Serial.print(wheels_m[0]);Serial.print(", R");Serial.println(wheels_m[1]);
+
+        Serial.print("Velocity: VX ");Serial.print(velocities_m[0]);Serial.print(", VTHETA (mrad/s) ");Serial.println(velocities_m[1]);
+
+        Serial.print("Position (mm): X "); Serial.print(position_u.x/1000.0); Serial.print(", Y "); Serial.print(position_u.y/1000.0); Serial.print(", TH "); Serial.println(position_u.th/1000.0);
     }
+    }
+
 }
