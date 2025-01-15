@@ -19,7 +19,7 @@ class RP2040(Device):
     @timing_decorator
     def start() -> None:
         try:
-            RP2040._serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.1)
+            RP2040._serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.5)
         except serial.SerialException:
             raise Device.ConnectionFailed
         time.sleep(2)
@@ -124,7 +124,7 @@ class RP2040(Device):
         return p
 
     @staticmethod
-    @timing_decorator
+    # @timing_decorator
     def get_debug_odometry() -> tuple[int, int, int, int, int]:
         """
         Request debug odometry data from RP2020

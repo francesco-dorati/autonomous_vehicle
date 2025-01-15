@@ -132,7 +132,7 @@ int target_wheel_velocities_m[2] = {0, 0}; // vl, vr (mm/s)
 double pid_goal_left = 0, pid_goal_right = 0; // PID goal
 double pid_actual_left = 0, pid_actual_right = 0; // PID actual
 double pid_output_left = 0, pid_output_right = 0; // PID output
-double Kp = 0, Ki = 0, Kd = 0;
+double Kp = 1.1, Ki = 3, Kd = 0;
 PID PID_LEFT(&pid_actual_left, &pid_output_left, &pid_goal_left, Kp, Ki, Kd, DIRECT);
 PID PID_RIGHT(&pid_actual_right, &pid_output_right, &pid_goal_right, Kp, Ki, Kd, DIRECT);
 void velocity_control();
@@ -781,8 +781,8 @@ void calculate_inverse_kinematic() {
         reads: target_robot_velocities_m[2]
         writes: target_wheel_velocities_m[2]
     */
-    target_wheel_velocities_m[0] = target_robot_velocities_m[0] - target_robot_velocities_m[1] * WHEEL_DISTANCE_MM / 2;
-    target_wheel_velocities_m[1] = target_robot_velocities_m[0] + target_robot_velocities_m[1] * WHEEL_DISTANCE_MM / 2;
+    target_wheel_velocities_m[0] = target_robot_velocities_m[0] - target_robot_velocities_m[1] * WHEEL_DISTANCE_MM / 2000.0;
+    target_wheel_velocities_m[1] = target_robot_velocities_m[0] + target_robot_velocities_m[1] * WHEEL_DISTANCE_MM / 2000.0;
 }
 
 // DEBUG

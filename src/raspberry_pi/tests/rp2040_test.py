@@ -5,13 +5,30 @@ from raspberry_pi.devices.rp2040 import RP2040
 
 def main():
     RP2040.start()
-    # RP2040.stop()
+
 
     try:
+        pass
+    #1ok 2mid 3 ok 4  5 ok 6 m
         # print("\nRP2040 running: ", RP2040.ping())
         # print()
         # time.sleep(2)
-        PowerTester.test_velocity()
+        # data = PidTester.base_test(3, 0, 0, 250, 0)
+        # PidTester.plot_data(data, 250, 0)
+
+        # KP 1.1
+        # KI 3
+        # KD 0.004
+        vx = 0
+        vang = 1500
+        data = PidTester.multiple_test([1.1], [0.004], [3], vx, vang)
+        for d1, d2, kp, kd, ki in data:
+            PidTester.plot_data(d1, vx, vang, f'../img/pid/p{kp}d{kd}i{ki}_front.png')
+            PidTester.plot_data(d2, vx, vang, f'../img/pid/p{kp}d{kd}i{ki}_back.png')
+
+
+
+        # PowerTester.test_velocity()
         # RP2040.set_target_power(120, 120)
         # time.sleep(10)
         
@@ -180,46 +197,65 @@ class PidTester(RP2040Tester):
     def base_test(kp, kd, ki, vl, va):
         """ Test correct pid values """
         sampling_time = 0.1
-        test_time = 3
+        test_time = 5
         data = []
 
         RP2040.set_pid_values(kp, ki, kd)
+        if not RP2040.ping():
+            return
         RP2040.set_target_velocity(vl, va)
+        if not RP2040.ping():
+            return
 
         t0 = time.time()
         while time.time() - t0 < test_time:
             t = time.time() - t0
-            _, _, _, vl, va = RP2040.get_debug_odometry()
+            x, y, th, vl, va = RP2040.get_debug_odometry()
             data.append((t, vl, va))
+            print(f"AT: {x}, {y}, {th}")
             time.sleep(sampling_time)
 
         RP2040.stop_motors()
         return data
-
+   
+    @staticmethod
+    def multiple_test(range_kp, range_kd, range_ki, vl, va):
+        data = []
+        for kp in range_kp:
+            for kd in range_kd:
+                for ki in range_ki:
+                    d1 = PidTester.base_test(kp, kd, ki, vl, va)
+                    RP2040.stop_motors()
+                    time.sleep(1)
+                    d2 = PidTester.base_test(kp, kd, ki, -vl, -va)
+                    data.append((d1, d2, kp, kd, ki))
+                    time.sleep(1)
+        return data
 
     @staticmethod
-    def plot_data(data, vl_goal, va_goal):
+    def plot_data(data, vl_goal, va_goal, filename):
         t_arr, vx_arr, va_arr = zip(*data)
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
 
         ax1.plot(t_arr, vx_arr, label="vl", color='blue', linewidth=2)
-        ax1.axline(y=vl_goal, color='red', linestyle="--", label="Target")
-        ax1.title("Linear Velocity")
-        ax1.xlabel("time (s)")
-        ax1.ylabel("linear vel (mm/s)")
+        ax1.axhline(y=vl_goal, color='red', linestyle="--", label="Target")
+        ax1.set_title("Linear Velocity")
+        ax1.set_xlabel("time (s)")
+        ax1.set_ylabel("linear vel (mm/s)")
         ax1.grid(True, linestyle="--", alpha=0.6)
         ax1.legend(fontsize=12)
 
         ax2.plot(t_arr, va_arr, label="va", color='blue', linewidth=2)
-        ax2.axline(y=va_goal, color='red', linestyle="--", label="Target")
-        ax2.title("Linear Velocity")
-        ax2.xlabel("time (s)")
-        ax2.ylabel("angular vel (mm/s)")
+        ax2.axhline(y=va_goal, color='red', linestyle="--", label="Target")
+        ax2.set_title("Linear Velocity")
+        ax2.set_xlabel("time (s)")
+        ax2.set_ylabel("angular vel (mm/s)")
         ax2.grid(True, linestyle="--", alpha=0.6)
         ax2.legend(fontsize=12)
 
         plt.tight_layout()
+        plt.savefig(filename)
         plt.show()
     
 
