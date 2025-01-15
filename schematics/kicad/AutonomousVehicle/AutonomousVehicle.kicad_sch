@@ -5884,7 +5884,7 @@
 		)
 		(uuid "1a2e6682-dbdf-47b9-af4b-007050629bb1")
 	)
-	(label "ENCODER_LA"
+	(label "ENCODER_LB"
 		(at 134.62 151.13 180)
 		(fields_autoplaced yes)
 		(effects
@@ -6137,7 +6137,7 @@
 		)
 		(uuid "7881850b-fe06-4fa9-8723-fbd496fcf25a")
 	)
-	(label "ENCODER_LB"
+	(label "ENCODER_LA"
 		(at 134.62 153.67 180)
 		(fields_autoplaced yes)
 		(effects

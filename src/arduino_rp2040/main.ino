@@ -91,8 +91,8 @@ bool is_over(long last_time, int interval);
 void sleep(long t_start);
 
 // ENCODERS
-#define LA_ENCODER_PIN 11 // LEFT GREEN
-#define LB_ENCODER_PIN 10 // LEFT YELLOW
+#define LA_ENCODER_PIN 10 // LEFT YELLOW 
+#define LB_ENCODER_PIN 11 // LEFT GREEN
 #define RA_ENCODER_PIN 9  // RIGHT GREEN
 #define RB_ENCODER_PIN 8  // RIGHT YELLOW
 #define WHEEL_RADIUS_MM 34      // mm
@@ -111,7 +111,6 @@ Position actual_robot_position_u = Position(); // x, y (um), theta (urad)
 void left_tick();
 void right_tick();
 void reset_odometry();
-void set_odometry(Position p_u);
 void update_odometry();
 
 // POWER CONTROL
@@ -183,28 +182,59 @@ int align_error_mrad();
 int align_velocity(int alpha_mrad);
 
 // DEBUG
-class Debug { // handle serial inside, check serial to be run every start of turn
+class Logger { // handle serial inside, check serial to be run every start of turn
+    class SerialLogger {
+        public:
+            void received(char command[]);
+            void ping();
+            void stop_motors();
+            void set_powers();
+            void set_velocities();
+            void set_pid();
+            void request_odometry(int x_mm, int y_mm, int th_mm);
+            void reset_odometry();
+            void set_odometry();
+            void complete_odometry(int x_mm, int y_mm, int th_mm, int v_lin, int v_ang);
+            void set_path();
+            void append_path();
+            void invalid_command();
+
+        private:
+            bool on;
+    };
+    class OdometryLogger {
+        public:
+            void log(long ticks_l, long ticks_r, long d_ticks_l, long d_ticks_r, long d_time_us, 
+                        long dL_um, long dR_um, long dS_um, long dT_urad);
+        private:
+            bool on;
+            bool is_time;
+    };
+    class ControlLogger {
+        public:
+            void log_change_target_position(int dist_mm);
+            void log_heading_adjustment(int dist_mm, int heading_error);
+            void log_alignment_adjustment(int dist_mm, int align_error);
+            void log_velocity();
+            void log_power();
+        private:
+            bool on;
+            bool is_time;
+    };
+    
     public:
-        // bool is_on;
-        long last_check_time;
-        Debug(); // setup serial
-        void check_serial();
-        bool serial;
-        void serial_received(char command[]); // chech serial and set it up
-        void serial_ping();
-        void serial_stop_motors();
-        void serial_powers(int left, int right);
-        bool odometry; 
-        long last_odometry_time;
-        void odometry_update(long ticks_l, long ticks_r, long d_ticks_l, long d_ticks_r, long d_time_us, 
-                            long dL_um, long dR_um, long dS_um, long dT_urad,
-                            int actual_wheel_velocities_m[], int actual_robot_velocities_m[]
-                            Position actual_robot_position_u);
+        SerialLogger serial;
+        OdometryLogger odometry;
+        ControlLogger control;
+        Logger(); // setup serial
+        void check_connection();
+        
     private:
         bool is_time;
+        long last_check_time;
 
 };
-Debug debug_serial = Debug();
+Debug debug_usb = Logger();
 
 
 
@@ -246,20 +276,16 @@ void setup() {
 //// LOOP ////
 void loop() {
     long t_start = millis();
-    // Serial.println("ok");
-    // delay(1000);
-    // Serial.println("OK B");
-    // delay(1000);
+
     // handle serial commands
-    
     if (is_over(last_serial_time, SERIAL_INTERVAL)) {
         // Serial1.write("HEllO!!\n");
         handle_serial();
         last_serial_time = millis();
     }
 
-    // Debug
-    debug_serial.check_serial();
+    // debug via usb serial
+    /* log */ debug_usb.check_connection();
 
     // update odometry
     update_odometry();
@@ -267,7 +293,6 @@ void loop() {
     // stall
     if (control_state == STALL) {
         // stop motors???
-        // Serial.println("Stall");
         sleep(t_start);
         return;
     }
@@ -344,22 +369,20 @@ void handle_serial() {
     while (Serial1.available() >= 3) {
         char command[4];
         command[3] = '\0';
+
         Serial1.readBytes(command, 3);
-        if (Serial) {
-          Serial.print("received: ");
-          Serial.println(command);
-        }
+        /* log */ debug_usb.serial.received(command); 
 
         if (strcmp(command, "PNG") == 0) {
             // ping
             Serial1.println("PNG");
-            if (Serial) Serial.println("OK");
+            /* log */ debug_usb.serial.ping();
 
         } else if (strcmp(command, "STP") == 0) {
             // stop motors
             // "STP"
             stop_motors();
-            if (Serial) Serial.println("MOTORS STOPPED");
+            /* log */ debug_usb.serial.stop_motors();
 
         } else if (strcmp(command, "PWR") == 0) {
             // power control
@@ -368,7 +391,7 @@ void handle_serial() {
             target_powers[0] = Serial1.parseInt();
             target_powers[1] = Serial1.parseInt();
             control_state = POWER_CONTROL;
-            if (Serial) {Serial.print("SET POWER TO "); Serial.print(target_powers[0]); Serial.println(target_powers[1]);}
+            /* log */ debug_usb.serial.set_powers();
 
         } else if (strcmp(command, "VEL") == 0) {
             // velocity control
@@ -378,6 +401,7 @@ void handle_serial() {
             target_robot_velocities_m[1] = Serial1.parseInt();
             calculate_inverse_kinematic();
             control_state = VELOCITY_CONTROL;
+            /* log */ debug_usb.serial.set_velocities();
 
         } else if (strcmp(command, "PID") == 0) {
             // pid values change
@@ -388,6 +412,7 @@ void handle_serial() {
             Kd = Serial1.parseFloat();
             PID_LEFT.SetTunings(Kp, Ki, Kd);
             PID_RIGHT.SetTunings(Kp, Ki, Kd);
+            /* log */ debug_usb.serial.set_pid();
 
         } else if (strcmp(command, "ORQ") == 0) {
             // odometry request
@@ -400,12 +425,13 @@ void handle_serial() {
             Serial1.print(y_mm); // y
             Serial1.print(" ");
             Serial1.println(th_mm); // theta
-            if (Serial) {Serial.print("ODOM REQUEST: "); Serial.print(x_mm); Serial.print(y_mm);Serial.println(th_mm);}
+            /* log */ debug_usb.serial.request_odometry(x_mm, y_mm, th_mm);
 
         } else if (strcmp(command, "ORS") == 0) {
             // odometry reset
             // "ORS"
             reset_odometry();
+            /* log */ debug_usb.serial.reset_odometry();
 
         } else if (strcmp(command, "OST") == 0) {
             // odometry set
@@ -413,7 +439,8 @@ void handle_serial() {
             int x_u = Serial1.parseInt()*1000; 
             int y_u = Serial1.parseInt()*1000; 
             int th_u = Serial1.parseInt()*1000; 
-            set_odometry(Position(x_u, y_u, th_u));
+            actual_robot_position_u = Position(x_u, y_u, th_u);
+            /* log */ debug_usb.serial.set_odometry();
 
         } else if (strcmp(command, "ODB") == 0) {
             // odometry debug
@@ -432,7 +459,7 @@ void handle_serial() {
             Serial1.print(v_lin); // vx
             Serial1.print(" ");
             Serial1.println(v_ang); // vt
-            if (Serial) {Serial.println("DEBUG ODOM REQUEST: "); Serial.print(x_mm); Serial.print(y_mm);Serial.println(th_mm);Serial.print(v_lin); Serial.println(v_ang);}
+            /* log */ debug_usb.serial.complete_odometry(x_mm, y_mm, th_mm, v_lin, v_ang);
 
         } else if (strcmp(command, "PTH") == 0) {
             // set path to follow
@@ -445,6 +472,7 @@ void handle_serial() {
                 long th_mrad = Serial1.parseInt();
                 target_position_queue.push(Position(x_mm, y_mm, th_mrad));
             }
+            /* log */ debug_usb.serial.set_path();
 
         } else if (strcmp(command, "APP") == 0) {
             int n = Serial1.parseInt();
@@ -454,10 +482,12 @@ void handle_serial() {
                 long th_mrad = Serial1.parseInt();
                 target_position_queue.push(Position(x_mm, y_mm, th_mrad));
             }
+            /* log */ debug_usb.serial.append_path();
 
         } else {
             // invalid command
             // ignore
+            /* log */ debug_usb.serial.invalid_command();
         }
 
         // read until END
@@ -487,9 +517,6 @@ void reset_odometry() {
     actual_robot_position_u.reset();
     target_robot_position_m.reset();
     target_position_queue.reset();
-}
-void set_odometry(Position p_u) {
-    actual_robot_position_u = p_u;
 }
 void update_odometry() {
     /*
@@ -535,21 +562,8 @@ void update_odometry() {
 
 
     //DEBUG
-    if (Serial) {
-        Serial.print("TICKS TOT "); Serial.println(ticks_r); Serial.print("Ticks: L "); Serial.print(d_ticks_l); Serial.print(", R"); Serial.println(d_ticks_r);
-
-        Serial.print("Time: "); Serial.print(d_time_us/1000); Serial.println("ms");
-
-        Serial.print("dL "); Serial.print(dL_um); Serial.print(", dR "); Serial.println(dR_um);
-
-        Serial.print(" dS ");Serial.print(dS_um);Serial.print(", dT ");Serial.println(dT_urad);
-
-        Serial.print("Wheels (mm/s): L ");Serial.print(actual_wheel_velocities_m[0]);Serial.print(", R");Serial.println(actual_wheel_velocities_m[1]);
-
-        Serial.print("Velocity: VX ");Serial.print(actual_robot_velocities_m[0]);Serial.print(", VTHETA (mrad/s) ");Serial.println(actual_robot_velocities_m[1]);
-
-        Serial.print("Position (mm): X "); Serial.print(actual_robot_position_u.x/1000.0); Serial.print(", Y "); Serial.print(actual_robot_position_u.y/1000.0); Serial.print(", TH "); Serial.println(actual_robot_position_u.th/1000.0);
-    }
+    /* log */ debug_usb.odometry.log(ticks_l, ticks_r, d_ticks_l, d_ticks_r, d_time_us, 
+                                                    dL_um, dR_um, dS_um, dT_urad);
 }
 
 // POWER CONTROL
@@ -589,6 +603,8 @@ void send_motor_powers() {
         digitalWrite(IN1, (target_powers[1] > 0) ? LOW : HIGH);
         digitalWrite(IN2, (target_powers[1] > 0) ? HIGH : LOW);
     }
+
+    /* log */ debug_usb.control.log_power();
 }
 
 // VELOCITY CONTROL
@@ -608,8 +624,10 @@ void velocity_control() {
     PID_LEFT.Compute();
     PID_RIGHT.Compute();
     // update target powers
-    target_powers[0] = (int) pid_output_left;
-    target_powers[1] = (int) pid_output_right;
+    target_powers[0] = (int) max(-255, min(pid_output_left, 255));
+    target_powers[1] = (int) max(-255, min(pid_output_right, 255));
+
+    /* log */ debug_usb.control.log_velocity();
 }
 
 // POSITION CONTROL
@@ -656,6 +674,8 @@ void position_control() {
     while (dist_mm <= CHANGE_DIST_MM && !target_position_queue.is_empty()) { 
         // change target
         target_robot_position_m = target_position_queue.pop();
+        /* log */ debug_usb.control.log_change_target_position(dist_mm);
+
         dist_mm = distance_error_mm();
     }
 
@@ -673,6 +693,8 @@ void position_control() {
             target_robot_velocities_m[1] = heading_velocity(heading_error);
         }
 
+        /* log */ debug_usb.control.log_heading_adjustment(dist_mm, heading_error);
+
     } else { 
         // inside distance threshold
         // check alignment
@@ -686,7 +708,11 @@ void position_control() {
             // aligned
             stop_motors();
         }
+    
+        /* log */ debug_usb.control.log_alignment_adjustment(dist_mm, align_error);
     }
+
+
 
 }
 
@@ -764,32 +790,201 @@ void calculate_inverse_kinematic() {
 }
 
 // DEBUG
-Debug::Debug() {
-    is_time = false
+Logger::Logger() {
+    is_time = false;
     last_check_time = millis();
 }
-
-void Debug::check_serial() {
+void Logger::check_connection() {
     if (is_over(last_check_time, DEBUG_INTERVAL)) {
         last_check_time = millis();
         if (!Serial) Serial.begin(9600);
         if (Serial) {
             is_time = true;
-            // check for debug instructions
+            odometry.is_time = true;
+            control.is_time = true;
+
+            Serial.println("ALIVE");
+            Serial.print("CONTROL TYPE: ");
+            switch (control_state) {
+                case STALL: Serial.println("STALL"); break;
+                case POWER_CONTROL: Serial.println("POWER CONTROL"); break;
+                case VELOCITY_CONTROL: Serial.println("VELOCITY CONTROL"); break;
+                case POSITION_CONTROL: Serial.println("POSITION CONTROL"); break;
+                default: Serial.println("ERROR"); break;
+            }
+            
+
+            if (Serial.available() > 0) {
+                // check for debug instructions
+                String command;
+                command = Serial.readStringUntil('\n');
+                if (command == "SER") {
+                    serial.on = !serial.on;
+                    Serial.println("SERIAL PRINTER " + (serial.on ? "ON" : "OFF"));
+                } else (command == "ODO") {
+                    odometry.on = !odometry.on;
+                    Serial.println("ODOMETRY " + (odometry.on ? "ON" : "OFF"));
+                } else (command == "CON") {
+                    control.on = !control.on;
+                    Serial.println("CONTROL " + (control.on ? "ON" : "OFF"));
+                }
+            }
         }
+
     } else {
         is_time = false;
+        odometry.is_time = false;
+        control.is_time = false;
     }
 }
 
-void Debug::odometry_update(
+void Logger::SerialLogger::received(char command[]) {
+    if (Serial && on) {
+        Serial.println("### SERIAL ###");
+        Serial.print("RECEIVED: \"");
+        Serial.print(command);
+        Serial.println("\"");
+    }
+}
+void Logger::SerialLogger::ping() {
+    if (Serial && on) {
+        Serial.println("PING");
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::stop_motors() {
+    if (Serial && on) {
+        Serial.println("STOP MOTORS");
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::set_powers() {
+    if (Serial && on) {
+        Serial.println("SET POWERS");
+        Serial.print("L: ");
+        Serial.print(target_powers[0]);
+        Serial.print(", R: ");
+        Serial.println(target_powers[1]);
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::set_velocities() {
+    if (Serial && on) {
+        Serial.println("SET VELOCITIES");
+        Serial.print("VX: ");
+        Serial.print(target_robot_velocities_m[0]);
+        Serial.print(", VT: ");
+        Serial.println(target_robot_velocities_m[1]);
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::set_pid() {
+    if (Serial && on) {
+        Serial.println("SET PID");
+        Serial.print("Kp: ");
+        Serial.print(Kp);
+        Serial.print(", Ki: ");
+        Serial.print(Ki);
+        Serial.print(", Kd: ");
+        Serial.println(Kd);
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::request_odometry(int x_mm, int y_mm, int th_mm) {
+    if (Serial && on) {
+        Serial.println("REQUEST ODOMETRY");
+        Serial.print("X: ");
+        Serial.print(x_mm);
+        Serial.print(", Y: ");
+        Serial.print(y_mm);
+        Serial.print(", TH: ");
+        Serial.println(th_mm);
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::reset_odometry() {
+    if (Serial && on) {
+        Serial.println("RESET ODOMETRY");
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::set_odometry() {
+    if (Serial && on) {
+        Serial.println("SET ODOMETRY");
+        Serial.print("X: ");
+        Serial.print(actual_robot_position_u.x/1000);
+        Serial.print(", Y: ");
+        Serial.print(actual_robot_position_u.y/1000);
+        Serial.print(", TH: ");
+        Serial.println(actual_robot_position_u.th/1000);
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::complete_odometry(int x_mm, int y_mm, int th_mm, int v_lin, int v_ang) {
+    if (Serial && on) {
+        Serial.println("ODOMETRY DEBUG REQUEST");
+        Serial.print("X: ");
+        Serial.print(x_mm);
+        Serial.print(", Y: ");
+        Serial.print(y_mm);
+        Serial.print(", TH: ");
+        Serial.print(th_mm);
+        Serial.print(", VX: ");
+        Serial.print(v_lin);
+        Serial.print(", VT: ");
+        Serial.println(v_ang);
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::set_path() {
+    if (Serial && on) {
+        Serial.println("SET PATH");
+        Serial.print("N: ");
+        Serial.println(target_position_queue.count);
+        for (int i = 0; i < target_position_queue.count; i++) {
+            Serial.print(i);
+            Serial.print(")  X: ");
+            Serial.print(target_position_queue.queue[i].x);
+            Serial.print(", Y: ");
+            Serial.print(target_position_queue.queue[i].y);
+            Serial.print(", TH: ");
+            Serial.println(target_position_queue.queue[i].th);
+        }
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::append_path() {
+    if (Serial && on) {
+        Serial.println("APPEND PATH");
+        Serial.print("N: ");
+        Serial.println(target_position_queue.count);
+        for (int i = 0; i < target_position_queue.count; i++) {
+            Serial.print(i);
+            Serial.print(")  X: ");
+            Serial.print(target_position_queue.queue[i].x);
+            Serial.print(", Y: ");
+            Serial.print(target_position_queue.queue[i].y);
+            Serial.print(", TH: ");
+            Serial.println(target_position_queue.queue[i].th);
+        }
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+void Logger::SerialLogger::invalid_command() {
+    if (Serial && on) {
+        Serial.println("INVALID COMMAND");
+        Serial.println("### END SERIAL ###\n");
+    }
+}
+
+
+void Logger::OdometryLogger::log(
     long ticks_l, long ticks_r, long d_ticks_l, long d_ticks_r, long d_time_us, 
-    long dL_um, long dR_um, long dS_um, long dT_urad,
-    int wheels_m[], int velocities_m[]
-    Position position_u) 
+    long dL_um, long dR_um, long dS_um, long dT_urad) 
 {
-    if (Serial && is_time && odometry) {
+    if (Serial && is_time && odometry_on) {
         Serial.println("### ODOMETRY ###")
+
         Serial.println("TICKS TOT "); 
         Serial.print("L: ")
         Serial.print(ticks_l); 
@@ -806,18 +1001,107 @@ void Debug::odometry_update(
         Serial.print(d_time_us/1000); 
         Serial.println("ms");
 
-        Serial.print("dL "); Serial.print(dL_um); 
-        Serial.print(", dR "); Serial.println(dR_um);
+        Serial.print("dL ");    Serial.print(dL_um); 
+        Serial.print(", dR ");  Serial.println(dR_um);
 
-        Serial.print("dS ");Serial.print(dS_um);
-        Serial.print(", dT ");Serial.println(dT_urad);
+        Serial.print("dS ");    Serial.print(dS_um);
+        Serial.print(", dT ");  Serial.println(dT_urad);
 
-        Serial.print("Wheels (mm/s): L ");Serial.print(wheels_m[0]);Serial.print(", R");Serial.println(wheels_m[1]);
+        Serial.print("Wheels (mm/s): L ");
+        Serial.print(actual_wheel_velocities_m[0]);
+        Serial.print(", R");
+        Serial.println(actual_wheel_velocities_m[1]);
 
-        Serial.print("Velocity: VX ");Serial.print(velocities_m[0]);Serial.print(", VTHETA (mrad/s) ");Serial.println(velocities_m[1]);
+        Serial.print("Velocity: VX ");
+        Serial.print(actual_robot_velocities_m[0]);
+        Serial.print(", VTHETA (mrad/s) ");
+        Serial.println(actual_robot_velocities_m[1]);
 
-        Serial.print("Position (mm): X "); Serial.print(position_u.x/1000.0); Serial.print(", Y "); Serial.print(position_u.y/1000.0); Serial.print(", TH "); Serial.println(position_u.th/1000.0);
+        Serial.print("Position (mm): X "); 
+        Serial.print(actual_robot_position_u.x/1000.0); 
+        Serial.print(", Y "); 
+        Serial.print(actual_robot_position_u.y/1000.0); 
+        Serial.print(", TH "); 
+        Serial.println(actual_robot_position_u.th/1000.0);
+
+        Serial.println("### END ODOMETRY ###\n");
     }
+}
+
+void Logger::ControlLogger::log_change_target_position(int dist_mm) {
+    if (Serial && is_time && on) {
+        Serial.println("CHANGE TARGET POSITION");
+        Serial.println("NEW TARGET:");
+        Serial.print("X ");
+        Serial.print(target_robot_position_m.x);
+        Serial.print(", Y ");
+        Serial.print(target_robot_position_m.y);
+        Serial.print(", TH ");
+        Serial.println(target_robot_position_m.th);
+        Serial.print("DISTANCE: ");
+        Serial.print(dist_mm);
+        Serial.print(" / ");
+        Serial.println(THRESH_DIST_MM);
+        Serial.println();
+    }
+}
+void Logger::ControlLogger::log_heading_adjustment(int dist_mm, int heading_error) {
+    if (Serial && is_time && on) {
+        Serial.println("HEADING ADJUSTMENT");
+        Serial.print("DISTANCE: ");
+        Serial.print(dist_mm);
+        Serial.print(" mm, HEADING ERROR: ");
+        Serial.print(heading_error);
+        Serial.println(" mrad");
+        Serial.println();
     }
 
+}
+void Logger::ControlLogger::log_alignment_adjustment(int dist_mm, int align_error) {
+    if (Serial && is_time && control_on) {
+        Serial.println("ALIGNMENT ADJUSTMENT");
+        Serial.print("DISTANCE: ");
+        Serial.print(dist_mm);
+        Serial.print(" mm, ALIGNMENT ERROR: ");
+        Serial.print(align_error);
+        Serial.println(" mrad");
+        Serial.println();
+    }
+}
+void Logger::ControlLogger::log_velocity() {
+    if (Serial && is_time && control_on) {
+        Serial.println("TARGET VELOCITIES");
+        Serial.print("VX:   ")
+        Serial.print(target_robot_velocities_m[0]);
+        Serial.print(" [mm/s],     VT:   ");
+        Serial.print(target_robot_velocities_m[1]);
+        Serial.println(" [mrad/s]");
+
+        Serial.println("\nTARGET WHEEL VELOCITIES");
+        Serial.print("L:    ")
+        Serial.print(target_wheel_velocities_m[0]);
+        Serial.print(" [mm/s],     R:    ");
+        Serial.print(target_wheel_velocities_m[1]);
+        Serial.println(" [mm/s]");
+
+        Serial.println("\nPID VALUES");
+        Serial.print("Kp:   ")
+        Serial.print(Kp);
+        Serial.print(",     Ki:   ");
+        Serial.print(Ki);
+        Serial.print(",     Kd:   ");
+        Serial.println(Kd);
+        Serial.println();
+        
+    }
+}
+void Logger::ControlLogger::log_power() {
+    if (Serial && is_time && control_on) {
+        Serial.println("TARGET POWERS");
+        Serial.print("L:    ")
+        Serial.print(target_powers[0]);
+        Serial.print(",     R:    ");
+        Serial.println(target_powers[1]);
+        Serial.println();
+    }
 }
