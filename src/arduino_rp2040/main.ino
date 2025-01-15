@@ -185,6 +185,7 @@ int align_velocity(int alpha_mrad);
 class Logger { // handle serial inside, check serial to be run every start of turn
     class SerialLogger {
         public:
+            bool on;
             void received(char command[]);
             void ping();
             void stop_motors();
@@ -198,28 +199,23 @@ class Logger { // handle serial inside, check serial to be run every start of tu
             void set_path();
             void append_path();
             void invalid_command();
-
-        private:
-            bool on;
     };
     class OdometryLogger {
         public:
-            void log(long ticks_l, long ticks_r, long d_ticks_l, long d_ticks_r, long d_time_us, 
-                        long dL_um, long dR_um, long dS_um, long dT_urad);
-        private:
             bool on;
             bool is_time;
+            void log(long ticks_l, long ticks_r, long d_ticks_l, long d_ticks_r, long d_time_us, 
+                        long dL_um, long dR_um, long dS_um, long dT_urad);
     };
     class ControlLogger {
         public:
+            bool on;
+            bool is_time;
             void log_change_target_position(int dist_mm);
             void log_heading_adjustment(int dist_mm, int heading_error);
             void log_alignment_adjustment(int dist_mm, int align_error);
             void log_velocity();
             void log_power();
-        private:
-            bool on;
-            bool is_time;
     };
     
     public:
@@ -234,7 +230,7 @@ class Logger { // handle serial inside, check serial to be run every start of tu
         long last_check_time;
 
 };
-Debug debug_usb = Logger();
+Logger debug_usb = Logger();
 
 
 
@@ -803,7 +799,7 @@ void Logger::check_connection() {
             odometry.is_time = true;
             control.is_time = true;
 
-            Serial.println("ALIVE");
+            Serial.println("\nALIVE");
             Serial.print("CONTROL TYPE: ");
             switch (control_state) {
                 case STALL: Serial.println("STALL"); break;
@@ -820,13 +816,16 @@ void Logger::check_connection() {
                 command = Serial.readStringUntil('\n');
                 if (command == "SER") {
                     serial.on = !serial.on;
-                    Serial.println("SERIAL PRINTER " + (serial.on ? "ON" : "OFF"));
-                } else (command == "ODO") {
+                    Serial.print("SERIAL PRINTER ");
+                    Serial.println(serial.on ? "ON" : "OFF");
+                } else if (command == "ODO") {
                     odometry.on = !odometry.on;
-                    Serial.println("ODOMETRY " + (odometry.on ? "ON" : "OFF"));
-                } else (command == "CON") {
+                    Serial.print("ODOMETRY ");
+                    Serial.println(odometry.on ? "ON" : "OFF");
+                } else if (command == "CON") {
                     control.on = !control.on;
-                    Serial.println("CONTROL " + (control.on ? "ON" : "OFF"));
+                    Serial.println("CONTROL ");
+                    Serial.println(control.on ? "ON" : "OFF");
                 }
             }
         }
@@ -939,34 +938,12 @@ void Logger::SerialLogger::complete_odometry(int x_mm, int y_mm, int th_mm, int 
 void Logger::SerialLogger::set_path() {
     if (Serial && on) {
         Serial.println("SET PATH");
-        Serial.print("N: ");
-        Serial.println(target_position_queue.count);
-        for (int i = 0; i < target_position_queue.count; i++) {
-            Serial.print(i);
-            Serial.print(")  X: ");
-            Serial.print(target_position_queue.queue[i].x);
-            Serial.print(", Y: ");
-            Serial.print(target_position_queue.queue[i].y);
-            Serial.print(", TH: ");
-            Serial.println(target_position_queue.queue[i].th);
-        }
         Serial.println("### END SERIAL ###\n");
     }
 }
 void Logger::SerialLogger::append_path() {
     if (Serial && on) {
         Serial.println("APPEND PATH");
-        Serial.print("N: ");
-        Serial.println(target_position_queue.count);
-        for (int i = 0; i < target_position_queue.count; i++) {
-            Serial.print(i);
-            Serial.print(")  X: ");
-            Serial.print(target_position_queue.queue[i].x);
-            Serial.print(", Y: ");
-            Serial.print(target_position_queue.queue[i].y);
-            Serial.print(", TH: ");
-            Serial.println(target_position_queue.queue[i].th);
-        }
         Serial.println("### END SERIAL ###\n");
     }
 }
@@ -982,19 +959,19 @@ void Logger::OdometryLogger::log(
     long ticks_l, long ticks_r, long d_ticks_l, long d_ticks_r, long d_time_us, 
     long dL_um, long dR_um, long dS_um, long dT_urad) 
 {
-    if (Serial && is_time && odometry_on) {
-        Serial.println("### ODOMETRY ###")
+    if (Serial && is_time && on) {
+        Serial.println("### ODOMETRY ###");
 
         Serial.println("TICKS TOT "); 
-        Serial.print("L: ")
+        Serial.print("L: ");
         Serial.print(ticks_l); 
-        Serial.print(", R: ")
+        Serial.print(", R: ");
         Serial.println(ticks_r); 
 
         Serial.println("DELTA TICKS:"); 
-        Serial.print("L: ")
+        Serial.print("L: ");
         Serial.print(d_ticks_l); 
-        Serial.print(", R: ")
+        Serial.print(", R: ");
         Serial.println(d_ticks_r);
 
         Serial.print("TIME: "); 
@@ -1058,7 +1035,7 @@ void Logger::ControlLogger::log_heading_adjustment(int dist_mm, int heading_erro
 
 }
 void Logger::ControlLogger::log_alignment_adjustment(int dist_mm, int align_error) {
-    if (Serial && is_time && control_on) {
+    if (Serial && is_time && on) {
         Serial.println("ALIGNMENT ADJUSTMENT");
         Serial.print("DISTANCE: ");
         Serial.print(dist_mm);
@@ -1069,23 +1046,23 @@ void Logger::ControlLogger::log_alignment_adjustment(int dist_mm, int align_erro
     }
 }
 void Logger::ControlLogger::log_velocity() {
-    if (Serial && is_time && control_on) {
+    if (Serial && is_time && on) {
         Serial.println("TARGET VELOCITIES");
-        Serial.print("VX:   ")
+        Serial.print("VX:   ");
         Serial.print(target_robot_velocities_m[0]);
         Serial.print(" [mm/s],     VT:   ");
         Serial.print(target_robot_velocities_m[1]);
         Serial.println(" [mrad/s]");
 
         Serial.println("\nTARGET WHEEL VELOCITIES");
-        Serial.print("L:    ")
+        Serial.print("L:    ");
         Serial.print(target_wheel_velocities_m[0]);
         Serial.print(" [mm/s],     R:    ");
         Serial.print(target_wheel_velocities_m[1]);
         Serial.println(" [mm/s]");
 
         Serial.println("\nPID VALUES");
-        Serial.print("Kp:   ")
+        Serial.print("Kp:   ");
         Serial.print(Kp);
         Serial.print(",     Ki:   ");
         Serial.print(Ki);
@@ -1096,9 +1073,9 @@ void Logger::ControlLogger::log_velocity() {
     }
 }
 void Logger::ControlLogger::log_power() {
-    if (Serial && is_time && control_on) {
+    if (Serial && is_time && on) {
         Serial.println("TARGET POWERS");
-        Serial.print("L:    ")
+        Serial.print("L:    ");
         Serial.print(target_powers[0]);
         Serial.print(",     R:    ");
         Serial.println(target_powers[1]);
