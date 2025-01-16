@@ -43,7 +43,6 @@
         - (x, y) in [mm], theta in [mrad], 
         - (vl, va) in [mm/s, mrad/s]
 
-
     "PTH <n> <x1> <y1> <th1> ... <xn> <yn> <thn>"
         - set new path to follow
         - n: number of points
@@ -132,7 +131,7 @@ int target_wheel_velocities_m[2] = {0, 0}; // vl, vr (mm/s)
 double pid_goal_left = 0, pid_goal_right = 0; // PID goal
 double pid_actual_left = 0, pid_actual_right = 0; // PID actual
 double pid_output_left = 0, pid_output_right = 0; // PID output
-double Kp = 1.1, Ki = 3, Kd = 0;
+double Kp = 1.1, Ki = 3, Kd = 0.004;
 PID PID_LEFT(&pid_actual_left, &pid_output_left, &pid_goal_left, Kp, Ki, Kd, DIRECT);
 PID PID_RIGHT(&pid_actual_right, &pid_output_right, &pid_goal_right, Kp, Ki, Kd, DIRECT);
 void velocity_control();
@@ -156,28 +155,24 @@ PositionQueue target_position_queue = PositionQueue();
 void position_control();
 void calculate_inverse_kinematic();
 // dist
-#define THRESH_DIST_MM 25   // mm   distance where target is reached
-#define CHANGE_DIST_MM 50 // mm    distance where target is changed
-#define MIN_LIN_SPEED_DIST_MM 100 // mm     distance where minimum speed is reached 
-#define MIN_LIN_SPEED_MMS 0         // mm/s    minimum speed
-#define MAX_LIN_SPEED_DIST_MM 500 // mm     distance where maximum speed is reached
-#define MAX_LIN_SPEED_MMS 0       // mm/s    maximum speed
-const double LIN_SPEED_SLOPE = (MAX_LIN_SPEED_MMS - MIN_LIN_SPEED_MMS)/(MAX_LIN_SPEED_DIST_MM - MIN_LIN_SPEED_DIST_MM); 
+#define THRESH_DIST_MM 50   // mm   distance where target is reached
+#define CHANGE_TARGET_DIST_MM 150 // mm    distance where target is changed
+#define CHANGE_LIN_SPEED_DIST_MM 130 // mm     distance where maximum speed is reached
+#define MIN_LIN_SPEED_MMS 150         // mm/s    minimum speed
+#define MAX_LIN_SPEED_MMS 300       // mm/s    maximum speed
 int distance_error_mm();
 int distance_velocity(int dist_mm);
 // heading
-#define THRESH_HEAD_MRAD 100 // 5 degrees    angle where target is reached
-#define START_HEAD_MRAD 600 
-#define MIN_ANG_SPEED_HEAD_MRAD 1 // mrad/s  angle where minimum speed is reached
-#define MIN_ANG_SPEED_MRADS 0 // mrad/s        minimum speed
-#define MAX_ANG_SPEED_HEAD_MRAD 10 // mrad/s     angle where maximum speed is reached
-#define MAX_ANG_SPEED_MRADS 100 // mrad/s      maximum speed
-const int ANG_SPEED_SLOPE = (MAX_ANG_SPEED_MRADS - MIN_ANG_SPEED_MRADS)/(MAX_ANG_SPEED_HEAD_MRAD - MIN_ANG_SPEED_HEAD_MRAD);
+#define THRESH_HEAD_MRAD 90 // 5 degrees    angle where target is reached
+#define START_HEAD_MRAD 550 
+#define CHANGE_ANG_SPEED_HEAD_MRAD 150 // mrad/s  angle where minimum speed is reached
+#define MIN_ANG_SPEED_MRADS 400 // mrad/s        minimum speed
+#define MAX_ANG_SPEED_MRADS 600 // mrad/s      maximum speed
 int heading_error_mrad();
 int heading_velocity(int heading_mrad);
 // // alpha
-#define THRESH_ALIGN_MRAD 200 // 10 degrees
-#define VEL_ALIGN_MRADS 0 // 5 degrees
+#define THRESH_ALIGN_MRAD 50 // 10 degrees
+#define VEL_ALIGN_MRADS 400 // 5 degrees
 int align_error_mrad();
 int align_velocity(int alpha_mrad);
 
@@ -749,9 +744,8 @@ int distance_velocity(int dist_mm) {
             staturated at MIN/MAX                       elsewhere
     */
     if (dist_mm < THRESH_DIST_MM) return 0;
-    if (dist_mm < MIN_LIN_SPEED_DIST_MM) return MIN_LIN_SPEED_MMS;
-    if (dist_mm > MAX_LIN_SPEED_DIST_MM) return MAX_LIN_SPEED_MMS;
-    return (dist_mm - MIN_LIN_SPEED_DIST_MM) * LIN_SPEED_SLOPE + MIN_LIN_SPEED_MMS;
+    if (dist_mm < CHANGE_LIN_SPEED_DIST_MM) return MIN_LIN_SPEED_MMS;
+    return MAX_LIN_SPEED_MMS;
 }
 int heading_velocity(int heading_mrad) {
     /*
@@ -763,9 +757,9 @@ int heading_velocity(int heading_mrad) {
             staturated at MIN/MAX                       elsewhere
     */
     if (abs(heading_mrad) < THRESH_HEAD_MRAD) return 0;
-    if (abs(heading_mrad) < MIN_ANG_SPEED_HEAD_MRAD) return MIN_ANG_SPEED_MRADS;
-    if (abs(heading_mrad) > MAX_ANG_SPEED_HEAD_MRAD) return MAX_ANG_SPEED_MRADS;
-    return (heading_mrad - MIN_ANG_SPEED_HEAD_MRAD) * ANG_SPEED_SLOPE + MIN_ANG_SPEED_MRADS;
+    int sign = (heading_mrad > 0) ? 1 : -1;
+    if (abs(heading_mrad) < CHANGE_ANG_SPEED_HEAD_MRAD) return sign*MIN_ANG_SPEED_MRADS;
+    return sign*MAX_ANG_SPEED_MRADS;
 }
 int align_velocity(int alpha_mrad) {
     /*
@@ -773,7 +767,7 @@ int align_velocity(int alpha_mrad) {
         reads: alpha_mrad
         fixed speed cut of at THRESH_ALIGN_MRAD
     */
-    return (abs(alpha_mrad) < THRESH_ALIGN_MRAD) ? 0 : VEL_ALIGN_MRADS; 
+    return (abs(alpha_mrad) < THRESH_ALIGN_MRAD) ? 0 : (alpha_mrad > 0) ? VEL_ALIGN_MRADS : -VEL_ALIGN_MRADS; 
 }
 void calculate_inverse_kinematic() {
     /*
@@ -789,6 +783,12 @@ void calculate_inverse_kinematic() {
 Logger::Logger() {
     is_time = false;
     last_check_time = millis();
+    serial = SerialLogger();
+    odometry = OdometryLogger();
+    control = ControlLogger();
+    serial.is_time = false;
+    odometry.is_time = false;
+    control.is_time = false;
 }
 void Logger::check_connection() {
     if (is_over(last_check_time, DEBUG_INTERVAL)) {

@@ -7,6 +7,7 @@
 
 import serial
 import time
+from typing import List
 
 from raspberry_pi.devices.device import Device
 from raspberry_pi.utils import timing_decorator
@@ -37,11 +38,8 @@ class RP2040(Device):
     @staticmethod
     @timing_decorator
     def ping() -> bool:
-        # RP2040._serial.flush()
         RP2040._serial.write("PNG\n".encode())
-        # png = RP2040._serial.read_util('\n')
         png = RP2040._serial.readline()
-        # png = RP2040._serial.read(32)
         png = png.decode().strip()
         return True if png == "PNG" else False
 
@@ -160,15 +158,37 @@ class RP2040(Device):
     @staticmethod
     @timing_decorator
     def set_position(pos: Position) -> None:
+        """Overrides the current position
+
+        Args:
+            pos (Position): new position
+        """
         RP2040._serial.write(f"OST {pos.x} {pos.y} {pos.th}\n".encode())
         pass
     
     @staticmethod
     @timing_decorator
-    def follow_path(path): # TODO
-        pass
+    def follow_path(path: List[Position]):
+        """Sends path to follow
+
+        Args:
+            path (List[Position]): path to follow
+        """
+        n = len(path)
+        req = f"PTH {n} "
+        for pos in path:
+            req += f"{pos.x} {pos.y} {pos.th}"
+            if pos != path[-1]:
+                req += " "
+        RP2040._serial.write(req.encode())
     
     @staticmethod
     @timing_decorator
-    def append_path(path): # TODO
-        pass
+    def append_path(path: List[Position]):
+        n = len(path)
+        req = f"APP {n} "
+        for pos in path:
+            req += f"{pos.x} {pos.y} {pos.th}"
+            if pos != path[-1]:
+                req += " "
+        RP2040._serial.write(req.encode())
