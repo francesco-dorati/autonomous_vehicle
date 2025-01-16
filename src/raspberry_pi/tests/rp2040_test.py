@@ -15,16 +15,45 @@ def main():
         # time.sleep(2)
         # data = PidTester.base_test(3, 0, 0, 250, 0)
         # PidTester.plot_data(data, 250, 0)
-
+        RP2040.append_path([])
         # KP 1.1
         # KI 3
         # KD 0.004
-        vx = 0
-        vang = 1500
-        data = PidTester.multiple_test([1.1], [0.004], [3], vx, vang)
-        for d1, d2, kp, kd, ki in data:
-            PidTester.plot_data(d1, vx, vang, f'../img/pid/p{kp}d{kd}i{ki}_front.png')
-            PidTester.plot_data(d2, vx, vang, f'../img/pid/p{kp}d{kd}i{ki}_back.png')
+        # vx0 = 300
+        # vx1 = 300
+        # vx1 = 200
+        # vx2 = 300
+        # vx3 = 400
+        # vx4 = 550
+        # vang0 = 0
+        # vang1 = -(1)*vx1
+        # data1 = PidTester.multiple_test([1.1], [0.004], [3], vx, vang)
+        # data2 = PidTester.multiple_test([1.1], [0.004], [3], vx, vang)
+        # d00 = PidTester.base_test(1, 0.004, 3, vx0, vang0)
+        # PidTester.base_test(0, 0, 0, -vx00, vang)
+        # d0 = PidTester.base_test(1, 0.004, 3, vx1, vang1)
+        # PidTester.base_test(0, 0, 0, -vx0, vang)
+        # d1 = PidTester.base_test(0, 0, 0, vx1, vang)
+        # # PidTester.base_test(0, 0, 0, -vx1, vang)
+        # d2 = PidTester.base_test(0, 0, 0, vx2, vang)
+        # # PidTester.base_test(0, 0, 0, -vx2, vang)
+        # d3 = PidTester.base_test(0, 0, 0, vx3, vang)
+        # # PidTester.base_test(0, 0, 0, -vx3, vang)
+        # d4 = PidTester.base_test(0, 0, 0, vx4, vang)
+        # PidTester.base_test(0, 0, 0, -vx4, vang)
+        # PidTester.plot_data(d00, vx0, vang0, f'../img/pid/front0.png')
+        PidTester.plot_data(d0, vx1, vang1, f'../img/pid/front1.png')
+        # PidTester.plot_data(d1, vx1, vang, f'../img/pid/front1.png')
+        # PidTester.plot_data(d2, vx2, vang, f'../img/pid/front2.png')
+        # PidTester.plot_data(d3, vx3, vang, f'../img/pid/front3.png')
+        # PidTester.plot_data(d4, vx4, vang, f'../img/pid/front4.png')
+        
+        # for d1, d2, kp, kd, ki in data1:
+        #     PidTester.plot_data(d1, vx, vang, f'../img/pid/front1.png')
+        #     PidTester.plot_data(d2, vx, vang, f'../img/pid/back1.png')
+        # for d1, d2, kp, kd, ki in data2:
+        #     PidTester.plot_data(d1, vx, vang, f'../img/pid/front2.png')
+        #     PidTester.plot_data(d2, vx, vang, f'../img/pid/back2.png')
 
 
 
@@ -197,7 +226,7 @@ class PidTester(RP2040Tester):
     def base_test(kp, kd, ki, vl, va):
         """ Test correct pid values """
         sampling_time = 0.1
-        test_time = 5
+        test_time = 3
         data = []
 
         RP2040.set_pid_values(kp, ki, kd)
