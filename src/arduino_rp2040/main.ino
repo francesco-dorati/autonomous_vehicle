@@ -786,6 +786,11 @@ Logger::Logger() {
     serial = SerialLogger();
     odometry = OdometryLogger();
     control = ControlLogger();
+
+    serial.on = true;
+    odometry.on = false;
+    control.on = true;
+
     odometry.is_time = false;
     control.is_time = false;
 }
@@ -808,7 +813,6 @@ void Logger::check_connection() {
                 default: Serial.println("ERROR"); break;
             }
             
-
             if (Serial.available() > 0) {
                 // check for debug instructions
                 String command;
