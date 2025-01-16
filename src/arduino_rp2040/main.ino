@@ -662,7 +662,7 @@ void position_control() {
     */
     
     int dist_mm = distance_error_mm();// calculate distance
-    while (dist_mm <= CHANGE_DIST_MM && !target_position_queue.is_empty()) { 
+    while (dist_mm <= CHANGE_TARGET_DIST_MM && !target_position_queue.is_empty()) { 
         // change target
         target_robot_position_m = target_position_queue.pop();
         /* log */ debug_usb.control.log_change_target_position(dist_mm);
@@ -786,7 +786,6 @@ Logger::Logger() {
     serial = SerialLogger();
     odometry = OdometryLogger();
     control = ControlLogger();
-    serial.is_time = false;
     odometry.is_time = false;
     control.is_time = false;
 }
