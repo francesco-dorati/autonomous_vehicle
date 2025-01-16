@@ -180,6 +180,7 @@ class RP2040(Device):
             req += f"{pos.x} {pos.y} {pos.th}"
             if pos != path[-1]:
                 req += " "
+        print(req)
         RP2040._serial.write(req.encode())
     
     @staticmethod

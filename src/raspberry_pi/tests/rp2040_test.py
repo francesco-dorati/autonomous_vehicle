@@ -1,6 +1,7 @@
 import time
 import matplotlib.pyplot as plt
 from raspberry_pi.devices.rp2040 import RP2040
+from raspberry_pi.data_structures.state import Position
 
 
 def main():
@@ -15,7 +16,14 @@ def main():
         # time.sleep(2)
         # data = PidTester.base_test(3, 0, 0, 250, 0)
         # PidTester.plot_data(data, 250, 0)
-        RP2040.append_path([])
+        RP2040.reset_position()
+        pos = RP2040.get_position()
+        print(pos)
+        goal = Position(1000, 0, 0)
+        RP2040.follow_path([goal])
+        time.sleep(5)
+        pos = RP2040.get_position()
+        print(pos)
         # KP 1.1
         # KI 3
         # KD 0.004
@@ -42,7 +50,7 @@ def main():
         # d4 = PidTester.base_test(0, 0, 0, vx4, vang)
         # PidTester.base_test(0, 0, 0, -vx4, vang)
         # PidTester.plot_data(d00, vx0, vang0, f'../img/pid/front0.png')
-        PidTester.plot_data(d0, vx1, vang1, f'../img/pid/front1.png')
+        # PidTester.plot_data(d0, vx1, vang1, f'../img/pid/front1.png')
         # PidTester.plot_data(d1, vx1, vang, f'../img/pid/front1.png')
         # PidTester.plot_data(d2, vx2, vang, f'../img/pid/front2.png')
         # PidTester.plot_data(d3, vx3, vang, f'../img/pid/front3.png')
