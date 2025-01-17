@@ -339,8 +339,10 @@ class Lidar(Device):
                 # add sample to scan
                 for angle, dist in samples:
                     Lidar._scan.add_sample(angle, dist)
-        except Exception as e:
+        except Lidar.InvalidDataReceived as e:
             print("ERROR IN SCAN THREAD: ", e)
+            Lidar._scanning = False
+
 
     @staticmethod
     def _unpack_descriptor(descriptor: bytes) -> tuple[int, int, int]:
@@ -378,24 +380,29 @@ class Lidar(Device):
             InvalidDataReceived: if data is invalid
         Returns:
             list[tuple[float, float]]: list of (angle, dist)
-        # TODO handle misaligned data
         """
         scan = []
         packets_number = math.floor(len(bytes_received)/Lidar.SCAN_PACKET_SIZE)
         packet_n = 0
+        misalignment = 0
         while packet_n < packets_number:
             # calculate bytes indexes
-            from_byte = packet_n*Lidar.SCAN_PACKET_SIZE
-            to_byte = (packet_n+1)*Lidar.SCAN_PACKET_SIZE
+            from_byte = misalignment+packet_n*Lidar.SCAN_PACKET_SIZE
+            to_byte = misalignment+(packet_n+1)*Lidar.SCAN_PACKET_SIZE
             # unpack packet
             s, ns, q, c, angle, dist = Lidar._unpack_packet(bytes_received[from_byte:to_byte])
-            # validation check
+            
+            # misalignment check
             if s == ns or c == 0:
-                print("DATA MISALIGNED")
-                raise Lidar.InvalidDataReceived("Data misaligned")
+                if misalignment == Lidar.SCAN_PACKET_SIZE:
+                    raise Lidar.InvalidDataReceived("Invalid data received")
+                misalignment += 1
+                continue 
+
             # add to scan
             scan.append((angle, dist))
             packet_n += 1
+
         return scan
         
     @staticmethod
