@@ -5,6 +5,7 @@ import numpy as np
 from raspberry_pi.drivers.lidar import Lidar
 from raspberry_pi.data_structures.maps import LocalMap, GlobalMap
 from raspberry_pi.data_structures.state import Position
+from raspberry_pi.devices.rp2040 import RP2040
 def main():
     # LidarTester.stop_scan()
     # return
@@ -63,8 +64,9 @@ class LidarTester:
 
     @staticmethod
     def test_static_dist():
+        RP2040.start()
         pos0 = Position(0, 0, 0)
-        pos1 = Position(1000, 0, 0)
+        pos1 = Position(1500, 0, 0)
         global_map = GlobalMap()
 
         Lidar.start()
@@ -72,7 +74,8 @@ class LidarTester:
         time.sleep(3)
         l0 = Lidar.create_local_map()
         global_map.expand(pos0, l0)
-        input("OK\nMove 1m >")
+        RP2040.follow_path([pos1])
+        time.sleep(5)
         l1 = Lidar.create_local_map()
         global_map.expand(pos1, l1)
         Lidar.stop_scan()
@@ -80,6 +83,7 @@ class LidarTester:
         l0.draw("local0")
         l1.draw("local1")
         global_map.draw("global")
+        RP2040.stop()
         
     # @staticmethod
     # def _draw_scan(scan, name="test"):
