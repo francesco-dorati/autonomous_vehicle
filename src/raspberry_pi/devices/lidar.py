@@ -319,10 +319,13 @@ class Lidar(Device):
                 # calculate bytes to read
                 bytes_to_read = Lidar.SCAN_PACKET_SIZE*Lidar.SCAN_PACKETS_PER_TIME
                 if Lidar._serial.in_waiting < bytes_to_read:
+                    # t = time.time()
                     # print("SCANNING WAIT", Lidar._serial.in_waiting, " < ", bytes_to_read)
+                    # print((time.time()-t)*1000)
+                    Lidar._serial.reset_input_buffer()
+                    time.sleep(0.05)
                     continue
                     
-                print("SCANNING OK")
                 # read bytes
                 bytes_receaved = Lidar._serial.read(bytes_to_read)
                 if len(bytes_receaved) != bytes_to_read:
@@ -336,12 +339,21 @@ class Lidar(Device):
                     print("ERROR LIDAR process_bytes error")
                     return
             
+                # print(f"SCANNING OK {len(samples)}")
                 # add sample to scan
                 for angle, dist in samples:
                     Lidar._scan.add_sample(angle, dist)
+                
+                time.sleep(0.05)
+
         except Lidar.InvalidDataReceived as e:
             print("ERROR IN SCAN THREAD: ", e)
+        except Exception as e:
+            print("ERROR: ", e)
+        finally:
             Lidar._scanning = False
+            Lidar.stop_scan()
+
 
 
     @staticmethod
@@ -389,13 +401,18 @@ class Lidar(Device):
             # calculate bytes indexes
             from_byte = misalignment+packet_n*Lidar.SCAN_PACKET_SIZE
             to_byte = misalignment+(packet_n+1)*Lidar.SCAN_PACKET_SIZE
+            if to_byte >= len(bytes_received):
+                break
+
             # unpack packet
             s, ns, q, c, angle, dist = Lidar._unpack_packet(bytes_received[from_byte:to_byte])
             
             # misalignment check
             if s == ns or c == 0:
                 if misalignment == Lidar.SCAN_PACKET_SIZE:
-                    raise Lidar.InvalidDataReceived("Invalid data received")
+                    Lidar._serial.reset_input_buffer()
+                    break
+                    # raise Lidar.InvalidDataReceived("Invalid data received")
                 misalignment += 1
                 continue 
 
