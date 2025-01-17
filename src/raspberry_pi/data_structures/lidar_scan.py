@@ -52,6 +52,7 @@ class LidarScan:
             angle_deg = round(angle_deg) % 360
             with self._scan_lock:
                 self._scan[angle_deg] = int(dist_mm)
+                # print("add sample ", angle_deg, dist_mm)
 
         def get_copy(self) -> list[tuple[int, int]]:
             """ LOCK
@@ -61,4 +62,5 @@ class LidarScan:
             """
             with self._scan_lock:
                 copy = self._scan.copy()
+            print("copy of ", copy)
             return copy

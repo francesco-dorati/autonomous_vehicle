@@ -2,16 +2,17 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-from raspberry_pi.drivers.lidar import Lidar
+from raspberry_pi.devices.lidar import Lidar
 from raspberry_pi.data_structures.maps import LocalMap, GlobalMap
 from raspberry_pi.data_structures.state import Position
 from raspberry_pi.devices.rp2040 import RP2040
 def main():
-    # LidarTester.stop_scan()
-    # return
-    LidarTester.test_global_map()
-    # LidarTester.test_static_dist()
+    LidarTester.stop_scan()
+    return
+    # LidarTester.test_global_map()
+    #LidarTester.test_static_dist()
 
+    LidarTester.test_local_maps()
   
 
 class LidarTester:
@@ -24,15 +25,15 @@ class LidarTester:
     @staticmethod
     def test_local_maps():
         Lidar.start()
-        Lidar.health()
+        Lidar.ping()
         Lidar.start_scan()
-        time.sleep(2)
+        time.sleep(20)
 
         i = 0
         maps = []
         t_start = time.time()
         while (time.time() - t_start) < 10:
-            local_map = Lidar.create_local_map()
+            local_map = Lidar.produce_local_map()
             maps.append(local_map)
             i += 1
             time.sleep(1)
@@ -46,14 +47,14 @@ class LidarTester:
     @staticmethod
     def test_global_map():
         Lidar.start()
-        Lidar.health()
+        Lidar.ping()
         Lidar.start_scan()
 
         global_map = GlobalMap()
         pos = Position(0, 0, 0)
         time.sleep(3)
 
-        local_map = Lidar.create_local_map()
+        local_map = Lidar.produce_local_map()
 
         Lidar.stop_scan()
         Lidar.stop()
@@ -65,18 +66,21 @@ class LidarTester:
     @staticmethod
     def test_static_dist():
         RP2040.start()
+        RP2040.reset_position()
         pos0 = Position(0, 0, 0)
         pos1 = Position(1500, 0, 0)
         global_map = GlobalMap()
 
         Lidar.start()
         Lidar.start_scan()
-        time.sleep(3)
-        l0 = Lidar.create_local_map()
+        time.sleep(2)
+        l0 = Lidar.produce_local_map()
+        print("OKKKK")
+        print(Lidar._scanning)
         global_map.expand(pos0, l0)
         RP2040.follow_path([pos1])
-        time.sleep(5)
-        l1 = Lidar.create_local_map()
+        time.sleep(10)
+        l1 = Lidar.produce_local_map()
         global_map.expand(pos1, l1)
         Lidar.stop_scan()
         Lidar.stop()

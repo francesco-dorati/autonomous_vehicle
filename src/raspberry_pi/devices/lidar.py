@@ -125,7 +125,7 @@ class Lidar(Device):
     HEALTH_COMMAND = b'\xA5\x52'
     BUFFER_SIZE = 4095
     SCAN_PACKET_SIZE = 5 # bytes
-    SCAN_PACKETS_PER_TIME = 600
+    SCAN_PACKETS_PER_TIME = 200
 
     _serial: Optional[serial.Serial] = None
     _thread: Optional[threading.Thread] = None
@@ -158,7 +158,7 @@ class Lidar(Device):
                                       timeout=Lidar.TIMEOUT, 
                                       parity=serial.PARITY_NONE, 
                                       stopbits=serial.STOPBITS_ONE)
-        time.wait(0.2)
+        time.sleep(0.2)
         # check connection and status
         if not Lidar.ping():
             Lidar.stop()
@@ -266,8 +266,8 @@ class Lidar(Device):
         # connection check
         if not Lidar._serial:
             raise Lidar.ConnectionNotInitiated("Lidar connection not initiated")
-        if not Lidar.ping():
-            raise Lidar.ConnectionFailed("Ping failed")
+        # if not Lidar.ping():
+        #     raise Lidar.ConnectionFailed("Ping failed")
         
         # stop reading
         if Lidar._scanning:
@@ -303,7 +303,8 @@ class Lidar(Device):
         if not Lidar._scanning:
             raise Lidar.NotScanning("Lidar is not scanning")
         # create local map
-        return LocalMap(Lidar._scan)
+        copy = Lidar._scan.get_copy()
+        return LocalMap(copy)
 
     # PRIVATE
 
@@ -313,28 +314,33 @@ class Lidar(Device):
         Scan thread
         Receives lidar data and puts them in _scan
         """
-        while Lidar._scanning:
-            # calculate bytes to read
-            bytes_to_read = Lidar.SCAN_PACKET_SIZE*Lidar.SCAN_PACKETS_PER_TIME
-            if Lidar._serial.in_waiting < bytes_to_read:
-                continue
-                
-            # read bytes
-            bytes_receaved = Lidar._serial.read(bytes_to_read)
-            if len(bytes_receaved) != bytes_to_read:
-                print("ERROR LIDAR read different bytes than expected")
-                return
+        try:
+            while Lidar._scanning:
+                # calculate bytes to read
+                bytes_to_read = Lidar.SCAN_PACKET_SIZE*Lidar.SCAN_PACKETS_PER_TIME
+                if Lidar._serial.in_waiting < bytes_to_read:
+                    # print("SCANNING WAIT", Lidar._serial.in_waiting, " < ", bytes_to_read)
+                    continue
+                    
+                print("SCANNING OK")
+                # read bytes
+                bytes_receaved = Lidar._serial.read(bytes_to_read)
+                if len(bytes_receaved) != bytes_to_read:
+                    print("ERROR LIDAR read different bytes than expected")
+                    return
 
-            # interpret data -> check if correct order
-            samples = Lidar._unpack_scan_bytes(bytes_receaved)
-            if not samples:
-                print(samples)
-                print("ERROR LIDAR process_bytes error")
-                return
-           
-            # add sample to scan
-            for angle, dist in samples:
-                Lidar._scan.add_sample(angle, dist)
+                # interpret data -> check if correct order
+                samples = Lidar._unpack_scan_bytes(bytes_receaved)
+                if not samples:
+                    print(samples)
+                    print("ERROR LIDAR process_bytes error")
+                    return
+            
+                # add sample to scan
+                for angle, dist in samples:
+                    Lidar._scan.add_sample(angle, dist)
+        except Exception as e:
+            print("ERROR IN SCAN THREAD: ", e)
 
     @staticmethod
     def _unpack_descriptor(descriptor: bytes) -> tuple[int, int, int]:
@@ -385,6 +391,7 @@ class Lidar(Device):
             s, ns, q, c, angle, dist = Lidar._unpack_packet(bytes_received[from_byte:to_byte])
             # validation check
             if s == ns or c == 0:
+                print("DATA MISALIGNED")
                 raise Lidar.InvalidDataReceived("Data misaligned")
             # add to scan
             scan.append((angle, dist))

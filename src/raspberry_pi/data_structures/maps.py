@@ -25,7 +25,7 @@ from raspberry_pi.utils import Utils, timing_decorator
 
 # can be extended as localmap as abstarct class and lidarmap, occupancy map as childs
 class LocalMap:
-    def __init__(self, scan: LidarScan):
+    def __init__(self, scan):
         """
         Local Map
         A list of position taken at 1° steps
@@ -34,7 +34,9 @@ class LocalMap:
         Arguments:
             Lidar.Scan: scan object 
         """
-        self._scan = scan.get_copy()
+        # print(scan)
+        self._scan = scan
+        # print("SCAN: ", self._scan)
 
     def __repr__(self):
         return f"local_map()"
