@@ -19,9 +19,9 @@ def main():
         RP2040.reset_position()
         pos = RP2040.get_position()
         print(pos)
-        goal = Position(1000, 0, 0)
-        RP2040.follow_path([goal])
-        time.sleep(5)
+        path = [Position(0, -1500, -1600), Position(0, -1500, -1600), Position(-1500, -1500, 0)]
+        RP2040.follow_path(path)
+        time.sleep(20)
         pos = RP2040.get_position()
         print(pos)
         # KP 1.1

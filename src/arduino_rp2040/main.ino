@@ -62,7 +62,7 @@
 #define BASE_INTERVAL 20 // ms
 #define POSITION_CONTROL_INTERVAL 100 // ms
 #define SERIAL_INTERVAL 100 // ms
-#define DEBUG_INTERVAL 500 // ms
+#define DEBUG_INTERVAL 999 // ms
 
 // STATE
 enum State {
@@ -163,16 +163,16 @@ void calculate_inverse_kinematic();
 int distance_error_mm();
 int distance_velocity(int dist_mm);
 // heading
-#define THRESH_HEAD_MRAD 90 // 5 degrees    angle where target is reached
-#define START_HEAD_MRAD 550 
+#define THRESH_HEAD_MRAD 100 // 5 degrees    angle where target is reached
+#define START_HEAD_MRAD 600 
 #define CHANGE_ANG_SPEED_HEAD_MRAD 150 // mrad/s  angle where minimum speed is reached
 #define MIN_ANG_SPEED_MRADS 400 // mrad/s        minimum speed
 #define MAX_ANG_SPEED_MRADS 600 // mrad/s      maximum speed
 int heading_error_mrad();
 int heading_velocity(int heading_mrad);
 // // alpha
-#define THRESH_ALIGN_MRAD 50 // 10 degrees
-#define VEL_ALIGN_MRADS 400 // 5 degrees
+#define THRESH_ALIGN_MRAD 20 // 10 degrees
+#define VEL_ALIGN_MRADS 470 // 5 degrees
 int align_error_mrad();
 int align_velocity(int alpha_mrad);
 
@@ -463,6 +463,7 @@ void handle_serial() {
                 long th_mrad = Serial1.parseInt();
                 target_position_queue.push(Position(x_mm, y_mm, th_mrad));
             }
+            control_state = POSITION_CONTROL;
             /* log */ debug_usb.serial.set_path();
 
         } else if (strcmp(command, "APP") == 0) {
@@ -473,6 +474,7 @@ void handle_serial() {
                 long th_mrad = Serial1.parseInt();
                 target_position_queue.push(Position(x_mm, y_mm, th_mrad));
             }
+            control_state = POSITION_CONTROL;
             /* log */ debug_usb.serial.append_path();
 
         } else {
@@ -674,7 +676,7 @@ void position_control() {
         // outside distance threashold
         // calculate heading error
         int heading_error = heading_error_mrad();
-        if (heading_error > START_HEAD_MRAD) {
+        if (abs(heading_error) > START_HEAD_MRAD) {
             // rotate
             target_robot_velocities_m[0] = 0;
             target_robot_velocities_m[1] = heading_velocity(heading_error);
@@ -690,7 +692,7 @@ void position_control() {
         // inside distance threshold
         // check alignment
         int align_error = align_error_mrad();
-        if (align_error < THRESH_ALIGN_MRAD) {
+        if (abs(align_error) > THRESH_ALIGN_MRAD) {
             // not aligned
             // rotate
             target_robot_velocities_m[0] = 0;
@@ -723,8 +725,7 @@ int heading_error_mrad() {
     */
     int dx_mm = target_robot_position_m.x - (actual_robot_position_u.x/1000);
     int dy_mm = target_robot_position_m.y - (actual_robot_position_u.y/1000);
-    return normalize_angle_mrad(atan2(dy_mm, dx_mm) * 1000);
-    // return normalize_angle_mrad(target_robot_position_m[2] - actual_robot_position_u[2]/1000);
+    return normalize_angle_mrad(atan2(dy_mm, dx_mm) * 1000 - actual_robot_position_u.th/1000);
 }
 int align_error_mrad() {
     /*
@@ -1009,7 +1010,7 @@ void Logger::OdometryLogger::log(
 }
 
 void Logger::ControlLogger::log_change_target_position(int dist_mm) {
-    if (Serial && is_time && on) {
+    if (Serial && true && on) {
         Serial.println("CHANGE TARGET POSITION");
         Serial.println("NEW TARGET:");
         Serial.print("X ");
@@ -1026,8 +1027,14 @@ void Logger::ControlLogger::log_change_target_position(int dist_mm) {
     }
 }
 void Logger::ControlLogger::log_heading_adjustment(int dist_mm, int heading_error) {
-    if (Serial && is_time && on) {
+    if (Serial && true && on) {
         Serial.println("HEADING ADJUSTMENT");
+        Serial.print("Position (mm): X "); 
+        Serial.print(actual_robot_position_u.x/1000.0); 
+        Serial.print(", Y "); 
+        Serial.print(actual_robot_position_u.y/1000.0); 
+        Serial.print(", TH "); 
+        Serial.println(actual_robot_position_u.th/1000.0);
         Serial.print("DISTANCE: ");
         Serial.print(dist_mm);
         Serial.print(" mm, HEADING ERROR: ");
@@ -1038,8 +1045,14 @@ void Logger::ControlLogger::log_heading_adjustment(int dist_mm, int heading_erro
 
 }
 void Logger::ControlLogger::log_alignment_adjustment(int dist_mm, int align_error) {
-    if (Serial && is_time && on) {
+    if (Serial && true && on) {
         Serial.println("ALIGNMENT ADJUSTMENT");
+        Serial.print("Position (mm): X "); 
+        Serial.print(actual_robot_position_u.x/1000.0); 
+        Serial.print(", Y "); 
+        Serial.print(actual_robot_position_u.y/1000.0); 
+        Serial.print(", TH "); 
+        Serial.println(actual_robot_position_u.th/1000.0);
         Serial.print("DISTANCE: ");
         Serial.print(dist_mm);
         Serial.print(" mm, ALIGNMENT ERROR: ");
@@ -1049,8 +1062,17 @@ void Logger::ControlLogger::log_alignment_adjustment(int dist_mm, int align_erro
     }
 }
 void Logger::ControlLogger::log_velocity() {
-    if (Serial && is_time && on) {
+    if (Serial && true && on) {
         Serial.println("TARGET VELOCITIES");
+        if (control_state == POSITION_CONTROL) {
+            Serial.print("Position (mm): X "); 
+            Serial.print(actual_robot_position_u.x/1000.0); 
+            Serial.print(", Y "); 
+            Serial.print(actual_robot_position_u.y/1000.0); 
+            Serial.print(", TH "); 
+            Serial.println(actual_robot_position_u.th/1000.0);
+        }
+
         Serial.print("VX:   ");
         Serial.print(target_robot_velocities_m[0]);
         Serial.print(" [mm/s],     VT:   ");
