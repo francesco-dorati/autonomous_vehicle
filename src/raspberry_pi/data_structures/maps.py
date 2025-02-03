@@ -19,6 +19,7 @@ import math
 import os
 import numpy as np
 from typing import Optional, List, Tuple
+import copy
 
 from raspberry_pi.data_structures.state import Position
 from raspberry_pi.data_structures.lidar_scan import LidarScan
@@ -254,7 +255,7 @@ class GlobalMap:
             self._ray_cast(position, obstacle_pos)
     
     @timing_decorator
-    def get_copy(self) -> GlobalMap:
+    def get_copy(self):
         with self._lock:
             return copy.deepcopy(self)
 
