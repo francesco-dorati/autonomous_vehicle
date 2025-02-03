@@ -338,223 +338,223 @@ def battery_check_worker(robot):
 
 
 
-class Main: 
+# class Main: 
     
 
-    class Status(Enum):
-        DISCONNECTED = 0,
-        IDLE = 1,
-        ACTIVE = 2,
+#     class Status(Enum):
+#         DISCONNECTED = 0,
+#         IDLE = 1,
+#         ACTIVE = 2,
     
     
-    # Settings and High Level states
-    status = Status.DISCONNECTED
-    #
-    battery_thread = None
-    connection_thread = None
+#     # Settings and High Level states
+#     status = Status.DISCONNECTED
+#     #
+#     battery_thread = None
+#     connection_thread = None
 
-    # Socket
-    main_socket = None
-    main_connection = None
-    manual_receiver = None
-    odometry_transmitter = None
+#     # Socket
+#     main_socket = None
+#     main_connection = None
+#     manual_receiver = None
+#     odometry_transmitter = None
 
     
 
-    @staticmethod
-    def start():
-        # start drivers
+#     @staticmethod
+#     def start():
+#         # start drivers
         
 
-        # setup main socket
-        Robot.main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        Robot.main_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        Robot.main_socket.bind((Robot.HOST, Robot.MAIN_PORT))
-        Robot.main_socket.setblocking(False)
-        Robot.main_socket.listen(1)
+#         # setup main socket
+#         Robot.main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#         Robot.main_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+#         Robot.main_socket.bind((Robot.HOST, Robot.MAIN_PORT))
+#         Robot.main_socket.setblocking(False)
+#         Robot.main_socket.listen(1)
         
-        # control loop
-        while True:
-            # check connection??
+#         # control loop
+#         while True:
+#             # check connection??
 
-            # DISCONNECTED
-            if Robot.status == Robot.Status.DISCONNECTED:
-                # check connection
-                try:
-                    Robot.main_connection, _ = Robot.main_socket.accept()
-                    Robot.main_connection.setblocking(False)
-                    Robot.status = Robot.Status.IDLE
-                    Robot.connection_thread = Thread(target=Robot.connection_handler, daemon=True)
-                    Robot.connection_thread.start()
-                except BlockingIOError:
-                    Robot.main_connection = None
-                    time.sleep(Robot.WAITING_DELAY)
-                    continue
+#             # DISCONNECTED
+#             if Robot.status == Robot.Status.DISCONNECTED:
+#                 # check connection
+#                 try:
+#                     Robot.main_connection, _ = Robot.main_socket.accept()
+#                     Robot.main_connection.setblocking(False)
+#                     Robot.status = Robot.Status.IDLE
+#                     Robot.connection_thread = Thread(target=Robot.connection_handler, daemon=True)
+#                     Robot.connection_thread.start()
+#                 except BlockingIOError:
+#                     Robot.main_connection = None
+#                     time.sleep(Robot.WAITING_DELAY)
+#                     continue
             
-            # IDLE
-            elif Robot.status == Robot.Status.IDLE:
-                time.sleep(Robot.WAITING_DELAY)
-                continue
+#             # IDLE
+#             elif Robot.status == Robot.Status.IDLE:
+#                 time.sleep(Robot.WAITING_DELAY)
+#                 continue
             
-            # ACTIVE
-            elif Robot.status == Robot.Status.ACTIVE:
-                with Robot.control_lock:
-                    ## LIDAR
-                    Robot.local_map = Lidar.produce_local_map()
+#             # ACTIVE
+#             elif Robot.status == Robot.Status.ACTIVE:
+#                 with Robot.control_lock:
+#                     ## LIDAR
+#                     Robot.local_map = Lidar.produce_local_map()
                     
-                    ## ODOMETRY
-                    if Robot.odometry_type == Robot.OdometryType.ENCODERS_ONLY: # only encoders odometry
-                        Robot.actual_pos = RP2040.get_position()
-                    elif Robot.odometry_type == Robot.OdometryType.FILTERED:    # position filtering
-                        encoder_pos = RP2040.request_odometry()
-                        visual_pos = Perception.visual_odometry()
-                        Robot.actual_pos = Perception.position_filter(visual_pos, encoder_pos) # merge the positions
-                        RP2040.set_position(Robot.actual_pos) # update the encoders position to meet the merged position
+#                     ## ODOMETRY
+#                     if Robot.odometry_type == Robot.OdometryType.ENCODERS_ONLY: # only encoders odometry
+#                         Robot.actual_pos = RP2040.get_position()
+#                     elif Robot.odometry_type == Robot.OdometryType.FILTERED:    # position filtering
+#                         encoder_pos = RP2040.request_odometry()
+#                         visual_pos = Perception.visual_odometry()
+#                         Robot.actual_pos = Perception.position_filter(visual_pos, encoder_pos) # merge the positions
+#                         RP2040.set_position(Robot.actual_pos) # update the encoders position to meet the merged position
 
-                    ## MAPPING
-                    if Robot.mapping_type == Robot.MappingType.MAPPING:
-                        Robot.global_map = Perception.map_construction(Robot.actual_pos, Robot.local_map, Robot.global_map)
+#                     ## MAPPING
+#                     if Robot.mapping_type == Robot.MappingType.MAPPING:
+#                         Robot.global_map = Perception.map_construction(Robot.actual_pos, Robot.local_map, Robot.global_map)
 
-                    ## PLANNING
-                    if Robot.control_type == Robot.ControlType.AUTONOMOUS:
-                            if goal_pos == None:
-                                goal_pos = Planning.choose_exploration_goal(Robot.global_map, Robot.actual_pos)
-                            path = Planning.path_planner(Robot.global_map, Robot.local_map, Robot.actual_pos, goal_pos)
-                            RP2040.follow_path(path)
-                    elif Robot.control_type == Robot.ControlType.MANUAL:
-                            vl, vth = ManualReceiver.get_command() # TODO
-                            vl, vth = Planning.obstacle_avoidance(vl, vth, Robot.local_map)
-                            RP2040.set_target_velocity(vl, vth)
-                    elif Robot.control_type == Robot.ControlType.OFF:
-                        RP2040.stop_motors()
+#                     ## PLANNING
+#                     if Robot.control_type == Robot.ControlType.AUTONOMOUS:
+#                             if goal_pos == None:
+#                                 goal_pos = Planning.choose_exploration_goal(Robot.global_map, Robot.actual_pos)
+#                             path = Planning.path_planner(Robot.global_map, Robot.local_map, Robot.actual_pos, goal_pos)
+#                             RP2040.follow_path(path)
+#                     elif Robot.control_type == Robot.ControlType.MANUAL:
+#                             vl, vth = ManualReceiver.get_command() # TODO
+#                             vl, vth = Planning.obstacle_avoidance(vl, vth, Robot.local_map)
+#                             RP2040.set_target_velocity(vl, vth)
+#                     elif Robot.control_type == Robot.ControlType.OFF:
+#                         RP2040.stop_motors()
                 
-                time.sleep(0.1)
+#                 time.sleep(0.1)
 
-    @staticmethod
-    def stop():
-        Robot.status = Robot.Status.DISCONNECTED
-        # stop threads
-        Robot.main_connection.close()
-        Robot.main_connection = None
-        pass
+#     @staticmethod
+#     def stop():
+#         Robot.status = Robot.Status.DISCONNECTED
+#         # stop threads
+#         Robot.main_connection.close()
+#         Robot.main_connection = None
+#         pass
 
-    @staticmethod
-    def check_battery():
-        while True:
-            battery_mv = NANO.get_battery()
-            if battery_mv < Robot.BATTERY_MIN_MV:
-                Robot.stop()
-                Robot.shutdown()
-                return
-            time.sleep(Robot.BATTERY_CHECK_DELAY)
+#     @staticmethod
+#     def check_battery():
+#         while True:
+#             battery_mv = NANO.get_battery()
+#             if battery_mv < Robot.BATTERY_MIN_MV:
+#                 Robot.stop()
+#                 Robot.shutdown()
+#                 return
+#             time.sleep(Robot.BATTERY_CHECK_DELAY)
 
-    @staticmethod
-    def connection_handler():
-        """THREAD
-        Handles the main connection
-        """
-        while Robot.status != Robot.Status.DISCONNECTED:
-            try:
-                # receive data
-                received_data = Robot.main_connection.recv(32)
+#     @staticmethod
+#     def connection_handler():
+#         """THREAD
+#         Handles the main connection
+#         """
+#         while Robot.status != Robot.Status.DISCONNECTED:
+#             try:
+#                 # receive data
+#                 received_data = Robot.main_connection.recv(32)
 
-            except (ConnectionResetError, BrokenPipeError): 
-                # lost connection
-                Robot.status = Robot.Status.DISCONNECTED
-                Robot.main_connection = None
-                return
-            except BlockingIOError: # no data
-                continue
-            if received_data == b'': # no data
-                continue
+#             except (ConnectionResetError, BrokenPipeError): 
+#                 # lost connection
+#                 Robot.status = Robot.Status.DISCONNECTED
+#                 Robot.main_connection = None
+#                 return
+#             except BlockingIOError: # no data
+#                 continue
+#             if received_data == b'': # no data
+#                 continue
 
-            # divide commands
-            commands = received_data.decode().split('\n')
-            for c in commands:
-                # handle single command
-                c = c.strip().split(' ')
+#             # divide commands
+#             commands = received_data.decode().split('\n')
+#             for c in commands:
+#                 # handle single command
+#                 c = c.strip().split(' ')
 
-                if c[0] == "SYS":
-                    if c[1] == "PNG":
-                        # Ping
-                        # "SYS PNG" -> "OK" 
-                        pass
+#                 if c[0] == "SYS":
+#                     if c[1] == "PNG":
+#                         # Ping
+#                         # "SYS PNG" -> "OK" 
+#                         pass
 
-                    # elif c[1] == "BAT":
-                    #     # Battery
-                    #     # "SYS BAT" -> "OK <battery_mv>"
-                    #     pass
+#                     # elif c[1] == "BAT":
+#                     #     # Battery
+#                     #     # "SYS BAT" -> "OK <battery_mv>"
+#                     #     pass
 
-                    elif c[1] == "STM":
-                        # Stop Motors
-                        # "SYS STM" -> "OK"
-                        Robot.control_type = Robot.ControlType.OFF
-                        with Robot.control_lock:
-                            RP2040.stop_motors()
+#                     elif c[1] == "STM":
+#                         # Stop Motors
+#                         # "SYS STM" -> "OK"
+#                         Robot.control_type = Robot.ControlType.OFF
+#                         with Robot.control_lock:
+#                             RP2040.stop_motors()
 
-                    elif c[1] == "STP":
-                        # Stop All
-                        # "SYS STP" -> "OK"
-                        Robot.stop()
-                        return
+#                     elif c[1] == "STP":
+#                         # Stop All
+#                         # "SYS STP" -> "OK"
+#                         Robot.stop()
+#                         return
     
-                    elif c[1] == "SHD":
-                        # Shutdown
-                        # "SYS SHD" -> "OK"
-                        # TODO
-                        pass
+#                     elif c[1] == "SHD":
+#                         # Shutdown
+#                         # "SYS SHD" -> "OK"
+#                         # TODO
+#                         pass
 
-                elif c[0] == "CTL":
-                    # manual control
-                    if c[1] == "MAN":
-                        if c[2] == "STR":
-                            # Start Manual Control
-                            # "CTL MAN STR" -> "OK <manual_port>"
-                            # TODO
-                            pass
-                        elif c[2] == "STP":
-                            # Stop Manual Control
-                            # "CTL MAN STP" -> "OK <manual_port>"
-                            # TODO
-                            pass
-                    elif c[1] == "AUT":
-                        if c[2] == "STR":
-                            # Start Autonomous Control
-                            # "CTL AUT STR" -> "OK"
-                            # TODO
-                            pass
-                        elif c[2] == "STP":
-                            # Stop Autonomous Control
-                            # "CTL AUT STP" -> "OK"
-                            # TODO
-                            pass
-                        elif c[2] == "SET":
-                            # Set Goal
-                            # "CTL AUT SET <x> <y>" -> "OK"
-                            # TODO
-                            pass
+#                 elif c[0] == "CTL":
+#                     # manual control
+#                     if c[1] == "MAN":
+#                         if c[2] == "STR":
+#                             # Start Manual Control
+#                             # "CTL MAN STR" -> "OK <manual_port>"
+#                             # TODO
+#                             pass
+#                         elif c[2] == "STP":
+#                             # Stop Manual Control
+#                             # "CTL MAN STP" -> "OK <manual_port>"
+#                             # TODO
+#                             pass
+#                     elif c[1] == "AUT":
+#                         if c[2] == "STR":
+#                             # Start Autonomous Control
+#                             # "CTL AUT STR" -> "OK"
+#                             # TODO
+#                             pass
+#                         elif c[2] == "STP":
+#                             # Stop Autonomous Control
+#                             # "CTL AUT STP" -> "OK"
+#                             # TODO
+#                             pass
+#                         elif c[2] == "SET":
+#                             # Set Goal
+#                             # "CTL AUT SET <x> <y>" -> "OK"
+#                             # TODO
+#                             pass
 
 
 
                 
-                # command lock
-                with Robot.control_lock:
-                    # handle all commands
-                    for c in commands:
-                        c = c.strip().split(' ')
+#                 # command lock
+#                 with Robot.control_lock:
+#                     # handle all commands
+#                     for c in commands:
+#                         c = c.strip().split(' ')
 
-                        ## COMMANDS HANDLING
+#                         ## COMMANDS HANDLING
 
 
-    @staticmethod    
-    def ping() -> str:
-        # battery
-        # rp2040 nano ping
-        # lidar status
-        pass
+#     @staticmethod    
+#     def ping() -> str:
+#         # battery
+#         # rp2040 nano ping
+#         # lidar status
+#         pass
 
 
 
 
 if __name__ == "__main__":
-    Robot.start()
+    main()
