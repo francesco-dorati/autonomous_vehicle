@@ -18,7 +18,7 @@ Returns:
 import math
 import os
 import numpy as np
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from raspberry_pi.data_structures.state import Position
 from raspberry_pi.data_structures.lidar_scan import LidarScan
@@ -135,7 +135,7 @@ class LocalMap:
         pass
 
     @timing_decorator
-    def get_polar_points(self) -> List[float, int]:
+    def get_polar_points(self) -> Tuple[float, int]:
         """Get polar coordinates of the scan
         Returns:
             List[float, int]: list of (angle, dist)

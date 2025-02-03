@@ -5,7 +5,7 @@ import time
 
 class Model:
     def __init__(self):
-        self.ROBOT_ADDRESS = '172.20.10.3'
+        self.ROBOT_ADDRESS = '192.168.1.103'
         self.MAIN_PORT = 5500
         self.main_connection = None
 
