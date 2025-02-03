@@ -11,6 +11,8 @@ from raspberry_pi.data_structures.maps import LocalMap, GlobalMap
 class Robot:
     MAP_FOLDER = "./data/maps"
     def __init__(self):
+        NANO.start()
+
         self.__thread = threading.Thread(target=self.__loop, daemon=True)
         self.__active: bool = False
         self.__lock = threading.Lock()
@@ -23,6 +25,10 @@ class Robot:
         self.__control_type: int = self.ControlType.OFF
         self.__target_position: Position = None
         self.__target_velocity: Tuple[float, float] = (0, 0)
+
+    def __del__(self):
+        NANO.stop()
+        self.stop()
 
     def is_active(self):
         return self.__active
@@ -43,7 +49,7 @@ class Robot:
 
     def __loop(self):
         RP2040.start()
-        NANO.start()
+        
         Lidar.start()
         Lidar.start_scan()
         while self.__active:
