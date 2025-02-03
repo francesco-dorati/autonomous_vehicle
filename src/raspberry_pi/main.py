@@ -146,6 +146,7 @@ from enum import Enum
 from threading import Thread, Lock, Event
 
 from raspberry_pi.robot import Robot
+from raspberry_pi.utils import timing_decorator
 from raspberry_pi.network.manual_receiver import ManualReceiver
 
 HOST = '192.168.1.103'
@@ -159,15 +160,19 @@ SERVER_DELAY = 0.2
 BATTERY_CHECK_DELAY = 3
 BATTERY_MIN_MV = 10500
 
-robot = Robot()
+robot = None
 
 battery_thread = None
 stop_battery = Event()
 
 main_socket = None
 connection = None
-
+    
+@timing_decorator
 def main():
+    global robot, battery_thread, main_socket, connection
+    robot = Robot()
+
     # SETUP BATTERY CHECK
     battery_thread = Thread(target=battery_check_worker, args=(robot,), daemon=True)
     battery_thread.start()
@@ -186,7 +191,7 @@ def main():
             try:
                 connection, _ = main_socket.accept()
                 connection.setblocking(False)
-                robot.start()
+                # robot.start()
             except BlockingIOError:
                 time.sleep(WAITING_DELAY)
                 continue
@@ -330,11 +335,11 @@ def shutdown():
 def battery_check_worker(robot):
     while not stop_battery.is_set():
         battery_mv = robot.get_battery()
-        if battery_mv < Robot.BATTERY_MIN_MV:
+        if battery_mv < BATTERY_MIN_MV:
             robot.stop()
             shutdown()
             return
-        time.sleep(Robot.BATTERY_CHECK_DELAY)
+        time.sleep(BATTERY_CHECK_DELAY)
 
 
 
@@ -557,4 +562,9 @@ def battery_check_worker(robot):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        if robot:
+            robot.stop()
+            del robot

@@ -2,6 +2,7 @@ import threading
 import time
 import os
 from typing import Tuple
+from raspberry_pi.utils import timing_decorator
 from raspberry_pi.devices.rp2040 import RP2040
 from raspberry_pi.devices.nano import NANO
 from raspberry_pi.devices.lidar import Lidar
@@ -12,7 +13,8 @@ class Robot:
     MAP_FOLDER = "./data/maps"
     def __init__(self):
         NANO.start()
-
+        RP2040.start()
+        Lidar.start()
         self.__thread = threading.Thread(target=self.__loop, daemon=True)
         self.__active: bool = False
         self.__lock = threading.Lock()
@@ -28,15 +30,19 @@ class Robot:
 
     def __del__(self):
         NANO.stop()
-        self.stop()
-
+        RP2040.start()
+        Lidar.start()
+    
+    @timing_decorator
     def is_active(self):
         return self.__active
     
+    @timing_decorator
     def start(self):
         self.__active = True
         self.__thread.start()
-
+    
+    @timing_decorator
     def stop(self):
         self.__active = False
         self.__thread.join()
@@ -82,12 +88,14 @@ class Robot:
         RP2040.stop_motors()
         RP2040.stop()
         NANO.stop()
-    
+        
+    @timing_decorator
     def get_battery(self) -> int:
         """ Returns battery mV """
         with self.__lock:
             return NANO.get_battery()
     # MAPPING
+    @timing_decorator
     def new_global_map(self, name: str) -> None:
         """ New global map
             does not require being active
@@ -98,7 +106,8 @@ class Robot:
                 raise Exception("Global map already initialized")
             self.__global_map = GlobalMap(name)
         os.mkdirs(f"{Robot.MAP_FOLDER}/{name}", exist_ok=True)
-        
+            
+    @timing_decorator
     def discard_global_map(self):
         """ Discards the global map 
             does not require being active
@@ -108,7 +117,8 @@ class Robot:
             if self.__mapping:
                 self.__mapping = False
             self.__global_map = None
-
+    
+    @timing_decorator
     def save_global_map(self):
         """ Saves a copy of the global map
             does not require being active
@@ -120,7 +130,8 @@ class Robot:
                 raise Exception("Global map not initialized")
             g = self.__global_map.get_grid()
         # TODO save it
-
+    
+    @timing_decorator
     def start_mapping(self):
         """ Starts mapping
             does not require being active 
@@ -130,40 +141,49 @@ class Robot:
             if self.__global_map is None:
                 raise Exception("Global map not initialized")
             self.__mapping = True
-
+    
+    @timing_decorator
     def stop_mapping(self):
         """ Stops mapping
             does not require being active
         """
         with self.__lock:
             self.__mapping = False
-
+    
+    @timing_decorator
     def load_global_map(self):
         pass
-    
+        
+    @timing_decorator
     def get_global_map(self):
         pass
-
+    
+    @timing_decorator
     def reset_odometry(self):
         pass
 
     # CONTROL
+        
+    @timing_decorator
     def get_control_type(self) -> int:
         with self.__lock:
             return self.__control_type
-        
+            
+    @timing_decorator
     def stop_control(self):
         with self.__lock:
             self.__control_type = self.ControlType.OFF
             self.__target_velocity = (.0, .0)
             self.__target_position = None
- 
+     
+    @timing_decorator
     def set_target_velocity(self, linear, angular):
         with self.__lock:
             self.__control_type = self.ControlType.VELOCITY
             self.__target_velocity = (linear, angular)
             self.__target_position = None
-        
+            
+    @timing_decorator
     def set_target_position(self, position):
         with self.__lock:
             self.__control_type = self.ControlType.POSITION
