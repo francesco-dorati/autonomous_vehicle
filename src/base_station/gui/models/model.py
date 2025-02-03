@@ -24,7 +24,7 @@ class Model:
 
     def connect(self) -> bool:
         self.main_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.main_connection.settimeout(1)
+        # self.main_connection.settimeout()
         try:
             self.main_connection.connect((self.ROBOT_ADDRESS, self.MAIN_PORT))
         except (socket.timeout, ConnectionRefusedError):
@@ -47,19 +47,44 @@ class Model:
                 bool: update map
         """
         try:
+            t = time.time()
             self.main_connection.send("SYS PNG\n".encode())
             response = self.main_connection.recv(32)
-            data = response.decode().strip().split()
-            if data[0] == "OK":
-                return True
+            self.ping_time = int((time.time() - t)*1000)
+            split = response.decode().strip().split()
+            if split[0] == "OK":
+                self.battery_V = float(split[1])/1000
+
+                c_type = None
+                match int(split[2]):
+                    case 0:
+                        c_type = 'off'
+                    case 1:
+                        c_type = 'manual'
+                    case 2:
+                        c_type = 'auto'
+                update_control = c_type != self.control_type
+                self.control_type = c_type
+
+                map_name = None if split[3] == "-" else split[3]
+                update_map = map_name != self.global_map_name
+                self.global_map_name = map_name
+
+                return True, update_control, update_map
         except Exception as e:
             print("PING failed, error: ", e)
-            return False
-        return True
+            return False, None, None
+
 
     def new_global_map(self, name):
         # send to serial
-        self.global_map_name = name
+        try:
+            self.main_connection.send(f"MAP NEW {name}\n".encode())
+            response = self.main_connection.recv(32).decode().strip()
+            if response == "OK":
+                self.global_map_name = name
+        except Exception as e:
+            print("error: ", e)
 
     def set_control(self, control_type: str):
         self.control_type = control_type

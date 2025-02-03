@@ -33,7 +33,7 @@ class Controller:
         self.view.main_page.discard_map()
     
     def periodic_ping(self):
-        if self.main_connection:
+        if self.model.main_connection:
             try:
                 ok, update_control, update_map = self.model.ping()
                 if ok:
@@ -51,7 +51,7 @@ class Controller:
                 self.disconnect()
                 return
 
-            self.main_view.after(PING_INTERVAL_MS, self.check_connection)
+            self.view.after(PING_INTERVAL_MS, self.periodic_ping)
     
     def set_control(self, control_type: str):
         self.model.set_control(control_type)

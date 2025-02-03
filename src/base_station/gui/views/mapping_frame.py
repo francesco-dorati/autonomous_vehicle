@@ -18,7 +18,8 @@ class MappingFrame(tk.Frame):
 
         self.new_map_button = tk.Button(self, text="New Map", font=("Arial", 15), command=self.new_map_popup)
         self.load_map_button = tk.Button(self, text="Load Map", font=("Arial", 15))
-
+        self.popup = None
+        
     def show(self):
         self.pack(side='top', fill='x')
         self.text_frame.pack(side='top', fill='x', pady=10)
@@ -54,7 +55,8 @@ class MappingFrame(tk.Frame):
         """ setup new map """
         self.map_name.config(text=map_name)
         self.mapping_checkbox.config(state='normal')
-        self.popup.destroy()
+        if self.popup:
+            self.popup.destroy()
 
         self.new_map_button.pack_forget()
         self.load_map_button.pack_forget()

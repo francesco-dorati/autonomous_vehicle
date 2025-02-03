@@ -97,9 +97,9 @@ class Sidebar(tk.Frame):
         self.config_button.pack(fill='x', side='top', pady=10)
     
     
-    def update_ping(self, ping, battery, level):
-        self.ping.config(text=f"{int(ping)} ms")
-        self.battery.config(text=f"{battery:.1f} V  ({level})")
+    def update_ping(self, battery: float, ping: int):
+        self.ping.config(text=f"📶  {ping} ms")
+        self.battery.config(text=f"⚡  {battery:.2f} V")
 
     def open_config(self):
         self.config_frame.pack(fill='x', side='top', pady=10)
