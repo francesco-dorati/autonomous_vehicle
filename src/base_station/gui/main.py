@@ -1,6 +1,7 @@
 from tkinter import Tk
+from models.model import Model
 from views.view import View
-from controllers.main_controller import MainController
+from controllers.main_controller import Controller
 
 
 class RobotApp(Tk):
@@ -9,9 +10,10 @@ class RobotApp(Tk):
         self.title("Robot Control Panel")
         self.geometry("1200x750")
 
-        self.main_view = View(self)
-        self.main_view.pack()
-        self.main_controller = MainController(self.main_view)
+        self.model = Model()
+        self.controller = Controller(self.model)
+        self.view = View(self.controller)
+
 
 if __name__ == "__main__":
     app = RobotApp()

@@ -81,9 +81,8 @@ class ManualController:
     def _key_event(self, event): # handles key events
         key = event.keysym
         if key.lower() == 'w': # FORWARD
-            if event.type == "2":
-                if not 'f' in self.x_buffer:
-                    self.x_buffer.append('f')
+            if event.type == "2" :
+                
                 self.view.controls_frame.set('fwd', True)
             elif event.type == "3":
                 if 'f' in self.x_buffer:

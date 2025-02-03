@@ -9,6 +9,7 @@ dependencies:
   - pillow
   - pip
   - tk
+  - pygame
   - matplotlib
   - ipykernel
   - pip:

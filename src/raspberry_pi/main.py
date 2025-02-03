@@ -9,12 +9,11 @@
 
     command types:
     - SYSTEM:
-        - ping [pure]      
-            "SYS PNG" -> "OK"
-
-        - battery [pure]
-            "SYS BAT" -> "OK <battery_mv>"
+        - ping     
+            "SYS PNG" -> "OK <battery_mv> <control_type> <map_name>"
             battery_mv: battery voltage in millivolts
+            control_type: 0 off, 1 manual, 2 autonomous
+            map_name: name of the global map (- if no map)
 
         - stop_motors   
             "SYS STM" -> "OK"
@@ -37,11 +36,8 @@
     - CONTROL:
         - manual 
             - start [thread]
-                "CTL MAN STR" -> "OK <manual_port>"
+                "CTL MAN" -> "OK <manual_port>"
                 starts manual control thread and server
-            - stop
-                "CTL MAN STP" -> "OK"
-                stops manual control thread and server
         - autonomous
             - start
                 "CTL AUT STR" -> "OK"
@@ -56,39 +52,40 @@
         - stop
             "CTL STP" -> "OK"
             sets control type to OFF
-            ensures:
-                no power to motors
-                odometry and mapping may still running
+            stops the robot (lidar, motors ecc)
+            
 
     - MAPPING:
-        - start_mapping
-            "MAP STR" -> "OK"
-            starts mapping
-            ensures:
-                global map exists => it expands it
-                alredy scanning => continues
-
-        - finish_mapping
-            "MAP FIN" -> "OK" 
-            finishes mapping and keeps the map as global map
-            "KO" if not in mapping mode
-
-        - save_map
-            "MAP SAV <filename??>" -> "OK"
-            saves the global map to the given file
-            ensures:
-                in mapping mode => continues mapping
-                not in mapping mode => stops mapping
+        - new_map
+            "MAP NEW <name>" -> "OK"
+            creates a new map with the given name
+            "KO" if map already exists
 
         - discard
             "MAP DIS" -> "OK"
             discards the global map
             ensures:
                 in mapping mode => stops mapping
+
+        - save_map
+            "MAP SAV" -> "OK"
+            saves the global map to the given file
+            "KO" if no global map
         
-        - use_map
-            "MAP USE <filename>" -> "OK"
+        - load_map
+            "MAP LOD <name>" -> "OK"
             sets global map to the given map
+        
+        - start_mapping
+            "MAP STR" -> "OK"
+            starts mapping
+            "KO" if already in mapping mode
+
+        - finish_mapping
+            "MAP STP" -> "OK" 
+            finishes mapping and keeps the map as global map
+            "KO" if not in mapping mode
+
 
     - LOCALIZATION ??
         - set_mode 
@@ -146,65 +143,215 @@
 import time
 import socket
 from enum import Enum
-from threading import Thread, Lock
+from threading import Thread, Lock, Event
 
-from raspberry_pi.drivers.rp2040 import RP2040
-from raspberry_pi.drivers.nano import NANO
-from raspberry_pi.drivers.lidar import Lidar
-from raspberry_pi.structures.state import Position
-from raspberry_pi.perception import Perception
-from raspberry_pi.planning import Planning
-
+from raspberry_pi.robot import Robot
 from raspberry_pi.network.manual_receiver import ManualReceiver
 
+HOST = '172.20.10.3'
+MAIN_PORT = 5500
+MANUAL_PORT = 5501
+CAMERA_PORT = 5503
+# delays
+WAITING_DELAY = 1
+SERVER_DELAY = 0.2
+# battery check
+BATTERY_CHECK_DELAY = 3
+BATTERY_MIN_MV = 10500
 
-class Robot: 
-    HOST = '172.20.10.3'
-    MAIN_PORT = 5500
-    MANUAL_PORT = 5501
-    CAMERA_PORT = 5503
+robot = Robot()
 
-    # delays
-    BATTERY_CHECK_DELAY = 3
-    WAITING_DELAY = 1
+battery_thread = None
+stop_battery = Event()
 
-    BATTERY_MIN_MV = 10500
+main_socket = None
+connection = None
+
+def main():
+    # SETUP BATTERY CHECK
+    battery_thread = Thread(target=battery_check_worker, args=(robot,), daemon=True)
+    battery_thread.start()
+
+    # SETUP SERVER
+    main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    main_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    main_socket.bind((HOST, MAIN_PORT))
+    main_socket.setblocking(False)
+    main_socket.listen(1)
+
+    # MAIN LOOP
+    while True:
+        if connection == None:
+            # check connection
+            try:
+                connection, _ = main_socket.accept()
+                connection.setblocking(False)
+                robot.start()
+            except BlockingIOError:
+                time.sleep(WAITING_DELAY)
+                continue
+        else:
+            # receive data
+            try:
+                received_data = connection.recv(32)
+            except (ConnectionResetError, BrokenPipeError): 
+                close_connection()
+                time.sleep(WAITING_DELAY)
+                continue
+            except BlockingIOError:
+                time.sleep(SERVER_DELAY)
+                continue
+            if received_data == b'':
+                time.sleep(SERVER_DELAY)
+                continue
+
+            # HANDLE COMMANDS
+            commands = received_data.decode().split('\n')
+            for c in commands:
+                c = c.strip().split(' ')
+                if c[0] == "SYS":
+                    if c[1] == "PNG":
+                        """Ping
+                            "SYS PNG" -> "OK <battery_mv> <control_type> <map_name>"
+                                battery_mv: battery voltage in millivolts
+                                control_type: 0 off, 1 manual, 2 autonomous
+                                map_name: name of the global map (- if no map) """
+                        battery = str(robot.get_battery())
+                        control = str(robot.get_control_type())
+                        map_name = '-'
+                        res = f"OK {battery} {control} {map_name}\n"
+                        connection.send(res.encode())
+
+                elif c[0] == "MAP":
+
+                    if c[1] == "NEW":
+                        """New Map
+                            "MAP NEW <name>" -> "OK"
+                            creates a new map with the given name
+                            "KO" if alraedy has a map
+                        """
+                        try:
+                            robot.new_map(c[2])
+                            res = "OK\n"
+                        except:
+                            res = "KO\n"
+                        connection.send(res.encode())
+
+                    elif c[1] == "DIS":
+                        """ Discard Map
+                            "MAP DIS" -> "OK"
+                            discards the global map (does not eliminate the map file)
+                        """
+                        try:
+                            robot.discard_map()
+                            res = "OK\n"
+                        except: # no map to discard
+                            res = "KO\n"
+                        connection.send(res.encode())
+            
+                    elif c[1] == "SAV":
+                        """ Save Map
+                            "MAP SAV" -> "OK"
+                        """
+                        try:
+                            robot.save_map()
+                            res = "OK\n"
+                        except:
+                            res = "KO\n"
+                        connection.send(res.encode())
+                        
+                    elif c[1] == "LOD":
+                        # Load Map
+                        # "MAP LOD <name>" -> "OK"
+                        pass
+
+                    elif c[1] == "STR":
+                        """ Start Mapping
+                            "MAP STR" -> "OK"
+                        """
+                        # Start Mapping
+                        # "MAP STR" -> "OK"
+                        try:
+                            robot.start_mapping()
+                            res = "OK"
+                        except:
+                            res = "KO"
+                        connection.send(res.encode())
+
+                    elif c[1] == "STP":
+                        # Stop Mapping
+                        # "MAP STP" -> "OK"
+                        try:
+                            robot.stop_mapping()
+                            res = "OK"
+                        except:
+                            res = "KO"
+                        connection.send(res.encode())
+
+                elif c[0] == "CTL":
+                    if c[1] == "STP":
+                        """ Stop Control
+                            "CTL STP" -> "OK"
+                            completely stops the robot (lidar ecc)
+                        """
+                        if ManualReceiver.is_connected():
+                            ManualReceiver.stop()
+                        robot.stop()
+                        connection.send("OK\n".encode())
+
+                    elif c[1] == "MAN":
+                        """ Start Manual Control
+                            "CTL MAN" -> "OK"
+                            starts manual receiver
+                        """
+                        ManualReceiver.start(MANUAL_PORT, robot)
+                        connection.send(f"OK {MANUAL_PORT}\n".encode())
+            
+
+def close_connection():
+    robot.stop()
+    if connection != None:
+        connection.close()
+        connection = None
+
+def close_all():
+    stop_battery.set()
+    battery_thread.join()
+    battery_thread = None
+    close_connection()
+    main_socket.close()
+    main_socket = None
+
+def shutdown():
+    close_all()
+    # shutdown system
+    pass
+
+def battery_check_worker(robot):
+    while not stop_battery.is_set():
+        battery_mv = robot.get_battery()
+        if battery_mv < Robot.BATTERY_MIN_MV:
+            robot.stop()
+            shutdown()
+            return
+        time.sleep(Robot.BATTERY_CHECK_DELAY)
+
+
+
+class Main: 
+    
 
     class Status(Enum):
         DISCONNECTED = 0,
         IDLE = 1,
         ACTIVE = 2,
     
-    class OdometryType(Enum):
-        OFF = 0,
-        ENCODERS_ONLY = 1,
-        FILTERED = 2
-
-    class MappingType(Enum):
-        OFF = 0,
-        MAPPING = 1
-
-    class ControlType(Enum):
-        OFF = 0,
-        MANUAL = 1,
-        AUTONOMOUS = 2,
     
     # Settings and High Level states
     status = Status.DISCONNECTED
-    odometry_type = OdometryType.OFF
-    mapping_type = MappingType.OFF
-    control_type = ControlType.OFF
-
-    # Threads
-    control_lock = Lock()
+    #
     battery_thread = None
     connection_thread = None
-
-    # Low Level states
-    actual_pos = None
-    goal_pos = None
-    local_map = None
-    global_map = None
 
     # Socket
     main_socket = None
@@ -217,13 +364,7 @@ class Robot:
     @staticmethod
     def start():
         # start drivers
-        RP2040.start()
-        NANO.start()
-        Lidar.start()
         
-        # start threads
-        Robot.battery_thread = Thread(target=Robot.check_battery, daemon=True)
-        Robot.battery_thread.start()
 
         # setup main socket
         Robot.main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -278,7 +419,6 @@ class Robot:
                     if Robot.control_type == Robot.ControlType.AUTONOMOUS:
                             if goal_pos == None:
                                 goal_pos = Planning.choose_exploration_goal(Robot.global_map, Robot.actual_pos)
-
                             path = Planning.path_planner(Robot.global_map, Robot.local_map, Robot.actual_pos, goal_pos)
                             RP2040.follow_path(path)
                     elif Robot.control_type == Robot.ControlType.MANUAL:
@@ -290,8 +430,12 @@ class Robot:
                 
                 time.sleep(0.1)
 
+    @staticmethod
     def stop():
-        # TODO
+        Robot.status = Robot.Status.DISCONNECTED
+        # stop threads
+        Robot.main_connection.close()
+        Robot.main_connection = None
         pass
 
     @staticmethod
@@ -309,7 +453,6 @@ class Robot:
         """THREAD
         Handles the main connection
         """
-
         while Robot.status != Robot.Status.DISCONNECTED:
             try:
                 # receive data
@@ -346,13 +489,15 @@ class Robot:
                         # Stop Motors
                         # "SYS STM" -> "OK"
                         Robot.control_type = Robot.ControlType.OFF
+                        with Robot.control_lock:
+                            RP2040.stop_motors()
 
                     elif c[1] == "STP":
                         # Stop All
                         # "SYS STP" -> "OK"
-                        # TODO
-                        pass
-
+                        Robot.stop()
+                        return
+    
                     elif c[1] == "SHD":
                         # Shutdown
                         # "SYS SHD" -> "OK"
@@ -372,7 +517,22 @@ class Robot:
                             # "CTL MAN STP" -> "OK <manual_port>"
                             # TODO
                             pass
-                    
+                    elif c[1] == "AUT":
+                        if c[2] == "STR":
+                            # Start Autonomous Control
+                            # "CTL AUT STR" -> "OK"
+                            # TODO
+                            pass
+                        elif c[2] == "STP":
+                            # Stop Autonomous Control
+                            # "CTL AUT STP" -> "OK"
+                            # TODO
+                            pass
+                        elif c[2] == "SET":
+                            # Set Goal
+                            # "CTL AUT SET <x> <y>" -> "OK"
+                            # TODO
+                            pass
 
 
 
@@ -384,6 +544,7 @@ class Robot:
                         c = c.strip().split(' ')
 
                         ## COMMANDS HANDLING
+
 
     @staticmethod    
     def ping() -> str:

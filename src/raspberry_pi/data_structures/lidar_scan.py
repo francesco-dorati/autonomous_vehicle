@@ -62,5 +62,4 @@ class LidarScan:
             """
             with self._scan_lock:
                 copy = self._scan.copy()
-            print("copy of ", copy)
             return copy

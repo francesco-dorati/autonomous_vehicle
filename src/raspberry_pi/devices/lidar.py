@@ -257,6 +257,8 @@ class Lidar(Device):
         Lidar._thread = threading.Thread(target=Lidar._scan_handler)
         Lidar._thread.start()
 
+        time.sleep(1)
+
     @staticmethod
     @timing_decorator
     def stop_scan():

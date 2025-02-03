@@ -16,7 +16,9 @@ Returns:
 """
 
 import math
+import os
 import numpy as np
+from typing import Optional, List
 
 from raspberry_pi.data_structures.state import Position
 from raspberry_pi.data_structures.lidar_scan import LidarScan
@@ -30,12 +32,11 @@ class LocalMap:
         Local Map
         A list of position taken at 1° steps
         _scan (list): list of distances [0, 359]
-
         Arguments:
             Lidar.Scan: scan object 
         """
         # print(scan)
-        self._scan = scan
+        self.__scan: LidarScan = scan
         # print("SCAN: ", self._scan)
 
     def __repr__(self):
@@ -44,6 +45,9 @@ class LocalMap:
     @timing_decorator
     def get_iterable(self) -> list: # TODO oppure get list che ritorna una lista ??
         return iter(enumerate(self._scan.copy()))
+    
+    def get_polar_points(self) -> List[float, int]:
+        return [(float(angle), distance) for angle, distance in enumerate(self.__scan)]
     
     @timing_decorator
     def draw(self, filename) -> None:
@@ -82,10 +86,8 @@ class LocalMap:
         """
         Get Dist
         Get the distance at a specified angle
-
         Args:
             angle (int): angle where to check distance
-
         Returns:
             int: distance in mm
         """
@@ -97,10 +99,8 @@ class LocalMap:
         Is Position Free
         Returns if position is obstacle free
         Position is relative to the local map
-
         Args:
             pos (Position): relative position to the center of the local map
-        
         Returns:
             bool: if position given is obstacle free
         """
@@ -112,11 +112,9 @@ class LocalMap:
         Is Line Free
         Returns if the segment connecting the two points is free
         Positions are relative to the local map
-
         Args:
             pos1 (Position): starting point of the segment
             pos2 (Position): ending point of the segment
-
         Returns:
             bool: if segment is obstacle free
         """
@@ -127,14 +125,52 @@ class LocalMap:
         """
         Is Area Free
         Returns if the area between the two angles and the distance is free
-
         Args:
             angle1 (_type_): _description_
             angle2 (_type_): _description_
             dist_mm (_type_): _description_
-
         Returns:
             bool: if the area is free
+        """
+        pass
+
+    @timing_decorator
+    def get_polar_points(self) -> List[float, int]:
+        """Get polar coordinates of the scan
+        Returns:
+            List[float, int]: list of (angle, dist)
+        """
+        points = []
+        for angle, distance in enumerate(self._scan):
+            if distance != 0: 
+                points.append((float(angle), distance))
+        return points  
+        
+    @timing_decorator
+    def get_cartesian_points(self) -> List[Position]:
+        """Get cartesian coordinates of the scan (based on the center of the local map)
+        Returns:
+            List[int, int]: list of positions (x, y)
+        """
+        points = [] 
+        for angle, distance in self.get_polar_points():
+            # Convert angle from degrees to radians for trigonometric functions
+            angle_rad = np.radians(angle)
+            x = distance * np.cos(angle_rad)
+            y = distance * np.sin(angle_rad)
+
+            # Skip points with invalid or zero distance
+            if distance > 0:
+                x = distance * np.cos(angle_rad)
+                y = distance * np.sin(angle_rad)
+                points.append((x, y))
+        return points
+    
+    @timing_decorator
+    def get_occupancy_grid(self) -> np.array:
+        """Get the occupancy grid of the local map
+        Returns:
+            np.array: 2D array of the local map
         """
         pass
     
@@ -150,10 +186,11 @@ class GlobalMap:
     (can be extended to a probability map returning what is the chance of a point to be occupied)
     """
 
-    INITIAL_SIZE_MM =  10000
+    INITIAL_SIZE_MM =  10000 # mm
     RESOLUTION = 100 # mm
-    def __init__(self):
-        self._grid_size = (self.INITIAL_SIZE_MM // self.RESOLUTION)
+    def __init__(self, name: str):
+        self.name: str = name
+        self._grid_size: int = self.INITIAL_SIZE_MM // self.RESOLUTION
         self._grid = np.full((self._grid_size, self._grid_size), -1, dtype=int)
         self.origin = lambda: ((self._grid_size // 2), (self._grid_size // 2))
     
@@ -217,18 +254,32 @@ class GlobalMap:
             self._ray_cast(position, obstacle_pos)
     
     @timing_decorator
-    def draw(self, filename) -> None:
+    def get_copy(self) -> GlobalMap:
+        with self._lock:
+            return copy.deepcopy(self)
+
+    @timing_decorator
+    @staticmethod
+    def save(self, name: str, grid: np.nparray) -> None:
         import matplotlib.pyplot as plt
         from matplotlib.colors import ListedColormap
 
-        path_name = f"../img/{filename}.png"
-        # Plotting
+        path_name = f"../data/maps/{name}"
+        os.makedirs(path_name, exist_ok=True)
+        image_name = f"{path_name}/{name}.png"
+        text_name = f"{path_name}/{name}.txt"
+        # TEXT
+        with open(text_name, 'w') as file:
+            file.write(f"{self._grid_size}\n")
+            for row in self._grid:
+                file.write(" ".join(map(str, row)) + "\n")
+        
+        # IMAGE
         cmap = ListedColormap(['gray', 'white', 'black'])
         bounds = [-1.5, -0.5, 0.5, 1.5]  # Boundaries for each value
         norm = plt.matplotlib.colors.BoundaryNorm(bounds, cmap.N)
-
         plt.figure(figsize=(8, 8))
-        plt.imshow(self._grid.T, cmap=cmap, norm=norm, origin='upper')
+        plt.imshow(grid.T, cmap=cmap, norm=norm, origin='upper')
         # Robot position
         y, x = self.origin()
         plt.plot(y, x, 'ro', label="Robot Position")  # Red dot for robot location
@@ -358,3 +409,21 @@ class GlobalMap:
                     p -= 2 * dy
                 p += 2 * dx
         return cells
+    
+class OccupancyGrid:
+    def __init__(self, size: int):
+        self.__size = size
+        self.__grid = np.full((self.__size, self.__size), -1, dtype=int)
+    
+    def get_size(self):
+        return self.__size
+    
+    def origin(self):
+        return ((self.__size // 2), (self.__size // 2))
+
+    # def 
+    
+    # def world_to_grid(self, pos: Position, offset: Optional[Position]) -> tuple[int, int]:
+    #     gx = round((pos.x - offset.x) / self.__size)
+    #     gy = round((pos.y - offset.y) / self.__size)
+    #     return gx, gy
