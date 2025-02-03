@@ -148,7 +148,7 @@ from threading import Thread, Lock, Event
 from raspberry_pi.robot import Robot
 from raspberry_pi.network.manual_receiver import ManualReceiver
 
-HOST = '172.20.10.3'
+HOST = '192.168.1.103'
 MAIN_PORT = 5500
 MANUAL_PORT = 5501
 CAMERA_PORT = 5503
