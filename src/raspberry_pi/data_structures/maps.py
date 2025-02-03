@@ -46,7 +46,7 @@ class LocalMap:
     def get_iterable(self) -> list: # TODO oppure get list che ritorna una lista ??
         return iter(enumerate(self._scan.copy()))
     
-    def get_polar_points(self) -> List[float, int]:
+    def get_polar_points(self) -> Tuple[float, int]:
         return [(float(angle), distance) for angle, distance in enumerate(self.__scan)]
     
     @timing_decorator
