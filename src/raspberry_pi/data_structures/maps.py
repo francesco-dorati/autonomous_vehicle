@@ -261,7 +261,7 @@ class GlobalMap:
 
     @timing_decorator
     @staticmethod
-    def save(self, name: str, grid: np.nparray) -> None:
+    def save(self, name: str, grid: np.ndarray) -> None:
         import matplotlib.pyplot as plt
         from matplotlib.colors import ListedColormap
 
