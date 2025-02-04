@@ -55,36 +55,42 @@ class Robot:
 
     def __loop(self):
         Lidar.start_scan()
-        while self.__active:
-            with self.__lock:
-                if self.__control_type == self.ControlType.OFF:
-                    continue
-                
-                ## LOCAL MAP
-                self.__local_map = Lidar.produce_local_map()
-                
-                ## POSITION
-                self.__actual_position = RP2040.get_position()
+        try:
+            while self.__active:
+                with self.__lock:
+                    print("loop")
+                    if self.__control_type == self.ControlType.OFF:
+                        continue
+                    
+                    ## LOCAL MAP
+                    self.__local_map = Lidar.produce_local_map()
+                    
+                    ## POSITION
+                    self.__actual_position = RP2040.get_position()
 
-                ## MAPPING
-                if self.__mapping:
-                    self.__global_map.expand(self.__actual_position, self.__local_map)
-                
-                ## CONTROL
-                if self.__control_type == self.ControlType.POSITION:
-                    # PLANNING
-                    pass
-                elif self.__control_type == self.ControlType.VELOCITY:
-                    # VELOCITY CONTROL
-                    # TODO obstacle avoidance
-                    RP2040.set_target_velocity(*self.__target_velocity)
-                else:
-                    # CONTROL OFF
-                    RP2040.stop_motors()
-            time.sleep(0.1)
+                    ## MAPPING
+                    if self.__mapping:
+                        self.__global_map.expand(self.__actual_position, self.__local_map)
+                    
+                    ## CONTROL
+                    if self.__control_type == self.ControlType.POSITION:
+                        # PLANNING
+                        pass
+                    elif self.__control_type == self.ControlType.VELOCITY:
+                        # VELOCITY CONTROL
+                        # TODO obstacle avoidance
+                        RP2040.set_target_velocity(*self.__target_velocity)
+                    else:
+                        # CONTROL OFF
+                        RP2040.stop_motors()
+                time.sleep(0.1)
 
-        Lidar.stop_scan()
-        RP2040.stop_motors()
+        except Exception as e:
+            print("Robot loop error: ", e)
+            
+        finally:
+            Lidar.stop_scan()
+            RP2040.stop_motors()
         
     @timing_decorator
     def get_battery(self) -> int:
@@ -178,8 +184,8 @@ class Robot:
     @timing_decorator
     def set_target_velocity(self, linear, angular):
         with self.__lock:
-            if self.__control_type != self.ControlType.VELOCITY:
-                Lidar.start_scan()
+            # if self.__control_type != self.ControlType.VELOCITY:
+            #     Lidar.start_scan()
 
             self.__control_type = self.ControlType.VELOCITY
             self.__target_velocity = (linear, angular)

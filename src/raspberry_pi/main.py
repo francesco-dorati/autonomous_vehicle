@@ -212,6 +212,7 @@ def main():
 
             # HANDLE COMMANDS
             commands = received_data.decode().split('\n')
+            print(commands)
             for c in commands:
                 c = c.strip().split(' ')
                 if c[0] == "SYS":
@@ -309,7 +310,8 @@ def main():
                             "CTL MAN" -> "OK"
                             starts manual receiver
                         """
-                        ManualReceiver.start(MANUAL_PORT, robot)
+                        robot.start()
+                        ManualReceiver.start(HOST, MANUAL_PORT, robot)
                         connection.send(f"OK {MANUAL_PORT}\n".encode())
             
 

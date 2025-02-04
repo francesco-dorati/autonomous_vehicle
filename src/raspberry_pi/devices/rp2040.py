@@ -77,8 +77,6 @@ class RP2040(Device):
         Side:
             writes to serial
         """
-        if lin_vel == 0 and ang_vel == 0:
-            RP2040.stop_motors()
         RP2040._serial.write(f"VEL {lin_vel} {ang_vel}\n".encode())
 
     @staticmethod

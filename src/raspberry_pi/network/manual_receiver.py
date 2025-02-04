@@ -17,7 +17,7 @@ class ManualReceiver:
         CONNECTED: thread running, socket listening, connection established
     """
     LIN_SPEED = 270
-    ANG_SPEED = 450
+    ANG_SPEED = 800
     MAX_TIME_WITHOUT_COMMAND = 1
 
     _robot = None
@@ -89,10 +89,13 @@ class ManualReceiver:
                 else:
                     # read dat
                     try:
-                        data = ManualReceiver._connection.recv(32).decode().strip()
-                        split = data.split(" ")
+                        data = ManualReceiver._connection.recv(25).decode().strip()
+                        if data == "":
+                            continue
+
+                        split = data.split("\n")[0].split(" ")
                         if len(split) != 3:
-                            print("Ivalid man receiver: ", data)
+                            print("Invalid man receiver: ", split, "len: ",  len(split))
                             continue
                         if split[0] == "KEY":
                             ManualReceiver._type = "keyboard"
@@ -103,7 +106,7 @@ class ManualReceiver:
                         ManualReceiver._command = (x, y)
                         ManualReceiver._last_received = time.time()
                         v_lin, v_ang = ManualReceiver.calculate_velocities()
-                        ManualReceiver._robot.set_manual_control(v_lin, v_ang)
+                        ManualReceiver._robot.set_target_velocity(v_lin, v_ang)
 
                     except BlockingIOError:
                         # inactive
