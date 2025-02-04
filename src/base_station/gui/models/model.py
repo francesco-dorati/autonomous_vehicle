@@ -27,7 +27,8 @@ class Model:
         # self.main_connection.settimeout()
         try:
             self.main_connection.connect((self.ROBOT_ADDRESS, self.MAIN_PORT))
-        except (socket.timeout, ConnectionRefusedError):
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            print("Connection failed")
             self.main_connection = None
             return False
         return True
@@ -35,6 +36,7 @@ class Model:
     def disconnect(self):
         if self.main_connection:
             # SEND COMMAND
+
             self.main_connection.close()
             self.main_connection = None
 
@@ -83,6 +85,16 @@ class Model:
             response = self.main_connection.recv(32).decode().strip()
             if response == "OK":
                 self.global_map_name = name
+        except Exception as e:
+            print("error: ", e)
+        
+    def discard_global_map(self):
+        # send to serial
+        try:
+            self.main_connection.send("MAP DIS\n".encode())
+            response = self.main_connection.recv(32).decode().strip()
+            if response == "OK":
+                self.global_map_name = None
         except Exception as e:
             print("error: ", e)
 

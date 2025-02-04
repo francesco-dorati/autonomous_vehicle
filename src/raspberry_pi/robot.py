@@ -54,12 +54,12 @@ class Robot:
         POSITION = 2
 
     def __loop(self):
-        RP2040.start()
-        
-        Lidar.start()
         Lidar.start_scan()
         while self.__active:
             with self.__lock:
+                if self.__control_type == self.ControlType.OFF:
+                    continue
+                
                 ## LOCAL MAP
                 self.__local_map = Lidar.produce_local_map()
                 
@@ -84,10 +84,7 @@ class Robot:
             time.sleep(0.1)
 
         Lidar.stop_scan()
-        Lidar.stop()
         RP2040.stop_motors()
-        RP2040.stop()
-        NANO.stop()
         
     @timing_decorator
     def get_battery(self) -> int:
@@ -175,10 +172,15 @@ class Robot:
             self.__control_type = self.ControlType.OFF
             self.__target_velocity = (.0, .0)
             self.__target_position = None
+            RP2040.stop_motors()
+            Lidar.stop_scan()
      
     @timing_decorator
     def set_target_velocity(self, linear, angular):
         with self.__lock:
+            if self.__control_type != self.ControlType.VELOCITY:
+                Lidar.start_scan()
+
             self.__control_type = self.ControlType.VELOCITY
             self.__target_velocity = (linear, angular)
             self.__target_position = None
@@ -186,6 +188,9 @@ class Robot:
     @timing_decorator
     def set_target_position(self, position):
         with self.__lock:
+            if self.__control_type != self.ControlType.POSITION:
+                Lidar.start_scan()
+
             self.__control_type = self.ControlType.POSITION
             self.__target_velocity = (.0, .0)
             self.__target_position = position

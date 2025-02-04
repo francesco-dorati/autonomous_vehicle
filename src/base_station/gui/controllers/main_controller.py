@@ -15,9 +15,10 @@ class Controller:
         self.view = view
 
     def connect(self):
-        self.model.connect()
-        self.periodic_ping()
-        self.view.connect()
+        ok = self.model.connect()
+        if ok:
+            self.periodic_ping()
+            self.view.connect()
         
     def disconnect(self):
         self.model.disconnect()
@@ -29,7 +30,7 @@ class Controller:
         self.view.main_page.set_map(self.model.global_map_name)
     
     def discard_map(self):
-        self.model.global_map_name = None
+        self.model.discard_global_map()
         self.view.main_page.discard_map()
     
     def periodic_ping(self):
