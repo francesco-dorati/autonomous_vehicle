@@ -21,85 +21,79 @@ import numpy as np
 from typing import Optional, List, Tuple
 import copy
 
-from raspberry_pi.data_structures.states import Position, PolarPoint, CartPoint
+from raspberry_pi.data_structures.states import Position
 from raspberry_pi.data_structures.lidar_scan import LidarScan
 from raspberry_pi.utils import Utils, timing_decorator
-from raspberry_pi.config import GLOBAL_MAP_CONFIG
-from raspberry_pi.utils.logger import get_logger
-
-logger = get_logger(__name__)
-
-class OccupancyGrid:
-    def __init__(self, size: int):
-        self.__size = size
-        self.__grid = np.full((self.__size, self.__size), -1, dtype=int)
-    
-    def get_size(self):
-        return self.__size
-    
-    def origin(self):
-        return ((self.__size // 2), (self.__size // 2))
-    
-    def set(self, gx, gy, val):
-        self.__grid[gx][gy] = val
-    
-    def to_string(self):
-        return ";".join([" ".join(map(str, row)) for row in self.__grid])
 
 
 # can be extended as localmap as abstarct class and lidarmap, occupancy map as childs
 class LocalMap:
-    def __init__(self, scan: List):
+    def __init__(self, scan):
         """
         Local Map
         A list of position taken at 1° steps
-        _scan (List): list of (angle, distance) tuples
+        _scan (list): list of distances [0, 359]
         Arguments:
             Lidar.Scan: scan object 
         """
         # print(scan)
-        self.__scan: List[PolarPoint] = scan
+        self.__scan: LidarScan = scan
         # print("SCAN: ", self._scan)
 
     def __repr__(self):
         return f"local_map()"
 
- 
     @timing_decorator
-    def get_polar_points(self) -> List[PolarPoint]:
-        """Get polar coordinates of the scan
-        Returns:
-            List[float, int]: list of (angle, dist)
-        """
-        return [coord for coord in self.__scan]
-
+    def get_iterable(self) -> list: # TODO oppure get list che ritorna una lista ??
+        return iter(enumerate(self._scan.copy()))
+    
+    def get_polar_points(self) -> Tuple[float, int]:
+        return [(float(angle), distance) for angle, distance in enumerate(self.__scan)]
+    
     @timing_decorator
-    def get_cartesian_points(self) -> List[CartPoint]:
-        """Get cartesian coordinates of the scan (based on the center of the local map)
-        Returns:
-            List[int, int]: list of positions (x, y)
-        """
-        points = [] 
-        for p in self.__scan:
+    def draw(self, filename) -> None:
+        import matplotlib.pyplot as plt
+        path_name = f"../img/{filename}.png"
+        x_points = []
+        y_points = []
+        for angle, distance in enumerate(self._scan):
+            if distance == 0: 
+                continue
             # Convert angle from degrees to radians for trigonometric functions
-            angle_rad: float = p.th / 1000.0
-            if p.r > 0:
-                p = CartPoint(
-                    p.r * np.cos(angle_rad), 
-                    p.r * np.sin(angle_rad))
-                
-                if abs(p.x) < max_dist and abs(p.y) < max_dist:
-                    points.append(p)
-        return points
+            angle_rad = np.radians(360 - angle)
+            # Skip points with invalid or zero distance
+            if distance > 0:
+                x = distance * np.cos(angle_rad)
+                y = distance * np.sin(angle_rad)
+                x_points.append(x)
+                y_points.append(y)
+        # Plotting
+        plt.figure(figsize=(8, 8))
+        plt.scatter(x_points, y_points, s=1, color='blue')  # Smaller marker for a denser plot
+        # Robot position
+        plt.plot(0, 0, 'ro', label="Robot Position")  # Red dot for robot location
+        plt.arrow(0, 0, 500, 0, head_width=100, head_length=80, fc='red', ec='red', label="Heading")
+        plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
+        plt.title("LIDAR Scan")
+        plt.xlabel("X (mm)")
+        plt.ylabel("Y (mm)")
+        plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
+        plt.grid(True)
+        plt.savefig(path_name, format='png')
+        plt.close() 
 
     @timing_decorator
-    def get_occupancy_grid(self) -> OccupancyGrid:
-        """Get the occupancy grid of the local map
-        Returns:
-            OccupancyGrid: 
+    def get_dist(self, angle: int) -> int:
         """
-        pass
-
+        Get Dist
+        Get the distance at a specified angle
+        Args:
+            angle (int): angle where to check distance
+        Returns:
+            int: distance in mm
+        """
+        return self._scan[angle]
+    
     @timing_decorator
     def is_position_free(self, pos: Position) -> bool:
         """
@@ -141,39 +135,45 @@ class LocalMap:
         """
         pass
 
-    
-    # @timing_decorator
-    # def draw(self, filename) -> None:
-    #     import matplotlib.pyplot as plt
-    #     path_name = f"../img/{filename}.png"
-    #     x_points = []
-    #     y_points = []
-    #     for angle, distance in enumerate(self._scan):
-    #         if distance == 0: 
-    #             continue
-    #         # Convert angle from degrees to radians for trigonometric functions
-    #         angle_rad = np.radians(360 - angle)
-    #         # Skip points with invalid or zero distance
-    #         if distance > 0:
-    #             x = distance * np.cos(angle_rad)
-    #             y = distance * np.sin(angle_rad)
-    #             x_points.append(x)
-    #             y_points.append(y)
-    #     # Plotting
-    #     plt.figure(figsize=(8, 8))
-    #     plt.scatter(x_points, y_points, s=1, color='blue')  # Smaller marker for a denser plot
-    #     # Robot position
-    #     plt.plot(0, 0, 'ro', label="Robot Position")  # Red dot for robot location
-    #     plt.arrow(0, 0, 500, 0, head_width=100, head_length=80, fc='red', ec='red', label="Heading")
-    #     plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
-    #     plt.title("LIDAR Scan")
-    #     plt.xlabel("X (mm)")
-    #     plt.ylabel("Y (mm)")
-    #     plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
-    #     plt.grid(True)
-    #     plt.savefig(path_name, format='png')
-    #     plt.close() 
+    @timing_decorator
+    def get_polar_points(self) -> Tuple[float, int]:
+        """Get polar coordinates of the scan
+        Returns:
+            List[float, int]: list of (angle, dist)
+        """
+        points = []
+        for angle, distance in enumerate(self._scan):
+            if distance != 0: 
+                points.append((float(angle), distance))
+        return points  
+        
+    @timing_decorator
+    def get_cartesian_points(self) -> List[Position]:
+        """Get cartesian coordinates of the scan (based on the center of the local map)
+        Returns:
+            List[int, int]: list of positions (x, y)
+        """
+        points = [] 
+        for angle, distance in self.get_polar_points():
+            # Convert angle from degrees to radians for trigonometric functions
+            angle_rad = np.radians(angle)
+            x = distance * np.cos(angle_rad)
+            y = distance * np.sin(angle_rad)
 
+            # Skip points with invalid or zero distance
+            if distance > 0:
+                x = distance * np.cos(angle_rad)
+                y = distance * np.sin(angle_rad)
+                points.append((x, y))
+        return points
+    
+    @timing_decorator
+    def get_occupancy_grid(self) -> np.array:
+        """Get the occupancy grid of the local map
+        Returns:
+            np.array: 2D array of the local map
+        """
+        pass
     
 class GlobalMap:
     """
@@ -187,10 +187,11 @@ class GlobalMap:
     (can be extended to a probability map returning what is the chance of a point to be occupied)
     """
 
+    INITIAL_SIZE_MM =  10000 # mm
+    RESOLUTION = 100 # mm
     def __init__(self, name: str):
         self.name: str = name
-        self._grid_size: int = GLOBAL_MAP_CONFIG.INITIAL_SIZE_MM // GLOBAL_MAP_CONFIG.RESOLUTION
-
+        self._grid_size: int = self.INITIAL_SIZE_MM // self.RESOLUTION
         self._grid = np.full((self._grid_size, self._grid_size), -1, dtype=int)
         self.origin = lambda: ((self._grid_size // 2), (self._grid_size // 2))
     
@@ -237,79 +238,62 @@ class GlobalMap:
             position (Position): position of the local map
             local_map (LocalMap): local map of the envoironment
         """
-        local_points = local_map.get_certeisan_points()
-        for lx, ly in local_points:
-            robot_th_rad = position.th / 1000
-            obs_x = position.x + lx*np.cos(robot_th_rad) - ly*np.sin(robot_th_rad)
-            obs_y = position.y + lx*np.sin(robot_th_rad) + ly*np.cos(robot_th_rad)
-            obs_point = CartPoint(obs_x, obs_y) # global coordinates
-            robot_point = position.get_point()
-            if not self._is_inside(obs_point):
+        scan = local_map.get_iterable()
+        for scan_angle_deg, scan_dist in scan:
+            if scan_dist == 0:
+                continue
+
+            scan_angle_mrad = Utils.deg_to_mrad(scan_angle_deg)
+
+            obstacle_angle_mrad = Utils.normalize_mrad(position.th + scan_angle_mrad)
+            obstacle_x = position.x + scan_dist*math.cos(obstacle_angle_mrad/1000)
+            obstacle_y = position.y + scan_dist*math.sin(obstacle_angle_mrad/1000)
+            obstacle_pos = Position(obstacle_x, obstacle_y, 0)
+            if not self._is_inside(obstacle_pos):
                 self._expand_grid()
-            self._ray_cast(robot_point, obs_point)
 
-    def get_subsection(self, center_local: CartPoint, size: int) -> OccupancyGrid:
-        """
-        Get Subsection
-        Returns a subsection of the grid based on the position and size
+            self._ray_cast(position, obstacle_pos)
+    
+    @timing_decorator
+    def get_copy(self):
+        with self._lock:
+            return copy.deepcopy(self)
 
-        Args:
-            position (Position): center of the subsection
-            size (int): size of the subsection
+    @timing_decorator
+    @staticmethod
+    def save(self, name: str, grid: np.ndarray) -> None:
+        import matplotlib.pyplot as plt
+        from matplotlib.colors import ListedColormap
 
-        Returns:
-            OccupancyGrid: subsection of the grid
-        """
-        subsection = OccupancyGrid(size)
-        for lx in range(size):
-            for ly in range(size):
-                current_global = CartPoint(
-                    center_local.x + lx,
-                    center_local.y + ly
-                )
-                val = -1
-                if self._is_inside(current_global):
-                    val = self._get(current_global)
-                subsection.set(lx, ly, val)
-        return subsection
-
-
-
-    # @timing_decorator
-    # @staticmethod
-    # def save(self, name: str, grid: np.ndarray) -> None:
-    #     import matplotlib.pyplot as plt
-    #     from matplotlib.colors import ListedColormap
-
-    #     path_name = f"../data/maps/{name}"
-    #     os.makedirs(path_name, exist_ok=True)
-    #     image_name = f"{path_name}/{name}.png"
-    #     text_name = f"{path_name}/{name}.txt"
-    #     # TEXT
-    #     with open(text_name, 'w') as file:
-    #         file.write(f"{self._grid_size}\n")
-    #         for row in self._grid:
-    #             file.write(" ".join(map(str, row)) + "\n")
+        path_name = f"../data/maps/{name}"
+        os.makedirs(path_name, exist_ok=True)
+        image_name = f"{path_name}/{name}.png"
+        text_name = f"{path_name}/{name}.txt"
+        # TEXT
+        with open(text_name, 'w') as file:
+            file.write(f"{self._grid_size}\n")
+            for row in self._grid:
+                file.write(" ".join(map(str, row)) + "\n")
         
-    #     # IMAGE
-    #     cmap = ListedColormap(['gray', 'white', 'black'])
-    #     bounds = [-1.5, -0.5, 0.5, 1.5]  # Boundaries for each value
-    #     norm = plt.matplotlib.colors.BoundaryNorm(bounds, cmap.N)
-    #     plt.figure(figsize=(8, 8))
-    #     plt.imshow(grid.T, cmap=cmap, norm=norm, origin='upper')
-    #     # Robot position
-    #     y, x = self.origin()
-    #     plt.plot(y, x, 'ro', label="Robot Position")  # Red dot for robot location
-    #     plt.arrow(y, x, 3, 0, head_width=1, head_length=1, fc='red', ec='red', label="Heading")
-    #     plt.arrow(y, x, 0, 3, head_width=1, head_length=1, fc='green', ec='green', label="Heading")
-    #     plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
-    #     plt.title("LIDAR Scan")
-    #     plt.xlabel("X (mm)")
-    #     plt.ylabel("Y (mm)")
-    #     plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
-    #     plt.grid(True)
-    #     plt.savefig(path_name, format='png')
-    #     plt.close() 
+        # IMAGE
+        cmap = ListedColormap(['gray', 'white', 'black'])
+        bounds = [-1.5, -0.5, 0.5, 1.5]  # Boundaries for each value
+        norm = plt.matplotlib.colors.BoundaryNorm(bounds, cmap.N)
+        plt.figure(figsize=(8, 8))
+        plt.imshow(grid.T, cmap=cmap, norm=norm, origin='upper')
+        # Robot position
+        y, x = self.origin()
+        plt.plot(y, x, 'ro', label="Robot Position")  # Red dot for robot location
+        plt.arrow(y, x, 3, 0, head_width=1, head_length=1, fc='red', ec='red', label="Heading")
+        plt.arrow(y, x, 0, 3, head_width=1, head_length=1, fc='green', ec='green', label="Heading")
+        plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
+        plt.title("LIDAR Scan")
+        plt.xlabel("X (mm)")
+        plt.ylabel("Y (mm)")
+        plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
+        plt.grid(True)
+        plt.savefig(path_name, format='png')
+        plt.close() 
 
     # get grid:  position, size -> array (to send to dev)
     # get grid:  position, size -> 01110110101
@@ -325,7 +309,7 @@ class GlobalMap:
         self._grid_size = new_size
         self._grid = new_grid
 
-    def _world_to_grid(self, p: CartPoint) -> tuple[int, int]:
+    def _world_to_grid(self, pos: Position) -> tuple[int, int]:
         """
         World Position to Grid Position
         Position (0, 0) world is center of grid
@@ -336,21 +320,17 @@ class GlobalMap:
         Returns:
             int, int: index of the position
         """
-        gx = round(p.x / self.RESOLUTION) + (self._grid_size // 2)
-        gy = round(p.y / self.RESOLUTION) + (self._grid_size // 2)
+        gx = round(pos.x / self.RESOLUTION) + (self._grid_size // 2)
+        gy = round(pos.y / self.RESOLUTION) + (self._grid_size // 2)
         return gx, gy
     
-    def _is_inside(self, p: CartPoint):
+    def _is_inside(self, p: Position):
         gx, gy = self._world_to_grid(p)
         inside_x = (gx >= 0 and gx < self._grid_size)
         inside_y = (gy >= 0 and gy < self._grid_size)
         inside = inside_x and inside_y
         return inside
         
-    def _get(self, p: CartPoint) -> int:
-        gx, gy = self._world_to_grid(p)
-        return self._grid[gx][gy]
-    
     def _set_unknown(self, gx, gy) -> None:
         self._grid[gx][gy] = -1
     
@@ -360,7 +340,7 @@ class GlobalMap:
     def _set_occupied(self, gx, gy) -> None:
         self._grid[gx][gy] = 1 
 
-    def _ray_cast(self, robot_point: CartPoint, obs_point: CartPoint) -> None:
+    def _ray_cast(self, robot_pos: Position, obstacle_pos: Position) -> None:
         """
         Ray Cast
         Set the line between robot and obstacle as free
@@ -370,8 +350,8 @@ class GlobalMap:
             robot_pos (Position): position of the robot
             obstacle_pos (Position): position of the obstacle
         """
-        xr, yr = self._world_to_grid(robot_point)
-        xo, yo = self._world_to_grid(obs_point)
+        xr, yr = self._world_to_grid(robot_pos)
+        xo, yo = self._world_to_grid(obstacle_pos)
         cells_between = self._cells_between(xr, yr, xo, yo)
         for gx, gy in cells_between:
             self._set_free(gx, gy)
@@ -431,6 +411,16 @@ class GlobalMap:
                 p += 2 * dx
         return cells
     
+class OccupancyGrid:
+    def __init__(self, size: int):
+        self.__size = size
+        self.__grid = np.full((self.__size, self.__size), -1, dtype=int)
+    
+    def get_size(self):
+        return self.__size
+    
+    def origin(self):
+        return ((self.__size // 2), (self.__size // 2))
 
     # def 
     

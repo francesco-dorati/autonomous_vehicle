@@ -2,79 +2,94 @@ import time
 import socket
 import pygame
 
-from controllers.manual_controller import ManualController
-from controllers.camera_controller import CameraReceiver
+from base_station.controllers.manual_controller import ManualController
+from base_station.controllers.input_handler  import InputHandler
+from base_station.network import ClientConnection, DataReceiver, ManualTransmitter
+from base_station.config import SERVER_HOST, MAIN_PORT, DATA_PORT
+
 
 PING_INTERVAL_MS = 5000
 class Controller:
-    def __init__(self, model):
+    def __init__(self):
         self.view = None
-        self.model = model
+        # self.model = model
+        self.connection = ClientConnection(SERVER_HOST, MAIN_PORT)
+        self.data_receiver = DataReceiver(DATA_PORT, self.update_data)
+        self.manual_transmitter = None
+        self.input_handler = None
 
     def set_view(self, view):
         self.view = view
 
     def connect(self):
-        ok = self.model.connect()
+        ok = self.connection.connect()
         if ok:
-            self.periodic_ping()
+            self.data_receiver.start()
+            self.__periodic_ping()
             self.view.connect()
         
     def disconnect(self):
-        self.model.disconnect()
+        # TODO disconnect all
+        self.data_receiver.stop()
+        self.connection.disconnect()
         self.view.disconnect()
-    
+
+    # MAP
     def new_map(self, entry):
         name = entry.get().strip()
-        self.model.new_global_map(name)
+        self.connection.new_global_map(name)
+        # self.model.new_global_map(name)
         self.view.main_page.set_map(self.model.global_map_name)
     
     def discard_map(self):
         self.model.discard_global_map()
         self.view.main_page.discard_map()
     
-    def periodic_ping(self):
-        if self.model.main_connection:
-            try:
-                ok, update_control, update_map = self.model.ping()
-                if ok:
-                    # update sidebar
-                    self.view.sidebar.update_ping(self.model.battery_V, self.model.ping_time)
-                    if update_control:
-                        self.view.main_page.set_control(self.model.control_type)
-                    if update_map:
-                        self.view.main_page.set_map(self.model.global_map_name)
-                else:
-                    self.disconnect()
-                    return
-
-            except (socket.timeout, BrokenPipeError, ConnectionResetError, socket.error):
-                self.disconnect()
-                return
-
-            self.view.after(PING_INTERVAL_MS, self.periodic_ping)
-    
+    # CONTROL
     def set_control(self, control_type: str):
-        self.model.set_control(control_type)
+        if control_type == "manual":
+            # Start manual control
+            ok, port = self.connection.start_manual_control()
+            if ok:
+                manual_frame = self.view.main_page.controls_frame.manual_frame
+                self.input_handler = InputHandler(self, manual_frame)
+                self.input_handler.set_input("keyboard")
+                self.manual_transmitter = ManualTransmitter(SERVER_HOST, port, self.input_handler)
+                self.manual_transmitter.start()
+
+        elif control_type == "off":
+            if self.manual_transmitter:
+                self.manual_transmitter.stop()
+                self.manual_transmitter = None
+            if self.input_handler:
+                self.input_handler.set_input("off")
+                self.input_handler = None
+            self.connection.stop_control()
+        
         self.view.main_page.set_control(control_type)
 
-    def set_manual_control(self, _type: str):
-        if self.model.control_type == "manual":
-            self.model.manual_control_type = _type
-            if _type == "keyboard":
-                self.stop_joypad_reading()
-                self.view.main_page.controls_frame.manual_frame.hide_joypad()
-                self.view.main_page.controls_frame.manual_frame.show_keyboard()
-                self.view.update_idletasks()
-                self.start_keyboard_reading()
-            elif _type == "joypad":
-                self.stop_keyboard_reading()
-                self.view.main_page.controls_frame.manual_frame.hide_keyboard()
-                self.view.main_page.controls_frame.manual_frame.show_joypad()
-                self.view.update_idletasks()
-                self.start_joypad_reading()
+    def update_data(self, size, global_map, lidar_points, robot_pos):
+        # update map
+        if self.view and self.view.main_page.display:
+            self.view.main_page.display.update(size, global_map, lidar_points, robot_pos)
 
-            
+
+    # def set_manual_control(self, _type: str):
+    #     if self.model.control_type == "manual":
+    #         self.model.manual_control_type = _type
+    #         if _type == "keyboard":
+    #             self.stop_joypad_reading()
+    #             self.view.main_page.controls_frame.manual_frame.hide_joypad()
+    #             self.view.main_page.controls_frame.manual_frame.show_keyboard()
+    #             self.view.update_idletasks()
+    #             self.start_keyboard_reading()
+    #         elif _type == "joypad":
+    #             self.stop_keyboard_reading()
+    #             self.view.main_page.controls_frame.manual_frame.hide_keyboard()
+    #             self.view.main_page.controls_frame.manual_frame.show_joypad()
+    #             self.view.update_idletasks()
+    #             self.start_joypad_reading()
+        
     def start_keyboard_reading(self):
         if self.model.control_type == "manual":
             manual_frame = self.view.main_page.controls_frame.manual_frame
@@ -146,6 +161,28 @@ class Controller:
 
             self.view.after(100, self.joypad_loop)
 
+
+    def __periodic_ping(self):
+        if self.model.main_connection:
+            try:
+                ok, update_control, update_map = self.connection.ping()
+                if ok:
+                    # update sidebar
+                    self.view.sidebar.update_ping(self.model.battery_V, self.model.ping_time)
+                    if update_control:
+                        self.view.main_page.set_control(self.model.control_type)
+                    if update_map:
+                        self.view.main_page.set_map(self.model.global_map_name)
+                else:
+                    self.disconnect()
+                    return
+
+            except (socket.timeout, BrokenPipeError, ConnectionResetError, socket.error):
+                self.disconnect()
+                return
+
+            self.view.after(PING_INTERVAL_MS, self.__periodic_ping)
+        
     # def start_manual_control(self):
     #     self.view.main_page.controls_frame.show_manual()
         

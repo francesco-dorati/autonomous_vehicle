@@ -1,2 +1,0 @@
-HOSTNAME = ""
-PORT = 5500

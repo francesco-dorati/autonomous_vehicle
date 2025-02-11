@@ -4,7 +4,7 @@ import numpy as np
 
 from raspberry_pi.devices.lidar import Lidar
 from raspberry_pi.data_structures.maps import LocalMap, GlobalMap
-from raspberry_pi.data_structures.state import Position
+from raspberry_pi.data_structures.states import Position
 from raspberry_pi.devices.rp2040 import RP2040
 def main():
     # LidarTester.stop_scan()

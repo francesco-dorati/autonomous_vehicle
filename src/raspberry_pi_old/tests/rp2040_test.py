@@ -1,7 +1,7 @@
 import time
 import matplotlib.pyplot as plt
 from raspberry_pi.devices.rp2040 import RP2040
-from raspberry_pi.data_structures.state import Position
+from raspberry_pi.data_structures.states import Position
 
 
 def main():

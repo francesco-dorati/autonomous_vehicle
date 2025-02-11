@@ -1,4 +1,0 @@
-
-# 1hz
-class MapTransmitter:
-    @

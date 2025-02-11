@@ -116,22 +116,16 @@ from raspberry_pi.utils import timing_decorator
 from raspberry_pi.data_structures.maps import LocalMap
 from raspberry_pi.data_structures.lidar_scan import LidarScan
 
-from raspberry_pi.config import LIDAR_CONFIG
-
-from raspberry_pi.logger import get_logger
-
-logger = get_logger(__name__)
-
 class Lidar(Device):
-    # PORT = '/dev/ttyUSB0'  
-    # BAUD_RATE = 460800 
-    # TIMEOUT = 0.05
-    # START_COMMAND = b'\xA5\x20'
-    # STOP_COMMAND = b'\xA5\x25'
-    # HEALTH_COMMAND = b'\xA5\x52'
-    # BUFFER_SIZE = 4095
-    # SCAN_PACKET_SIZE = 5 # bytes
-    # SCAN_PACKETS_PER_TIME = 200
+    PORT = '/dev/ttyUSB0'  
+    BAUD_RATE = 460800 
+    TIMEOUT = 0.05
+    START_COMMAND = b'\xA5\x20'
+    STOP_COMMAND = b'\xA5\x25'
+    HEALTH_COMMAND = b'\xA5\x52'
+    BUFFER_SIZE = 4095
+    SCAN_PACKET_SIZE = 5 # bytes
+    SCAN_PACKETS_PER_TIME = 200
 
     _serial: Optional[serial.Serial] = None
     _thread: Optional[threading.Thread] = None
@@ -160,19 +154,15 @@ class Lidar(Device):
             HealthError: if health status is ERROR
         """
         # start serial connection
-        Lidar._serial = serial.Serial(LIDAR_CONFIG.PORT, LIDAR_CONFIG.BAUD_RATE, 
-                                      timeout=LIDAR_CONFIG.TIMEOUT, 
+        Lidar._serial = serial.Serial(Lidar.PORT, Lidar.BAUD_RATE, 
+                                      timeout=Lidar.TIMEOUT, 
                                       parity=serial.PARITY_NONE, 
                                       stopbits=serial.STOPBITS_ONE)
         time.sleep(0.2)
         # check connection and status
         if not Lidar.ping():
             Lidar.stop()
-            logger.error("Lidar ping failed")
             raise Lidar.ConnectionFailed("Health check failed")
-        
-        logger.info("Lidar connection established")
-
 
     @staticmethod   
     @timing_decorator
@@ -191,7 +181,6 @@ class Lidar(Device):
 
         Lidar._serial.close()
         Lidar._serial = None
-        logger.info("Lidar connection closed")
 
 
     @staticmethod
@@ -212,7 +201,7 @@ class Lidar(Device):
         
         # send health command 
         try:
-            Lidar._serial.write(LIDAR_CONFIG.HEALTH_COMMAND)   
+            Lidar._serial.write(Lidar.HEALTH_COMMAND)   
         except:
             return False
         
@@ -252,14 +241,13 @@ class Lidar(Device):
 
         # send start command
         Lidar._serial.flush()
-        Lidar._serial.write(LIDAR_CONFIG.START_COMMAND)
+        Lidar._serial.write(Lidar.START_COMMAND)
 
         # receive and check descriptor
         response_descriptor = Lidar._serial.read(7)
         l, _, _, = Lidar._unpack_descriptor(response_descriptor)
-        if l != LIDAR_CONFIG.SCAN_PACKET_SIZE']:
+        if l != Lidar.SCAN_PACKET_SIZE:
             Lidar.stop()
-            logger.error("Lidar descriptor length mismatch")
             raise Lidar.InvalidDescriptor("Descriptor length mismatch")
         
         # delay for lidar to start scanning
@@ -290,7 +278,7 @@ class Lidar(Device):
         Lidar._scan = None
 
         # write stop command
-        Lidar._serial.write(LIDAR_CONFIG.STOP_COMMAND)
+        Lidar._serial.write(Lidar.STOP_COMMAND)
         time.sleep(0.01)
         Lidar._serial.flush()
     
@@ -331,7 +319,7 @@ class Lidar(Device):
         try:
             while Lidar._scanning:
                 # calculate bytes to read
-                bytes_to_read = LIDAR_CONFIG.SCAN_PACKET_SIZE * LIDAR_CONFIG.SCAN_PACKETS_PER_TIME
+                bytes_to_read = Lidar.SCAN_PACKET_SIZE*Lidar.SCAN_PACKETS_PER_TIME
                 if Lidar._serial.in_waiting < bytes_to_read:
                     # t = time.time()
                     # print("SCANNING WAIT", Lidar._serial.in_waiting, " < ", bytes_to_read)
@@ -343,13 +331,14 @@ class Lidar(Device):
                 # read bytes
                 bytes_receaved = Lidar._serial.read(bytes_to_read)
                 if len(bytes_receaved) != bytes_to_read:
-                    logger.error("Lidar read different bytes than expected")
+                    print("ERROR LIDAR read different bytes than expected")
                     return
 
                 # interpret data -> check if correct order
                 samples = Lidar._unpack_scan_bytes(bytes_receaved)
                 if not samples:
-                    logger.error("ERROR LIDAR process_bytes error, samples: ", samples)
+                    print(samples)
+                    print("ERROR LIDAR process_bytes error")
                     return
             
                 # print(f"SCANNING OK {len(samples)}")
@@ -360,12 +349,13 @@ class Lidar(Device):
                 time.sleep(0.05)
 
         except Lidar.InvalidDataReceived as e:
-            logger.error("ERROR IN SCAN THREAD: ", e)
+            print("ERROR IN SCAN THREAD: ", e)
         except Exception as e:
-            logger.error("ERROR: ", e)
+            print("ERROR: ", e)
         finally:
             Lidar._scanning = False
             Lidar.stop_scan()
+
 
 
     @staticmethod
@@ -406,14 +396,13 @@ class Lidar(Device):
             list[tuple[float, float]]: list of (angle, dist)
         """
         scan = []
-        packet_size = LIDAR_CONFIG.SCAN_PACKET_SIZE
-        packets_number = len(bytes_received) // packet_size
+        packets_number = math.floor(len(bytes_received)/Lidar.SCAN_PACKET_SIZE)
         packet_n = 0
         misalignment = 0
         while packet_n < packets_number:
             # calculate bytes indexes
-            from_byte = misalignment + packet_n * packet_size
-            to_byte = misalignment + (packet_n+1) * packet_size
+            from_byte = misalignment+packet_n*Lidar.SCAN_PACKET_SIZE
+            to_byte = misalignment+(packet_n+1)*Lidar.SCAN_PACKET_SIZE
             if to_byte >= len(bytes_received):
                 break
 
@@ -422,7 +411,7 @@ class Lidar(Device):
             
             # misalignment check
             if s == ns or c == 0:
-                if misalignment == packet_size:
+                if misalignment == Lidar.SCAN_PACKET_SIZE:
                     Lidar._serial.reset_input_buffer()
                     break
                     # raise Lidar.InvalidDataReceived("Invalid data received")

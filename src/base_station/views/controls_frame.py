@@ -126,14 +126,14 @@ class ManualFrame(tk.Frame):
         self.right.config(state='normal', bg='lightgray', fg='black', relief='raised')
         # self.right.grid(row=1, column=2, padx=8, pady=8)
         
-        self.switch_button.config(text="🎮  joypad", command=lambda: self.controller.set_manual_control("joypad"))
+        self.switch_button.config(text="🎮  joypad", command=lambda: self.controller.input_handler.set_input('joypad'))
     
     def hide_keyboard(self):
         self.keyboard_frame.grid_forget()
 
     def show_joypad(self):
         self.joypad_frame.grid(row=0, column=0, padx=20, pady=10, sticky='w')
-        self.switch_button.config(text="⌨️  keyboard", command=lambda: self.controller.set_manual_control("keyboard"))
+        self.switch_button.config(text="⌨️  keyboard", command=lambda: self.controller.input_handler.set_input("keyboard"))
         # self.joypad_canvas.pack(side='left', fill='none', pady=10)
 
     def hide_joypad(self):

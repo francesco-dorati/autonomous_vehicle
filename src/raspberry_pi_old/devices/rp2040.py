@@ -8,56 +8,44 @@
 import serial
 import time
 from typing import List
-import threading
 
 from raspberry_pi.devices.device import Device
 from raspberry_pi.utils import timing_decorator
 from raspberry_pi.data_structures.states import Position
-from raspberry_pi.config import RP2040_CONFIG
-from raspberry_pi.utils.logger import get_logger
 
-logger = get_logger(__name__)
 
 class RP2040(Device):
-    _serial_lock = threading.Lock()
-
     @staticmethod
     @timing_decorator
     def start() -> None:
         try:
-            RP2040._serial = serial.Serial(RP2040_CONFIG.PORT, RP2040_CONFIG.BAUD_RATE, timeout=RP2040_CONFIG.TIMEOUT)
-            time.sleep(2)
-            if not RP2040.ping(): # check connection
-                RP2040.stop()
-                raise Device.ConnectionFailed
+            RP2040._serial = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.5)
         except serial.SerialException:
+            raise Device.ConnectionFailed
+        time.sleep(2)
+        if not RP2040.ping(): # check connection
+            RP2040.stop()
             raise Device.ConnectionFailed
 
     @staticmethod
     @timing_decorator
     def stop() -> None:
         if RP2040._serial:
-            with RP2040._serial_lock:
-                RP2040._serial.close()
+            RP2040._serial.close()
         RP2040._serial = None
 
     @staticmethod
     @timing_decorator
     def ping() -> bool:
-        with RP2040._serial_lock:
-            try:
-                RP2040._serial.write("PNG\n".encode())
-                png = RP2040._serial.readline().decode().strip()
-                return png == "PNG"
-            except Exception as e:
-                logger.error(f"Ping failed: {e}")
-                return False
+        RP2040._serial.write("PNG\n".encode())
+        png = RP2040._serial.readline()
+        png = png.decode().strip()
+        return True if png == "PNG" else False
 
     @staticmethod
     @timing_decorator
     def stop_motors() -> None:
-        with RP2040._serial_lock:
-            RP2040._serial.write("STP\n".encode())
+        RP2040._serial.write("STP\n".encode())
 
     @staticmethod
     @timing_decorator
@@ -71,8 +59,10 @@ class RP2040(Device):
         Side:
             writes to serial
         """
-        with RP2040._serial_lock:
-            RP2040._serial.write(f"PWR {power_left} {power_right}\n".encode())
+        if power_left == 0 and power_right == 0:
+            RP2040.stop_motors()
+
+        RP2040._serial.write(f"PWR {power_left} {power_right}\n".encode())
         
     @staticmethod
     @timing_decorator
@@ -86,8 +76,7 @@ class RP2040(Device):
         Side:
             writes to serial
         """
-        with RP2040._serial_lock:
-            RP2040._serial.write(f"VEL {lin_vel} {ang_vel}\n".encode())
+        RP2040._serial.write(f"VEL {lin_vel} {ang_vel}\n".encode())
 
     @staticmethod
     @timing_decorator
@@ -102,8 +91,7 @@ class RP2040(Device):
         Side:
             writes to serial
         """
-        with RP2040._serial_lock:
-            RP2040._serial.write(f"PID {kp} {ki} {kd}\n".encode())
+        RP2040._serial.write(f"PID {kp} {ki} {kd}\n".encode())
 
     @staticmethod
     @timing_decorator
@@ -117,19 +105,18 @@ class RP2040(Device):
         Returns:
             Position: position of the robot
         """
-        with RP2040._serial_lock:
-            RP2040._serial.write("ORQ\n".encode())
-            line = RP2040._serial.readline().decode().strip()
-            if line:
-                try:
-                    x, y, th = map(int, line.split())
-                    return Position(x, y, th)
-                except ValueError:
-                    logger.error(f"Invalid position data received: {line}")
-                    return None
-            else:
-                logger.error("No data received from RP2040")
-                return None
+        RP2040._serial.write("ORQ\n".encode())
+        line = RP2040._serial.readline()
+        if not line:
+            return None
+        
+        line = line.decode().strip().split(" ")
+        print(line)
+        x = int(line[0])
+        y = int(line[1])
+        th = int(line[2])
+        p = Position(x, y, th)
+        return p
 
     @staticmethod
     # @timing_decorator
@@ -147,16 +134,15 @@ class RP2040(Device):
             int: vl position of the robot   [mm/s]
             int: va position of the robot   [mm/s]
         """
-        with RP2040._serial_lock:
-            RP2040._serial.write("ODB\n".encode())
-            line = RP2040._serial.readline().decode().strip().split(" ")
-            print(line)
-            x = int(line[0])
-            y = int(line[1])
-            th = int(line[2])
-            vl = int(line[3])
-            va = int(line[4])
-            return x, y, th, vl, va
+        RP2040._serial.write("ODB\n".encode())
+        line = RP2040._serial.readline().decode().strip().split(" ")
+        print(line)
+        x = int(line[0])
+        y = int(line[1])
+        th = int(line[2])
+        vl = int(line[3])
+        va = int(line[4])
+        return x, y, th, vl, va
         
     @staticmethod
     @timing_decorator
@@ -164,8 +150,7 @@ class RP2040(Device):
         """
             Sends odometry reset command
         """
-        with RP2040._serial_lock:
-            RP2040._serial.write("ORS\n".encode())
+        RP2040._serial.write("ORS\n".encode())
 
     @staticmethod
     @timing_decorator
@@ -175,9 +160,8 @@ class RP2040(Device):
         Args:
             pos (Position): new position
         """
-        with RP2040._serial_lock:
-            RP2040._serial.write(f"OST {pos.x} {pos.y} {pos.th}\n".encode())
-       
+        RP2040._serial.write(f"OST {pos.x} {pos.y} {pos.th}\n".encode())
+        pass
     
     @staticmethod
     @timing_decorator
@@ -187,24 +171,22 @@ class RP2040(Device):
         Args:
             path (List[Position]): path to follow
         """
-        with RP2040._serial_lock:
-            n = len(path)
-            req = f"PTH {n} "
-            for pos in path:
-                req += f"{pos.x} {pos.y} {pos.th}"
-                if pos != path[-1]:
-                    req += " "
-            print(req)
-            RP2040._serial.write(req.encode())
+        n = len(path)
+        req = f"PTH {n} "
+        for pos in path:
+            req += f"{pos.x} {pos.y} {pos.th}"
+            if pos != path[-1]:
+                req += " "
+        print(req)
+        RP2040._serial.write(req.encode())
     
     @staticmethod
     @timing_decorator
     def append_path(path: List[Position]):
-        with RP2040._serial_lock:
-            n = len(path)
-            req = f"APP {n} "
-            for pos in path:
-                req += f"{pos.x} {pos.y} {pos.th}"
-                if pos != path[-1]:
-                    req += " "
-            RP2040._serial.write(req.encode())
+        n = len(path)
+        req = f"APP {n} "
+        for pos in path:
+            req += f"{pos.x} {pos.y} {pos.th}"
+            if pos != path[-1]:
+                req += " "
+        RP2040._serial.write(req.encode())

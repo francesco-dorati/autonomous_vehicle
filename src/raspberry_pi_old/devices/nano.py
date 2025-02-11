@@ -4,10 +4,6 @@ import time
 
 from raspberry_pi.devices.device import Device
 from raspberry_pi.utils import timing_decorator
-from raspberry_pi.config import NANO_CONFIG
-from raspberry_pi.utils.logger import get_logger
-
-logger = get_logger(__name__)
 
 class NANO(Device):
     """
@@ -61,16 +57,10 @@ class NANO(Device):
     _request_lock = None
     _sensors_running = False  
 
-
     class InvalidResponse(Exception):
         pass
     class SensorsMismatch(Exception):           # TODO remove to start and stop sensors
         pass
-
-    __battery_lock = threading.Lock()
-    __battery_value = None
-    __battery_polling_thread = None
-    __battery_polling_stop = threading.Event()
 
     @staticmethod
     @timing_decorator
@@ -80,19 +70,13 @@ class NANO(Device):
         Raises:
             ConnectionFailed: if starting failed
         """
-        try:
-            NANO._serial = serial.Serial(NANO_CONFIG.PORT, NANO_CONFIG.BAUD_RATE, timeout=NANO_CONFIG.TIMEOUT)
-        except Exception as e:
-            raise NANO.ConnectionFailed(f"Could not open serial port: {e}")
-
+        NANO._serial = serial.Serial('/dev/ttyAMA2', 9600, timeout=1)
         NANO._request_lock = threading.Lock()
         NANO._sensors_running = False
         time.sleep(0.2)
         if not NANO.ping():
             NANO.stop()
             raise NANO.ConnectionFailed("Starting failed.")
-
-        NANO.__start_battery_reader()
 
 
     @staticmethod
@@ -110,8 +94,6 @@ class NANO(Device):
         # stop sensors
         if NANO._sensors_running:
             NANO.stop_sensors()
-        # stop battery reader
-        NANO.__stop_battery_reader()
         # close serial
         if NANO._serial:
             NANO._serial.close()
@@ -148,8 +130,19 @@ class NANO(Device):
         Returns:
             int: battery voltage [mV]
         """
-        with NANO.__battery_lock:
-            return NANO.__battery_value
+        # request
+        with NANO._request_lock:
+            NANO._serial.write("B\n".encode())
+            line = NANO._serial.readline()
+        # validity check
+        if not line:
+            raise NANO.InvalidResponse("No battery response from nano.")
+        try:
+            line = line.decode().strip()
+            battery_mv = int(line)
+        except:
+            raise NANO.InvalidResponse(f"Invalid battery response from nano: \"{line}\"")
+        return battery_mv
     
     @staticmethod
     @timing_decorator
@@ -210,55 +203,4 @@ class NANO(Device):
             raise NANO.InvalidResponse("Invalid sensor response from nano.")
         return [fl, fr, rl, rr]
 
-    @staticmethod
-    def __start_battery_reader():
-        """
-        Start the battery polling thread.
-        """
-        if NANO.__battery_polling_thread is None:
-            NANO.__battery_polling_stop.clear()
-            NANO.__battery_polling_thread = threading.Thread(
-                target=NANO.__battery_polling_loop, daemon=True
-            )
-            NANO.__battery_polling_thread.start()
 
-    @staticmethod
-    def __stop_battery_reader():
-        """
-        Stop the battery polling thread.
-        """
-        if NANO.__battery_polling_thread:
-            NANO.__battery_polling_stop.set()
-            NANO.__battery_polling_thread.join(timeout=1)
-            NANO.__battery_polling_thread = None
-    
-    @staticmethod
-    def __battery_polling_loop():
-        """
-        Background loop that polls the battery voltage and caches the result.
-        """
-        while not NANO.__battery_polling_stop.is_set():
-            try:
-                battery = NANO.__battery_request()  # blocking call that takes ~20ms
-                with NANO.__battery_lock:
-                    NANO.__battery_value = battery
-            except Exception as e:
-                # Optionally log the error.
-                logger.error(f"Error polling battery voltage: {e}")
-                pass
-            time.sleep(NANO_CONFIG.BATTERY_POLL_INTERVAL)
-
-    def __battery_request() -> int:
-        # request
-        with NANO._request_lock:
-            NANO._serial.write("B\n".encode())
-            line = NANO._serial.readline()
-        # validity check
-        if not line:
-            raise NANO.InvalidResponse("No battery response from nano.")
-        try:
-            line = line.decode().strip()
-            battery_mv = int(line)
-        except:
-            raise NANO.InvalidResponse(f"Invalid battery response from nano: \"{line}\"")
-        return battery_mv

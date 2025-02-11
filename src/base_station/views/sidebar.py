@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from base_station.config import SERVER_HOST, MAIN_PORT
 
 class Sidebar(tk.Frame):
     def __init__(self, parent, controller):
@@ -16,7 +17,7 @@ class Sidebar(tk.Frame):
         self.status = tk.Label(self.status_frame, font=("Arial", 16))  
         self.status.grid(row=0, column=0, padx=5, pady=10, sticky=tk.W)
         
-        self.hostname = tk.Label(self.status_frame, text=f"🌐  {self.controller.model.ROBOT_ADDRESS}", font=("Arial", 14))
+        self.hostname = tk.Label(self.status_frame, text=f"🌐  {SERVER_HOST}", font=("Arial", 14))
         self.hostname.grid(row=1, column=0, padx=5, pady=10, sticky=tk.W)
         # PING
         self.ping = tk.Label(self.status_frame, font=("Arial", 16))
