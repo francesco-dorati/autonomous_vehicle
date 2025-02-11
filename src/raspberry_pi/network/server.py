@@ -3,10 +3,10 @@ import threading
 import time
 from typing import List
 
-from utils.logger import get_logger
 from raspberry_pi.network.data_transmitter import DataTransmitter
 from raspberry_pi.network.manual_receiver import ManualReceiver
-from raspberry_pi.config import HOST, MAIN_PORT, MANUAL_PORT
+from raspberry_pi.utils.logger import get_logger
+from raspberry_pi.config import COMMAND_SERVER_CONFIG, MANUAL_SERVER_CONFIG
 
 logger = get_logger(__name__)
 
@@ -15,7 +15,7 @@ class CommandServer:
         self.robot = robot
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self._server_socket.bind((HOST, MAIN_PORT))
+        self._server_socket.bind((COMMAND_SERVER_CONFIG.HOST, COMMAND_SERVER_CONFIG.PORT))
         self._server_socket.listen(1)
         self._running = False
         self._connection = None
@@ -185,5 +185,5 @@ class CommandServer:
                 self._manual_receiver = ManualReceiver(self.robot)
                 self._manual_receiver.start()
             self.robot.set_control('manual')
-            return f"OK {MANUAL_PORT}" 
+            return f"OK {MANUAL_SERVER_CONFIG.PORT}" 
         return "KO"

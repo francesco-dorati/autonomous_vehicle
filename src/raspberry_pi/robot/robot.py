@@ -2,14 +2,13 @@ import threading
 import time
 import os
 from typing import Tuple, Optional, List
-from raspberry_pi.utils import timing_decorator
 from raspberry_pi.devices.rp2040 import RP2040
 from raspberry_pi.devices.nano import NANO
 from raspberry_pi.devices.lidar import Lidar
 from raspberry_pi.data_structures.states import Position, CartPoint
 from raspberry_pi.data_structures.maps import LocalMap, GlobalMap, OccupancyGrid
-from raspberry_pi.config import MAP_FOLDER, CONTROL_LOOP_INTERVAL
-from utils.logger import get_logger
+from raspberry_pi.config import ROBOT_CONFIG
+from raspberry_pi.utils.logger import get_logger, timing_decorator
 
 logger = get_logger(__name__)
 
@@ -113,7 +112,7 @@ class Robot:
                 raise Exception("Global map already initialized")
             self.__global_map = GlobalMap(name)
             self.RP2040.reset_odometry()
-        os.makedirs(f"{MAP_FOLDER}/{name}", exist_ok=True)
+        os.makedirs(f"{ROBOT_CONFIG.MAP_FOLDER}/{name}", exist_ok=True)
             
     @timing_decorator
     def discard_global_map(self):
@@ -255,7 +254,7 @@ class Robot:
                 if control_type == self.ControlType.VELOCITY:
                     RP2040.set_target_velocity(target_velocity)
 
-                time.sleep(CONTROL_LOOP_INTERVAL)
+                time.sleep(ROBOT_CONFIG.CONTROL_LOOP_INTERVAL)
 
         except Exception as e:
             logger.error(f"Robot loop error: {e}")

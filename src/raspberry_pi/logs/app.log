@@ -1,0 +1,388 @@
+[2025-02-11 22:18:24] [INFO] [raspberry_pi.devices.lidar]: Lidar connection established
+[2025-02-11 22:18:24] [INFO] [__main__]: Robot initialized.
+[2025-02-11 22:18:25] [INFO] [raspberry_pi.devices.lidar]: Lidar connection closed
+[2025-02-11 22:22:40] [INFO] [raspberry_pi.devices.nano]: NANO connection established.
+[2025-02-11 22:22:42] [INFO] [raspberry_pi.devices.rp2040]: RP2040 connection established.
+[2025-02-11 22:22:42] [INFO] [raspberry_pi.devices.lidar]: Lidar connection established
+[2025-02-11 22:22:42] [INFO] [__main__]: Robot initialized.
+[2025-02-11 22:22:43] [INFO] [raspberry_pi.devices.lidar]: Lidar connection closed
+[2025-02-11 22:23:06] [INFO] [raspberry_pi.devices.nano]: NANO connection established.
+[2025-02-11 22:23:08] [INFO] [raspberry_pi.devices.rp2040]: RP2040 connection established.
+[2025-02-11 22:23:08] [INFO] [raspberry_pi.devices.lidar]: Lidar connection established
+[2025-02-11 22:23:08] [INFO] [__main__]: Robot initialized.
+[2025-02-11 22:23:08] [INFO] [raspberry_pi.network.server]: CommandServer thread started.
+[2025-02-11 22:23:08] [INFO] [__main__]: Command server started on 192.168.1.103:5500
+[2025-02-11 22:23:08] [INFO] [__main__]: Battery voltage: 10938 mV
+[2025-02-11 22:23:08] [ERROR] [__main__]: An error occurred: 'RobotConfig' object has no attribute 'BATTERY_CHECK_DELAY'
+[2025-02-11 22:24:50] [INFO] [raspberry_pi.devices.nano]: NANO connection established.
+[2025-02-11 22:24:52] [INFO] [raspberry_pi.devices.rp2040]: RP2040 connection established.
+[2025-02-11 22:24:52] [INFO] [raspberry_pi.devices.lidar]: Lidar connection established
+[2025-02-11 22:24:52] [INFO] [__main__]: Robot initialized.
+[2025-02-11 22:24:52] [INFO] [raspberry_pi.network.server]: CommandServer thread started.
+[2025-02-11 22:24:52] [INFO] [__main__]: Command server started on 192.168.1.103:5500
+[2025-02-11 22:24:52] [INFO] [__main__]: Battery voltage: 11202 mV
+[2025-02-11 22:24:57] [INFO] [__main__]: Battery voltage: 11097 mV
+[2025-02-11 22:25:02] [INFO] [__main__]: Battery voltage: 10848 mV
+[2025-02-11 22:25:07] [INFO] [__main__]: Battery voltage: 11010 mV
+[2025-02-11 22:25:12] [INFO] [__main__]: Battery voltage: 11127 mV
+[2025-02-11 22:25:13] [INFO] [raspberry_pi.network.server]: Accepted connection from ('192.168.1.102', 52892)
+[2025-02-11 22:25:13] [INFO] [raspberry_pi.network.data_transmitter]: DataTransmitter started. Sending data to 192.168.1.102:5502
+[2025-02-11 22:25:13] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:14] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:15] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:16] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:17] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:17] [INFO] [__main__]: Battery voltage: 11202 mV
+[2025-02-11 22:25:18] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:19] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:20] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:21] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:22] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:22] [INFO] [__main__]: Battery voltage: 11157 mV
+[2025-02-11 22:25:23] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:24] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:25] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:26] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:27] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:27] [INFO] [__main__]: Battery voltage: 11010 mV
+[2025-02-11 22:25:28] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:29] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:30] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:31] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:32] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:32] [INFO] [__main__]: Battery voltage: 11070 mV
+[2025-02-11 22:25:33] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:34] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:35] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:36] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:37] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:37] [INFO] [__main__]: Battery voltage: 10878 mV
+[2025-02-11 22:25:38] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:39] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:40] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:41] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:42] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:42] [INFO] [__main__]: Battery voltage: 11040 mV
+[2025-02-11 22:25:43] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:44] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:45] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:46] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:47] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:47] [INFO] [__main__]: Battery voltage: 10980 mV
+[2025-02-11 22:25:48] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:49] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:50] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:51] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:52] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:52] [INFO] [__main__]: Battery voltage: 11010 mV
+[2025-02-11 22:25:53] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:54] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:55] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:56] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:57] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:57] [INFO] [__main__]: Battery voltage: 11025 mV
+[2025-02-11 22:25:58] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:25:59] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:00] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:01] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:02] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:02] [INFO] [__main__]: Battery voltage: 11040 mV
+[2025-02-11 22:26:03] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:04] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:05] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:06] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:07] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:07] [INFO] [__main__]: Battery voltage: 11085 mV
+[2025-02-11 22:26:08] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:09] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:10] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:11] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:12] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:12] [INFO] [__main__]: Battery voltage: 10776 mV
+[2025-02-11 22:26:13] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:14] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:15] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:16] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:17] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:17] [INFO] [__main__]: Battery voltage: 10923 mV
+[2025-02-11 22:26:18] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:19] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:20] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:21] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:22] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:22] [INFO] [__main__]: Battery voltage: 10863 mV
+[2025-02-11 22:26:23] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:24] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:25] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:26] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:27] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:27] [INFO] [__main__]: Battery voltage: 11217 mV
+[2025-02-11 22:26:28] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:29] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:30] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:31] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:32] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:32] [INFO] [__main__]: Battery voltage: 11055 mV
+[2025-02-11 22:26:33] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:34] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:35] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:36] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:37] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:37] [INFO] [__main__]: Battery voltage: 11127 mV
+[2025-02-11 22:26:38] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:39] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:40] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:41] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:42] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:42] [INFO] [__main__]: Battery voltage: 11244 mV
+[2025-02-11 22:26:43] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:44] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:45] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:46] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:47] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:47] [INFO] [__main__]: Battery voltage: 11127 mV
+[2025-02-11 22:26:48] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:49] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:50] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:51] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:52] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:52] [INFO] [__main__]: Battery voltage: 11172 mV
+[2025-02-11 22:26:53] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:54] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:55] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:56] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:57] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:57] [INFO] [__main__]: Battery voltage: 11229 mV
+[2025-02-11 22:26:58] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:26:59] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:00] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:01] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:02] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:02] [INFO] [__main__]: Battery voltage: 11157 mV
+[2025-02-11 22:27:03] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:04] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:05] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:06] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:07] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:07] [INFO] [__main__]: Battery voltage: 11055 mV
+[2025-02-11 22:27:08] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:09] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:10] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:11] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:12] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:12] [INFO] [__main__]: Battery voltage: 11157 mV
+[2025-02-11 22:27:13] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:14] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:15] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:16] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:17] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:17] [INFO] [__main__]: Battery voltage: 11289 mV
+[2025-02-11 22:27:18] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:19] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:20] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:21] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:22] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:22] [INFO] [__main__]: Battery voltage: 11010 mV
+[2025-02-11 22:27:23] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:24] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:25] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:26] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:27] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:27] [INFO] [__main__]: Battery voltage: 11289 mV
+[2025-02-11 22:27:28] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:29] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:30] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:31] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:32] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:32] [INFO] [__main__]: Battery voltage: 11172 mV
+[2025-02-11 22:27:33] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:34] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:35] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:36] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:37] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:37] [INFO] [__main__]: Battery voltage: 11259 mV
+[2025-02-11 22:27:38] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:39] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:40] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:41] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:42] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:42] [INFO] [__main__]: Battery voltage: 11187 mV
+[2025-02-11 22:27:43] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:44] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:45] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:46] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:47] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:47] [INFO] [__main__]: Battery voltage: 11274 mV
+[2025-02-11 22:27:48] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:49] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:50] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:51] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:52] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:52] [INFO] [__main__]: Battery voltage: 11274 mV
+[2025-02-11 22:27:53] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:54] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:55] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:56] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:57] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:57] [INFO] [__main__]: Battery voltage: 11010 mV
+[2025-02-11 22:27:58] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:27:59] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:00] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:01] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:02] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:02] [INFO] [__main__]: Battery voltage: 11259 mV
+[2025-02-11 22:28:03] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:04] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:05] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:06] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:07] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:07] [INFO] [__main__]: Battery voltage: 11172 mV
+[2025-02-11 22:28:08] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:09] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:10] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:11] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:12] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:12] [INFO] [__main__]: Battery voltage: 11202 mV
+[2025-02-11 22:28:13] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:14] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:15] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:16] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:17] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:17] [INFO] [__main__]: Battery voltage: 11274 mV
+[2025-02-11 22:28:18] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:19] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:20] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:21] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:22] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:22] [INFO] [__main__]: Battery voltage: 11157 mV
+[2025-02-11 22:28:23] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:24] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:25] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:26] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:27] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:27] [INFO] [__main__]: Battery voltage: 11025 mV
+[2025-02-11 22:28:28] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:29] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:30] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:31] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:32] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:32] [INFO] [__main__]: Battery voltage: 11202 mV
+[2025-02-11 22:28:33] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:34] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:35] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:36] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:37] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:37] [INFO] [__main__]: Battery voltage: 11055 mV
+[2025-02-11 22:28:38] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:39] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:40] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:41] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:42] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:42] [INFO] [__main__]: Battery voltage: 11187 mV
+[2025-02-11 22:28:43] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:44] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:45] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:46] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:47] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:47] [INFO] [__main__]: Battery voltage: 10980 mV
+[2025-02-11 22:28:48] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:49] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:50] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:51] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:52] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:52] [INFO] [__main__]: Battery voltage: 11274 mV
+[2025-02-11 22:28:53] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:54] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:55] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:56] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:57] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:57] [INFO] [__main__]: Battery voltage: 11172 mV
+[2025-02-11 22:28:58] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:28:59] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:00] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:01] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:02] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:02] [INFO] [__main__]: Battery voltage: 11259 mV
+[2025-02-11 22:29:03] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:04] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:05] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:06] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:07] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:07] [INFO] [__main__]: Battery voltage: 11112 mV
+[2025-02-11 22:29:08] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:09] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:10] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:11] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:12] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:12] [INFO] [__main__]: Battery voltage: 11202 mV
+[2025-02-11 22:29:13] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:14] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:15] [INFO] [__main__]: Keyboard interrupt detected. Shutting down...
+[2025-02-11 22:29:17] [INFO] [raspberry_pi.devices.nano]: NANO connection established.
+[2025-02-11 22:29:19] [INFO] [raspberry_pi.devices.rp2040]: RP2040 connection established.
+[2025-02-11 22:29:19] [INFO] [raspberry_pi.devices.lidar]: Lidar connection established
+[2025-02-11 22:29:19] [INFO] [__main__]: Robot initialized.
+[2025-02-11 22:29:19] [INFO] [raspberry_pi.network.server]: CommandServer thread started.
+[2025-02-11 22:29:19] [INFO] [__main__]: Command server started on 192.168.1.103:5500
+[2025-02-11 22:29:19] [INFO] [__main__]: Battery voltage: 11085 mV
+[2025-02-11 22:29:24] [INFO] [__main__]: Battery voltage: 11055 mV
+[2025-02-11 22:29:29] [INFO] [__main__]: Battery voltage: 11244 mV
+[2025-02-11 22:29:31] [INFO] [raspberry_pi.network.server]: Accepted connection from ('192.168.1.102', 53070)
+[2025-02-11 22:29:31] [INFO] [raspberry_pi.network.data_transmitter]: DataTransmitter started. Sending data to 192.168.1.102:5502
+[2025-02-11 22:29:31] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:32] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:33] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:34] [INFO] [__main__]: Battery voltage: 11187 mV
+[2025-02-11 22:29:34] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:35] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:36] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:37] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:38] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:39] [INFO] [__main__]: Battery voltage: 11157 mV
+[2025-02-11 22:29:39] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:40] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:41] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:42] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:43] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:44] [INFO] [__main__]: Battery voltage: 11127 mV
+[2025-02-11 22:29:44] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:45] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:46] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:47] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:48] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:49] [INFO] [__main__]: Battery voltage: 11127 mV
+[2025-02-11 22:29:49] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:50] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:51] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:52] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:53] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:54] [INFO] [__main__]: Battery voltage: 11112 mV
+[2025-02-11 22:29:54] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:55] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:56] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:57] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:58] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:29:59] [INFO] [__main__]: Battery voltage: 11112 mV
+[2025-02-11 22:29:59] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:00] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:01] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:02] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:03] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:04] [INFO] [__main__]: Battery voltage: 11259 mV
+[2025-02-11 22:30:04] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:05] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:06] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:07] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:08] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:09] [INFO] [__main__]: Battery voltage: 11172 mV
+[2025-02-11 22:30:09] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:10] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:11] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:12] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:13] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:14] [INFO] [__main__]: Battery voltage: 11259 mV
+[2025-02-11 22:30:14] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:15] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:16] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:17] [ERROR] [raspberry_pi.network.data_transmitter]: DataTransmitter error: a bytes-like object is required, not 'str'
+[2025-02-11 22:30:18] [INFO] [__main__]: Keyboard interrupt detected. Shutting down...

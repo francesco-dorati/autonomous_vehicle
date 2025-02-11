@@ -1,8 +1,8 @@
 import socket
 import threading
 import time
-from utils.logger import get_logger
-from raspberry_pi.config import HOST, MANUAL_PORT, LIN_SPEED, ANG_SPEED
+from raspberry_pi.utils.logger import get_logger
+from raspberry_pi.config import COMMAND_SERVER_CONFIG, MANUAL_SERVER_CONFIG
 
 logger = get_logger(__name__)
 
@@ -13,7 +13,7 @@ class ManualReceiver:
         self._thread = None
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self._server_socket.bind((HOST, MANUAL_PORT))
+        self._server_socket.bind((COMMAND_SERVER_CONFIG.HOST, MANUAL_SERVER_CONFIG.PORT))
         self._server_socket.listen(1)
         self._connection = None
 
@@ -70,8 +70,8 @@ class ManualReceiver:
         x = 0 if abs(x) < 0.25 else x
         y = 0 if abs(y) < 0.25 else y
 
-        v_lin = x * LIN_SPEED
-        v_ang = y * ANG_SPEED
+        v_lin = x * MANUAL_SERVER_CONFIG.LIN_VEL
+        v_ang = y * MANUAL_SERVER_CONFIG.ANG_VEL
         return v_lin, v_ang
 
         

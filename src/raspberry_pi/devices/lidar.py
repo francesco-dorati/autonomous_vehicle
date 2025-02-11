@@ -112,13 +112,11 @@ import math
 from typing import Optional
 
 from raspberry_pi.devices.device import Device
-from raspberry_pi.utils import timing_decorator
-from raspberry_pi.data_structures.maps import LocalMap
-from raspberry_pi.data_structures.lidar_scan import LidarScan
+from raspberry_pi.data_structures.maps import LocalMap, LidarScan
 
 from raspberry_pi.config import LIDAR_CONFIG
 
-from raspberry_pi.logger import get_logger
+from raspberry_pi.utils.logger import get_logger, timing_decorator
 
 logger = get_logger(__name__)
 
@@ -257,7 +255,7 @@ class Lidar(Device):
         # receive and check descriptor
         response_descriptor = Lidar._serial.read(7)
         l, _, _, = Lidar._unpack_descriptor(response_descriptor)
-        if l != LIDAR_CONFIG.SCAN_PACKET_SIZE']:
+        if l != LIDAR_CONFIG.SCAN_PACKET_SIZE:
             Lidar.stop()
             logger.error("Lidar descriptor length mismatch")
             raise Lidar.InvalidDescriptor("Descriptor length mismatch")

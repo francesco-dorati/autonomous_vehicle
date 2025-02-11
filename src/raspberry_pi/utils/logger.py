@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 from logging.handlers import RotatingFileHandler
 
 # Configuration constants
@@ -10,6 +11,40 @@ LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
 LOG_FILE = os.path.join(os.path.dirname(__file__), "..", "logs", "app.log")
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB per log file
 BACKUP_COUNT = 5             # Keep last 5 log files
+
+# Global variable to track call depth
+call_depth = 0
+
+def timing_decorator(func):
+    def wrapper(*args, **kwargs):
+        global call_depth
+        
+        # Indentation based on call depth
+        indent = '  ' * call_depth
+        call_depth += 1
+        
+        # Log function call
+        arg_list = ', '.join([repr(arg) for arg in args] +
+                             [f"{k}={repr(v)}" for k, v in kwargs.items()])
+        print(f"{indent}> Calling '{func.__qualname__}({arg_list})'")
+        
+        # Time the function execution
+        ts = time.time()
+        try:
+            res = func(*args, **kwargs)
+        except Exception as e:
+            print(f"{indent}! Exception in '{func.__qualname__}': {e}")
+            call_depth -= 1
+            raise
+        dt = (time.time() - ts) * 1000
+        
+        # Log function result
+        print(f"{indent}< Returned: {repr(res)}")
+        print(f"{indent}- Took: {dt:.2f} ms")
+        
+        call_depth -= 1
+        return res
+    return wrapper
 
 def get_logger(name: str) -> logging.Logger:
     """

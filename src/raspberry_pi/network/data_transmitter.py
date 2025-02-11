@@ -3,7 +3,7 @@ import threading
 import time
 import json
 from typing import List
-from utils.logger import get_logger
+from raspberry_pi.utils.logger import get_logger
 from raspberry_pi.data_structures.maps import OccupancyGrid
 from raspberry_pi.data_structures.states import Position, CartPoint
 from raspberry_pi.config import DATA_SERVER_CONFIG
@@ -78,7 +78,7 @@ class DataTransmitter:
                 else:
                     payload += "-\n"
 
-                self._socket.sendto(payload, (self._receiver_host, DATA_SERVER_CONFIG.PORT))
+                self._socket.sendto(payload.encode(), (self._receiver_host, DATA_SERVER_CONFIG.PORT))
 
             except Exception as e:
                 logger.error(f"DataTransmitter error: {e}")

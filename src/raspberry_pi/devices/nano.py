@@ -3,9 +3,8 @@ import threading
 import time
 
 from raspberry_pi.devices.device import Device
-from raspberry_pi.utils import timing_decorator
+from raspberry_pi.utils.logger import get_logger, timing_decorator
 from raspberry_pi.config import NANO_CONFIG
-from raspberry_pi.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -93,6 +92,7 @@ class NANO(Device):
             raise NANO.ConnectionFailed("Starting failed.")
 
         NANO.__start_battery_reader()
+        logger.info("NANO connection established.")
 
 
     @staticmethod

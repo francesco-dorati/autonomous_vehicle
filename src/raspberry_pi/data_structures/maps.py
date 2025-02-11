@@ -19,15 +19,45 @@ import math
 import os
 import numpy as np
 from typing import Optional, List, Tuple
+import threading
 import copy
 
 from raspberry_pi.data_structures.states import Position, PolarPoint, CartPoint
-from raspberry_pi.data_structures.lidar_scan import LidarScan
-from raspberry_pi.utils import Utils, timing_decorator
+# from raspberry_pi.utils import Utils
 from raspberry_pi.config import GLOBAL_MAP_CONFIG
-from raspberry_pi.utils.logger import get_logger
+from raspberry_pi.utils.logger import get_logger, timing_decorator
 
 logger = get_logger(__name__)
+
+class LidarScan:
+        def __init__(self):
+            """
+            Initializes the Lidar Scan
+            """
+            self._scan = np.full(360, 0, dtype=tuple)
+            self._scan_lock = threading.Lock()
+
+        def add_sample(self, angle_deg: float, dist_mm: float) -> None:
+            """ LOCK
+            Adds sample to the scan
+            Args:
+                angle_deg (float): angle of the sample, 
+                dist_mm (int): distance of the obstacle
+            """
+            angle_deg = round(angle_deg) % 360
+            with self._scan_lock:
+                self._scan[angle_deg] = int(dist_mm)
+                # print("add sample ", angle_deg, dist_mm)
+
+        def get_copy(self) -> list[tuple[int, int]]:
+            """ LOCK
+            Generates a copy of the scan
+            Returns:
+                list[tuple[int, int]]
+            """
+            with self._scan_lock:
+                copy = self._scan.copy()
+            return copy
 
 class OccupancyGrid:
     def __init__(self, size: int):

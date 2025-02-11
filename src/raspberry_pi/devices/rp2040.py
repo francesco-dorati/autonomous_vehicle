@@ -11,10 +11,9 @@ from typing import List
 import threading
 
 from raspberry_pi.devices.device import Device
-from raspberry_pi.utils import timing_decorator
 from raspberry_pi.data_structures.states import Position
+from raspberry_pi.utils.logger import get_logger, timing_decorator
 from raspberry_pi.config import RP2040_CONFIG
-from raspberry_pi.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -30,6 +29,7 @@ class RP2040(Device):
             if not RP2040.ping(): # check connection
                 RP2040.stop()
                 raise Device.ConnectionFailed
+            logger.info("RP2040 connection established.")
         except serial.SerialException:
             raise Device.ConnectionFailed
 
