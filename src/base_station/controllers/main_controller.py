@@ -36,15 +36,21 @@ class Controller:
 
     # MAP
     def new_map(self, entry):
+        print("NEW MAP")
         name = entry.get().strip()
-        self.connection.new_global_map(name)
-        self.model.map_name = name
-        # self.view.main_page.set_map(self.model.global_map_name)
-    
+        ok = self.connection.new_map(name)
+        print(ok)
+        if ok:
+            self.model.map_name = name
+            self.view.main_page.set_map(name)
+        
     def discard_map(self):
-        # self.model.discard_global_map()
-        self.model.map_name = None
-        self.view.main_page.discard_map()
+        print("DISCARD MAP")
+        ok = self.connection.discard_map()
+        print(ok) 
+        if ok:
+            self.model.map_name = None
+            self.view.main_page.discard_map()
     
     # CONTROL
     def set_control(self, control_type: str):

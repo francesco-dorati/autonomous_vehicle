@@ -1,5 +1,6 @@
 import time
 import pygame
+import threading
 
 class InputHandler:
     def __init__(self, manual_frame):
@@ -10,6 +11,7 @@ class InputHandler:
         self.joypad = None
 
     def set_input(self, input_type):
+        print("Input type set to", input_type)
         self.input_type = input_type
         self.buffer = {'x': 0, 'y': 0}
         if input_type == "keyboard":
@@ -46,7 +48,6 @@ class InputHandler:
         pygame.joystick.init()
     def __stop_joypad_reading(self):
         pygame.joystick.quit()
-        pygame.quit()
   
 
     def key_event(self, event):
@@ -76,7 +77,13 @@ class InputHandler:
             self.manual_frame.set_key(self.buffer)
 
     def update_joypad(self):
+        # Schedule this update on the main thread
+        if threading.current_thread() != threading.main_thread():
+            self.manual_frame.after(0, self.update_joypad)
+            return
+        
         if self.input_type == "joypad":
+            print("Updating joypad")
             pygame.event.pump()
             if self.joypad:
                 # print(self.model.joypad)

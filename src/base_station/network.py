@@ -80,10 +80,38 @@ class ClientConnection:
             return
         
         try:
+            print("Stopping control")
             self.connection.send("CTL STP\n".encode())
+            response = self.connection.recv(32).decode().strip()
+            return response == "OK"
         except Exception as e:
             print(f"Failed to stop control: {e}")
     
+    def new_map(self, map_name: str) -> bool:
+        """Sends a command to the robot to start a new map."""
+        if not self.connection:
+            return
+        try:
+            self.connection.send(f"MAP NEW {map_name}\n".encode())
+            print("Sent new map command")
+            response = self.connection.recv(32).decode().strip()
+            print(response)
+            return response == "OK"
+        except Exception as e:
+            print(f"Failed to send new map command: {e}")
+            return False
+        
+    def discard_map(self) -> bool:
+        """Sends a command to the robot to discard the current map."""
+        if not self.connection:
+            return
+        try:
+            self.connection.send("MAP DIS\n".encode())
+            response = self.connection.recv(32).decode().strip()
+            return response == "OK"
+        except Exception as e:
+            print(f"Failed to send discard map command: {e}")
+            return False
 
 class DataReceiver:
     """
@@ -173,8 +201,8 @@ class DataReceiver:
         """
         lines = data.split("\n")
         try:
-            print("RECEIVED DATA OK")
-            print(lines)
+            # print("RECEIVED DATA OK")
+            # print(lines)
             assert lines[0] == "DATA"
             size = int(lines[1])
             assert lines[2] == "GLOBAL_MAP"
@@ -189,7 +217,7 @@ class DataReceiver:
             robot_pos = None
             if lines[7] != "-":
                 robot_pos = tuple(map(float, lines[7].split()))
-            print("PARSED DATA OK")
+            # print("PARSED DATA OK")
             return True, size, global_map, lidar_points, robot_pos
         except AssertionError:
             print("PARSED DATA ERROR: assertion failed")
