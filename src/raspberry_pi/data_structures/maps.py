@@ -34,8 +34,8 @@ class LidarScan:
             """
             Initializes the Lidar Scan
             """
-            self._scan = np.full(360, 0, dtype=tuple)
-            self._scan_lock = threading.Lock()
+            self.__scan = np.full(360, 0, dtype=tuple)
+            self.__scan_lock = threading.Lock()
 
         def add_sample(self, angle_deg: float, dist_mm: float) -> None:
             """ LOCK
@@ -45,18 +45,18 @@ class LidarScan:
                 dist_mm (int): distance of the obstacle
             """
             angle_deg = round(angle_deg) % 360
-            with self._scan_lock:
-                self._scan[angle_deg] = int(dist_mm)
+            with self.__scan_lock:
+                self.__scan[angle_deg] = int(dist_mm)
                 # print("add sample ", angle_deg, dist_mm)
 
-        def get_copy(self) -> list[tuple[int, int]]:
+        def get_copy(self) -> list[PolarPoint]:
             """ LOCK
             Generates a copy of the scan
             Returns:
                 list[tuple[int, int]]
             """
-            with self._scan_lock:
-                copy = self._scan.copy()
+            with self.__scan_lock:
+                copy = [PolarPoint(dist, ang) for ang, dist in enumerate(self.__scan.copy())]
             return copy
 
 class OccupancyGrid:
@@ -83,7 +83,7 @@ class LocalMap:
         """
         Local Map
         A list of position taken at 1° steps
-        _scan (List): list of (angle, distance) tuples
+        __scan (List): list of (angle, distance) tuples
         Arguments:
             Lidar.Scan: scan object 
         """
@@ -96,20 +96,23 @@ class LocalMap:
 
  
     @timing_decorator
-    def get_polar_points(self) -> List[PolarPoint]:
+    def get_polar_points(self, section_radius: int = None) -> List[PolarPoint]:
         """Get polar coordinates of the scan
         Returns:
             List[float, int]: list of (angle, dist)
         """
-        return [coord for coord in self.__scan]
+        if section_radius is None:
+            return [coord for coord in self.__scan]
+        return [coord for coord in self.__scan if coord.distance <= section_radius]
 
     @timing_decorator
-    def get_cartesian_points(self) -> List[CartPoint]:
+    def get_cartesian_points(self, section_size: int = None) -> List[CartPoint]:
         """Get cartesian coordinates of the scan (based on the center of the local map)
         Returns:
             List[int, int]: list of positions (x, y)
         """
         points = [] 
+        # print(self.__scan)
         for p in self.__scan:
             # Convert angle from degrees to radians for trigonometric functions
             angle_rad: float = p.th / 1000.0
@@ -117,9 +120,11 @@ class LocalMap:
                 p = CartPoint(
                     p.r * np.cos(angle_rad), 
                     p.r * np.sin(angle_rad))
-                
-                if abs(p.x) < max_dist and abs(p.y) < max_dist:
+                max_dist = (section_size//2)*GLOBAL_MAP_CONFIG.RESOLUTION
+                inside_section = section_size is None or (abs(p.x) < max_dist and abs(p.y) < max_dist)
+                if inside_section:
                     points.append(p)
+        print(points)
         return points
 
     @timing_decorator

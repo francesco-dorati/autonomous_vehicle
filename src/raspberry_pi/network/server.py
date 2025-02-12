@@ -78,6 +78,7 @@ class CommandServer:
                         buffer += data
                         while "\n" in buffer:
                             command, buffer = buffer.split("\n", 1)
+                            logger.info("Received command: " + command)
                             response = self._process_command(command.strip())
                             connection.send((response + "\n").encode())
                     

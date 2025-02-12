@@ -109,8 +109,9 @@ import serial
 import time
 import threading
 import math
-from typing import Optional
+from typing import Optional, List
 
+from raspberry_pi.data_structures.states import PolarPoint
 from raspberry_pi.devices.device import Device
 from raspberry_pi.data_structures.maps import LocalMap, LidarScan
 
@@ -315,7 +316,7 @@ class Lidar(Device):
         if not Lidar._scanning:
             raise Lidar.NotScanning("Lidar is not scanning")
         # create local map
-        copy = Lidar._scan.get_copy()
+        copy: Optional[List[PolarPoint]] = Lidar._scan.get_copy()
         return LocalMap(copy)
 
     # PRIVATE

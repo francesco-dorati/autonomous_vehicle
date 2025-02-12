@@ -21,7 +21,7 @@ class ManualReceiver:
         self._running = True
         self._thread = threading.Thread(target=self._listen_for_connections, daemon=True)
         self._thread.start()
-        logger.info(f"ManualReceiver started on {self.host}:{self.port}")
+        logger.info(f"ManualReceiver started on {COMMAND_SERVER_CONFIG.HOST}:{MANUAL_SERVER_CONFIG.PORT}")
     
     def stop(self):
         self._running = False
@@ -56,7 +56,7 @@ class ManualReceiver:
                         while "\n" in buffer:
                             command, buffer = buffer.split("\n", 1)
                             v_lin, v_ang = self._process_command(command)
-                            self._robot.set_target_velocity(v_lin, v_ang)
+                            self.robot.set_target_velocity(v_lin, v_ang)
                     
                     except socket.timeout:
                         continue

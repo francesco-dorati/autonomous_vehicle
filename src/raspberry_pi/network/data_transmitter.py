@@ -65,14 +65,16 @@ class DataTransmitter:
                 
                 # LIDAR POINTS
                 payload += "LOCAL_MAP\n"
+                logger.debug(f"lidar points {lidar_points}")
                 if lidar_points:
-                    lidar_points_str = ";".join([f"{point.x} {point.y}" for point in lidar_points])
+                    lidar_points_str = ";".join([f"{point.x:.2f} {point.y:.2f}" for point in lidar_points])
                     payload += f"{lidar_points_str}\n"
                 else:
                     payload += "-\n"
 
                 # POSITION
                 payload += "POSITION\n"
+                logger.debug(f"position {position}")
                 if position:
                     payload += f"{position.x} {position.y} {position.th}\n"
                 else:

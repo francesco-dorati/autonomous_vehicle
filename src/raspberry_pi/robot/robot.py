@@ -72,17 +72,26 @@ class Robot:
     @timing_decorator
     def set_control(self, ctype):
         """ Sets the control type
-            ('off', 'velocity', 'position')
+            ctype: ('off', 'manual', 'auto')
+            internal state ('off', 'velocity', 'position')
         """
-        if ctype in self.ControlType.__members__.values():
+        if ctype in ['off', 'manual', 'auto']:
             with self.__lock:
-                self.__control_type = ctype
                 self.__target_velocity = (.0, .0)
                 self.__target_position = None
-            if ctype == self.ControlType.OFF:
-                self.__stop_control_loop() 
+                if ctype == 'off':
+                    self.__control_type = self.ControlType.OFF
+                elif ctype == 'manual':
+                    self.__control_type = self.ControlType.VELOCITY
+                elif ctype == 'auto':
+                    self.__control_type = self.ControlType.POSITION
+            if self.__control_type == self.ControlType.OFF:
+                self.__stop_control_loop()
             else:
                 self.__start_control_loop()
+        else:
+            raise ValueError(f"Invalid control type: {ctype}")
+
  
             
     @timing_decorator
@@ -160,7 +169,7 @@ class Robot:
                 global_map = self.__global_map.get_subsection(self.__actual_position, size)
             # LOCAL MAP
             if self.__local_map:
-                local_map = self.__local_map.get_subsection(size)
+                local_map = self.__local_map.get_cartesian_points(size)
             # POSITION
             if self.__actual_position:
                 position = self.__actual_position
@@ -217,6 +226,7 @@ class Robot:
         Lidar.start_scan()
         try:
             while not self.__stop_loop_event.is_set():
+                logger.info("Loop running")
                 # 🔒 LOCK 1 - Read shared state
                 with self.__lock:
                     if self.__control_type == self.ControlType.OFF:
@@ -252,7 +262,7 @@ class Robot:
                 if control_type == self.ControlType.POSITION:
                     RP2040.set_target_position(target_position)
                 if control_type == self.ControlType.VELOCITY:
-                    RP2040.set_target_velocity(target_velocity)
+                    RP2040.set_target_velocity(*target_velocity)
 
                 time.sleep(ROBOT_CONFIG.CONTROL_LOOP_INTERVAL)
 
