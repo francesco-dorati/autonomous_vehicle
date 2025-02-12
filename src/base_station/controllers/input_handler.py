@@ -51,7 +51,7 @@ class InputHandler:
 
     def key_event(self, event):
         """Handle keyboard input and update command buffer"""
-        key = event.keysym()
+        key = event.keysym
         if key.lower() in ['w', 's', 'a', 'd'] and self.input_type == "keyboard":
             if key.lower() == 'w':
                 if event.type == "2":

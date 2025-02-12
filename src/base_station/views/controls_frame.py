@@ -108,7 +108,8 @@ class ManualFrame(tk.Frame):
         self.frame.grid_columnconfigure(0, weight=1)  # Keyboard area
         self.frame.grid_columnconfigure(1, weight=1)  # Empty space
         self.frame.grid_columnconfigure(2, weight=1)  # Buttons
-        self.controller.set_manual_control("keyboard")
+        if self.controller.input_handler:
+            self.controller.input_handler.set_input("keyboard")
         self.buttons_frame.grid(row=0, column=2, padx=20, pady=10, sticky='e')
     
     def hide(self):

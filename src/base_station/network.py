@@ -31,6 +31,35 @@ class ClientConnection:
             self.connection.close()
             self.connection = None
 
+    def ping(self):
+        """ Ping
+        Returns:
+            ok: bool
+            time_ms: int
+            battery_V: float
+            control_type: str
+
+    """
+        ping_time_ms: int = None
+        battery_V: float = None
+        control_type: str = None
+        map_name: str = None
+        try:
+            t = time.time()
+            self.connection.send("SYS PNG\n".encode())
+            response = self.connection.recv(32)
+            ping_time_ms = int((time.time() - t)*1000)
+            split = response.decode().strip().split()
+            if split[0] == "OK":
+                battery_V = float(split[1])/1000
+                control_type = None if split[2] == "-" else split[2]
+                map_name = None if split[3] == "-" else split[3]
+                return True, ping_time_ms, battery_V, control_type, map_name
+            return False, None , None, None, None
+        except Exception as e:
+            print(f"Ping failed: {e}")
+            return False, None , None, None, None
+
     def start_manual_control(self) -> Tuple[bool, int]:
         """Sends a command to the robot to start manual control."""
         if not self.connection:
@@ -81,28 +110,37 @@ class DataReceiver:
         """Worker thread that listens for UDP packets and processes them."""
         while self.running:
             try:
-                data, addr = self.sock.recvfrom(self.buffer_size)
+                # If the socket is already closed, exit the loop
+                if self.sock.fileno() == -1:
+                    print("Socket is closed, stopping worker")
+                    break
+                data = self.sock.recv(self.buffer_size)
                 data = data.decode().strip()
                 ok, size, global_map, lidar_points, robot_pose = self.parse_data(data)
                 if ok:
                     self.update_callback(size, global_map, lidar_points, robot_pose)
             except Exception as e:
                 print("Error in display server worker:", e)
-                self.stop()
+                # Instead of calling stop() from within the worker, just break out of the loop.
                 break
             time.sleep(0.1)
+        # Cleanup after leaving the worker loop
+        self.running = False
+        if self.sock:
+            self.sock.close()
 
     def stop(self):
         """Stops the UDP server and cleans up resources."""
         self.running = False
         if self.sock:
             self.sock.close()
-        if self.thread:
+        if self.thread and threading.current_thread() != self.thread:
             self.thread.join()
     
     def parse_data(self, data):
         """Parses the incoming data and returns the components."""
         lines = data.split("\n")
+        print(lines)
         try:
             assert lines[0] == "DATA"
             size = int(lines[1])
@@ -123,8 +161,6 @@ class DataReceiver:
             return False, 0, None, None, None
         except Exception as e:
             return False, 0, None, None, None
- 
-    
 
 MANUAL_INTERVAL = 0.1
 class ManualTransmitter:
