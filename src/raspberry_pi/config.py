@@ -17,6 +17,7 @@ class RobotConfig:
 ROBOT_CONFIG = RobotConfig(
     CONTROL_LOOP_INTERVAL = 0.1,
     MAP_FOLDER = "../data/maps",
+    SCANS_FOLDER = "../data/scans",
 
     BATTERY_MIN_MV = 10500,
     BATTERY_CHECK_INTERVAL = 5,

@@ -9,6 +9,8 @@ from raspberry_pi.data_structures.states import Position, CartPoint
 from raspberry_pi.data_structures.maps import LocalMap, GlobalMap, OccupancyGrid
 from raspberry_pi.config import ROBOT_CONFIG
 from raspberry_pi.utils.logger import get_logger, timing_decorator
+from raspberry_pi.utils.utils import Utils
+from raspberry_pi.utils.drawer import Drawer
 
 logger = get_logger(__name__)
 
@@ -171,7 +173,7 @@ class Robot:
             # LOCAL MAP
             if self.__local_map:
                 list_points = self.__local_map.get_cartesian_points(size_mm)
-                lidar_points: Tuple[int, int] = [global_map.local_to_grid(p) for p in list_points]
+                lidar_points: Tuple[int, int] = [Utils.local_to_grid(size_mm, p) for p in list_points]
             # POSITION
             if self.__actual_position:
                 position = self.__actual_position
@@ -221,7 +223,7 @@ class Robot:
             else:
                 logger.info("Control thread already stopped")
                             
-    def __loop(self):
+    def __loop(self):# TODO draw n lidar maps
         """ Robot control loop
             Handles perception, planning and control
         """
@@ -234,12 +236,13 @@ class Robot:
                     if self.__control_type == self.ControlType.OFF:
                         logger.info("Stopping control loop. (control OFF)")
                         break
-                    global_map = self.__global_map  # Store reference safely
-                    mapping_enabled = self.__mapping
-                    control_type = self.__control_type  # Avoid repeated lock usage
+                    global_map: GlobalMap = self.__global_map  # Store reference safely
+                    mapping_enabled: bool = self.__mapping
+                    control_type: str = self.__control_type  # Avoid repeated lock usage
 
                 # 📡 Request sensor data (outside the lock)
                 local_map = Lidar.produce_local_map()
+                Drawer.draw_lidar_points(5000, local_map.get_cartesian_points(5000))
                 actual_pos = RP2040.get_position() if global_map else None
 
                 # 🔒 LOCK 2 - Update shared state

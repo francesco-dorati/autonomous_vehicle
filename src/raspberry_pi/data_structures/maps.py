@@ -64,10 +64,9 @@ class LidarScan:
             return copy
 
 class OccupancyGrid:
-    def __init__(self, size_mm: int, resolution_mm: int):
+    def __init__(self, size_mm: int):
         self.__size_mm: int = size_mm
-        self.__resolution_mm: int = resolution_mm
-        self.__grid_size: int = size_mm // resolution_mm
+        self.__grid_size: int = Utils.dist_to_grid(size_mm)
         self.__grid = None
     
     def get_size_mm(self):
@@ -80,16 +79,10 @@ class OccupancyGrid:
     def set(self, gx, gy, val):
         if self.__grid is None:
             self.__grid = np.full((self.__grid_size, self.__grid_size), -1, dtype=int)
-
         self.__grid[gx][gy] = val
 
     def origin(self):
         return ((self.__grid_size // 2), (self.__grid_size // 2))
-
-    def local_to_grid(self, p: CartPoint) -> Tuple[int, int]:
-        gx = int(round(p.x / self.__resolution_mm) + (self.__grid_size // 2))
-        gy = int(round(p.y / self.__resolution_mm) + (self.__grid_size // 2))
-        return gx, gy
     
     def get_string(self):
         if self.__grid is None:
