@@ -79,6 +79,7 @@ class Robot:
             with self.__lock:
                 self.__target_velocity = (.0, .0)
                 self.__target_position = None
+                self.__local_map = None
                 if ctype == 'off':
                     self.__control_type = self.ControlType.OFF
                 elif ctype == 'manual':
