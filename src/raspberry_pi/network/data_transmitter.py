@@ -3,10 +3,11 @@ import threading
 import time
 import json
 from typing import List
+from raspberry_pi.robot.robot import Robot
 from raspberry_pi.utils.logger import get_logger
 from raspberry_pi.data_structures.maps import OccupancyGrid
 from raspberry_pi.data_structures.states import Position, CartPoint
-from raspberry_pi.config import DATA_SERVER_CONFIG
+from raspberry_pi.config import DATA_SERVER_CONFIG, ROBOT_CONFIG
 
 logger = get_logger(__name__)
 
@@ -30,12 +31,12 @@ class DataTransmitter:
         in frame coordinates
     - global map is a nxn occupancy grid
     """
-    def __init__(self, receiver_host: str, robot):
-        self._robot = robot  # Robot instance from which to collect data
+    def __init__(self, receiver_host: str, robot: Robot):
+        self._robot: Robot = robot  # Robot instance from which to collect data
         self._receiver_host = receiver_host
         self._running = False
         self._thread = None
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # using UDP for simplicity
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # using UDP for simplicity
 
     def start(self):
         self._running = True
@@ -53,21 +54,18 @@ class DataTransmitter:
     def _transmit_loop(self):
         while self._running:
             try:
-                payload = f"DATA\n{DATA_SERVER_CONFIG.SIZE}\n"
-                global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE)
+                payload = f"DATA\n{DATA_SERVER_CONFIG.SIZE_MM//ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n"
+                global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
 
                 # GLOBAL MAP
                 payload += "GLOBAL_MAP\n"
-                if global_map:
-                    payload += f"{global_map.to_string()}\n"
-                else:
-                    payload += "-\n"
+                payload += f"{global_map.get_string()}\n"
                 
                 # LIDAR POINTS
                 payload += "LOCAL_MAP\n"
                 logger.debug(f"lidar points {lidar_points}")
-                if lidar_points:
-                    lidar_points_str = ";".join([f"{point.x:.2f} {point.y:.2f}" for point in lidar_points])
+                if len(lidar_points) > 0:
+                    lidar_points_str = ";".join([f"{point[0]} {point[1]}" for point in lidar_points])
                     payload += f"{lidar_points_str}\n"
                 else:
                     payload += "-\n"

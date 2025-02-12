@@ -12,12 +12,17 @@ class RobotConfig:
     MAP_FOLDER: str
     BATTERY_MIN_MV: int
     BATTERY_CHECK_INTERVAL: float
+    GLOBAL_MAP_SIZE_MM: int
+    GLOBAL_MAP_RESOLUTION: int
 ROBOT_CONFIG = RobotConfig(
     CONTROL_LOOP_INTERVAL = 0.1,
     MAP_FOLDER = "./data/maps",
 
     BATTERY_MIN_MV = 10500,
     BATTERY_CHECK_INTERVAL = 5,
+
+    GLOBAL_MAP_SIZE_MM = 10000,
+    GLOBAL_MAP_RESOLUTION = 100,
 )
 
 @dataclass
@@ -42,22 +47,13 @@ MANUAL_SERVER_CONFIG = ManualServerConfig(
 
 @dataclass
 class DataServerConfig:
-    SIZE: int
     INTERVAL: float
     PORT: int
+    SIZE_MM: int
 DATA_SERVER_CONFIG = DataServerConfig(
     PORT = 5502,
-    INTERVAL = 1.0,
-    SIZE = 100, 
-)
-
-@dataclass
-class GlobalMapConfig:
-    INITIAL_SIZE_MM: int
-    RESOLUTION: int
-GLOBAL_MAP_CONFIG = GlobalMapConfig(
-    INITIAL_SIZE_MM = 10000,
-    RESOLUTION = 100,
+    INTERVAL = 0.5,
+    SIZE_MM = 5000, # mm
 )
 
 
