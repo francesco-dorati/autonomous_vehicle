@@ -71,8 +71,9 @@ class Controller:
 
     def update_data(self, size, global_map, lidar_points, robot_pos):
         # update map
-        if self.view and self.view.main_page.display:
-            self.view.main_page.display.update(size, global_map, lidar_points, robot_pos)
+        print("controller updating data")
+        if self.view and self.view.main_page.display_frame:
+            self.view.main_page.display_frame.update(size, global_map, lidar_points, robot_pos)
 
 
     # def set_manual_control(self, _type: str):

@@ -90,7 +90,7 @@ class DataReceiver:
     A simple UDP server that listens on a specific port (e.g., 5502)
     for display data and uses an update callback to notify the view.
     """
-    def __init__(self, udp_port: int, update_callback, buffer_size: int = 1024):
+    def __init__(self, udp_port: int, update_callback, buffer_size: int = 2048):
         self.udp_port = udp_port
         self.update_callback = update_callback  # Function to update the view with new data
         self.buffer_size = buffer_size
@@ -123,7 +123,7 @@ class DataReceiver:
                 print("Error in display server worker:", e)
                 # Instead of calling stop() from within the worker, just break out of the loop.
                 break
-            time.sleep(0.1)
+            time.sleep(0.5)
         # Cleanup after leaving the worker loop
         self.running = False
         if self.sock:
@@ -140,26 +140,30 @@ class DataReceiver:
     def parse_data(self, data):
         """Parses the incoming data and returns the components."""
         lines = data.split("\n")
-        print(lines)
         try:
+            print("RECEIVED DATA OK")
+            print(lines)
             assert lines[0] == "DATA"
             size = int(lines[1])
-            assert lines[3] == "GLOBAL_MAP"
+            assert lines[2] == "GLOBAL_MAP"
             global_map = None
-            if lines[4] != "-":
-                global_map = [list(map(int, row.split())) for row in lines[4].split(";")]
-            assert lines[6] == "LOCAL_MAP"
+            if lines[3] != "-":
+                global_map = [list(map(int, row.split())) for row in lines[3].split(";")]
+            assert lines[4] == "LOCAL_MAP"
             lidar_points = None
-            if lines[7] != "-":
-                lidar_points = [tuple(map(float, point.split())) for point in lines[7].split(";")]
-            assert lines[9] == "POSITION"
+            if lines[5] != "-":
+                lidar_points = [tuple(map(float, point.split())) for point in lines[5].split(";")]
+            assert lines[6] == "POSITION"
             robot_pos = None
-            if lines[10] != "-":
-                robot_pos = tuple(map(float, lines[10].split()))
+            if lines[7] != "-":
+                robot_pos = tuple(map(float, lines[7].split()))
+            print("PARSED DATA OK")
             return True, size, global_map, lidar_points, robot_pos
         except AssertionError:
+            print("PARSED DATA ERROR, assertion failed")
             return False, 0, None, None, None
         except Exception as e:
+            print("PARSED DATA ERROR, exception", e)
             return False, 0, None, None, None
 
 MANUAL_INTERVAL = 0.1
