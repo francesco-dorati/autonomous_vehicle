@@ -1,3 +1,4 @@
+from raspberry_pi.utils.utils import Utils
 
 class CartPoint:
     """
@@ -11,7 +12,7 @@ class CartPoint:
     def __str__(self):
         return f"x: {self.x}, y: {self.y}"
     def __repr__(self):
-        return f"point({self.x}, {self.y})"
+        return f"CartPoint({self.x:.2f}, {self.y:.2f})"
 
 class PolarPoint:
     """
@@ -21,11 +22,11 @@ class PolarPoint:
     """
     def __init__(self, r, th):
         self.r = r
-        self.th = th
+        self.th = Utils.normalize_mrad(th)
     def __str__(self):
         return f"r: {self.r}, th: {self.th}"
     def __repr__(self):
-        return f"point({self.r}, {self.th})"
+        return f"PolarPoint({self.r:.2f}, {self.th:.2f})"
 
 
 class Position:

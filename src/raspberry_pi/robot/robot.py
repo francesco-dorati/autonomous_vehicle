@@ -154,26 +154,27 @@ class Robot:
         pass
         
     @timing_decorator
-    def get_data(self, size) -> Tuple[OccupancyGrid, Optional[CartPoint], Position]:
+    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[CartPoint], Optional[Position]]:
         """ Returns data
-            - global map
-            - local map
-            - position  
+            - global map: Occupancy Grid
+            - local map: list of points (inside the grid frame)
+            - position: global coordinates
         """
-        global_map = None
-        local_map = None
+        global_map = OccupancyGrid(size_mm, ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION)
+        lidar_points = []
         position = None
         with self.__lock:
             # GLOBAL MAP
             if self.__global_map and self.__actual_position:
-                global_map = self.__global_map.get_subsection(self.__actual_position, size)
+                global_map = self.__global_map.get_subsection(self.__actual_position, size_mm)
             # LOCAL MAP
             if self.__local_map:
-                local_map = self.__local_map.get_cartesian_points(size)
+                list_points = self.__local_map.get_cartesian_points(size_mm)
+                lidar_points: Tuple[int, int] = [global_map.local_to_grid(p) for p in list_points]
             # POSITION
             if self.__actual_position:
                 position = self.__actual_position
-        return global_map, local_map, position
+        return global_map, lidar_points, position
     
         
     @timing_decorator

@@ -24,8 +24,9 @@ import copy
 
 from raspberry_pi.data_structures.states import Position, PolarPoint, CartPoint
 # from raspberry_pi.utils import Utils
-from raspberry_pi.config import GLOBAL_MAP_CONFIG
+from raspberry_pi.config import ROBOT_CONFIG
 from raspberry_pi.utils.logger import get_logger, timing_decorator
+from raspberry_pi.utils.utils import Utils
 
 logger = get_logger(__name__)
 
@@ -55,25 +56,44 @@ class LidarScan:
             Returns:
                 list[tuple[int, int]]
             """
+            copy = []
             with self.__scan_lock:
-                copy = [PolarPoint(dist, ang) for ang, dist in enumerate(self.__scan.copy())]
+                for ang_deg, dist in enumerate(self.__scan):
+                    ang_mrad = Utils.deg_to_mrad(ang_deg)
+                    copy.append(PolarPoint(dist, ang_mrad))
             return copy
 
 class OccupancyGrid:
-    def __init__(self, size: int):
-        self.__size = size
-        self.__grid = np.full((self.__size, self.__size), -1, dtype=int)
+    def __init__(self, size_mm: int, resolution_mm: int):
+        self.__size_mm: int = size_mm
+        self.__resolution_mm: int = resolution_mm
+        self.__grid_size: int = size_mm // resolution_mm
+        self.__grid = None
     
-    def get_size(self):
-        return self.__size
+    def get_size_mm(self):
+        return self.__size_mm
+
+    def get_grid_size(self):
+        return self.__grid_size
     
-    def origin(self):
-        return ((self.__size // 2), (self.__size // 2))
     
     def set(self, gx, gy, val):
+        if self.__grid is None:
+            self.__grid = np.full((self.__grid_size, self.__grid_size), -1, dtype=int)
+
         self.__grid[gx][gy] = val
+
+    def origin(self):
+        return ((self.__grid_size // 2), (self.__grid_size // 2))
+
+    def local_to_grid(self, p: CartPoint) -> Tuple[int, int]:
+        gx = int(round(p.x / self.__resolution_mm) + (self.__grid_size // 2))
+        gy = int(round(p.y / self.__resolution_mm) + (self.__grid_size // 2))
+        return gx, gy
     
-    def to_string(self):
+    def get_string(self):
+        if self.__grid is None:
+            return "-"
         return ";".join([" ".join(map(str, row)) for row in self.__grid])
 
 
@@ -109,22 +129,24 @@ class LocalMap:
     def get_cartesian_points(self, section_size: int = None) -> List[CartPoint]:
         """Get cartesian coordinates of the scan (based on the center of the local map)
         Returns:
-            List[int, int]: list of positions (x, y)
+            List[CartPoint]: list cartesian points in local coordinates (refers to position of the robot)
         """
         points = [] 
         # print(self.__scan)
         for p in self.__scan:
             # Convert angle from degrees to radians for trigonometric functions
-            angle_rad: float = p.th / 1000.0
+            # logger.debug(f"p: {p}")
+            angle_rad: float = p.th / 1000.0        # p.th already normalized
             if p.r > 0:
-                p = CartPoint(
+                cart_p = CartPoint(
                     p.r * np.cos(angle_rad), 
-                    p.r * np.sin(angle_rad))
-                max_dist = (section_size//2)*GLOBAL_MAP_CONFIG.RESOLUTION
-                inside_section = section_size is None or (abs(p.x) < max_dist and abs(p.y) < max_dist)
+                    p.r * np.sin(angle_rad)
+                )
+                max_dist = (section_size//2)*ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
+                inside_section = section_size is None or (abs(cart_p.x) < max_dist and abs(cart_p.y) < max_dist)
                 if inside_section:
-                    points.append(p)
-        print(points)
+                    points.append(cart_p)
+        logger.debug(points)
         return points
 
     @timing_decorator
@@ -224,7 +246,7 @@ class GlobalMap:
 
     def __init__(self, name: str):
         self.name: str = name
-        self._grid_size: int = GLOBAL_MAP_CONFIG.INITIAL_SIZE_MM // GLOBAL_MAP_CONFIG.RESOLUTION
+        self._grid_size: int = ROBOT_CONFIG.GLOBAL_MAP_SIZE_MM // ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
 
         self._grid = np.full((self._grid_size, self._grid_size), -1, dtype=int)
         self.origin = lambda: ((self._grid_size // 2), (self._grid_size // 2))
