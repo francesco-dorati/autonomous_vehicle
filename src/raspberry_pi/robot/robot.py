@@ -163,7 +163,7 @@ class Robot:
             - local map: list of points (inside the grid frame)
             - position: global coordinates
         """
-        global_map = OccupancyGrid(size_mm, ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION)
+        global_map = OccupancyGrid(size_mm)
         lidar_points = []
         position = None
         with self.__lock:
@@ -227,6 +227,7 @@ class Robot:
         """ Robot control loop
             Handles perception, planning and control
         """
+        i = 0
         Lidar.start_scan()
         try:
             while not self.__stop_loop_event.is_set():
@@ -242,7 +243,6 @@ class Robot:
 
                 # 📡 Request sensor data (outside the lock)
                 local_map = Lidar.produce_local_map()
-                Drawer.draw_lidar_points(5000, local_map.get_cartesian_points(5000))
                 actual_pos = RP2040.get_position() if global_map else None
 
                 # 🔒 LOCK 2 - Update shared state

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 class RobotConfig:
     CONTROL_LOOP_INTERVAL: float
     MAP_FOLDER: str
+    SCANS_FOLDER: str
     BATTERY_MIN_MV: int
     BATTERY_CHECK_INTERVAL: float
     GLOBAL_MAP_SIZE_MM: int

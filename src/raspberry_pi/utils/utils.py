@@ -1,5 +1,5 @@
-from raspberry_pi.data_structures.states import CartPoint
 from raspberry_pi.config import ROBOT_CONFIG
+# from raspberry_pi.data_structures.states import CartPoint
 
 from typing import Tuple
 class Utils:
@@ -18,11 +18,11 @@ class Utils:
         return int(deg * Utils.MRAD_DEG)
     
     @staticmethod
-    def dist_to_grid(self, dist_mm: float) -> int:
+    def dist_to_grid(dist_mm: float) -> int:
         return dist_mm // ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
     
     @staticmethod
-    def local_to_grid(grid_size_mm: int, local_point: CartPoint) -> Tuple[int, int]:
+    def local_to_grid(grid_size_mm: int, local_point) -> Tuple[int, int]:
         """Converts a local point to grid point."""
         grid_size = Utils.dist_to_grid(grid_size_mm)
         gx = int(round(local_point.x / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (grid_size // 2))

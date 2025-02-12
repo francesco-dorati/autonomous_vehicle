@@ -18,22 +18,30 @@ class Drawer:
     def draw_lidar_points(size_mm, lidar_points: List[CartPoint]):
         """Draws the lidar points on the image."""
         def draw(points, timestamp):
+            print("\nREALLY PRINTING LIDAR POINTS\n")
             path = f"{ROBOT_CONFIG.SCANS_FOLDER}/lidar_points_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-            grid_points = [Utils.local_to_grid(size_mm, p) for p in points]
+            grid_points = [(Utils.local_to_grid(size_mm, p)) for p in points]
             x = [p[0] for p in grid_points]
             y = [p[1] for p in grid_points]
             grid_size = Utils.dist_to_grid(size_mm)
-            plt.scatter(x, y, color='red', marker='o', s=100, label="Grid Points")
-            plt.grid(True, linestyle="--", linewidth=0.5)
-            plt.xticks(range(0, grid_size))  # Set integer ticks on x-axis
-            plt.yticks(range(0, grid_size))  # Set integer ticks on y-axis
-            plt.xlabel("X-axis")
-            plt.ylabel("Y-axis")
+
+            plt.figure(figsize=(8, 8))
+            plt.scatter(x, y, s=1, color='blue')  # Smaller marker for a denser plot
+            # Robot position
+            plt.gca().invert_yaxis()  # Invert y-axis to make the plot look correct
+            plt.title("LIDAR Scan")
+            plt.xlabel("X")
+            plt.ylabel("Y")
             plt.title(f"Lidar Points - {timestamp}")
-            plt.savefig(path, dpi=300)  # Save with high resolution
-            plt.close()
+            plt.axis('equal')  # Ensures aspect ratio is equal for X and Y axes
+            plt.grid(True)
+            plt.savefig(path, format='png')
+            plt.close() 
+            ######
+  
+        print("\nPRINTING LIDAR POINTS\n")
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        t = threading.Thread(target=draw, args=(lidar_points, timestamp))
+        t = threading.Thread(target=draw, args=(lidar_points, timestamp), daemon=True)
         t.start()
         return
        
