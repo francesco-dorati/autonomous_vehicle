@@ -121,7 +121,7 @@ class Robot:
             if self.__global_map is not None:
                 raise Exception("Global map already initialized")
             self.__global_map = GlobalMap(name)
-            self.RP2040.reset_odometry()
+        RP2040.reset_position()
         os.makedirs(f"{ROBOT_CONFIG.MAP_FOLDER}/{name}", exist_ok=True)
             
     @timing_decorator
@@ -134,7 +134,7 @@ class Robot:
             if self.__mapping:
                 self.__mapping = False
             self.__global_map = None
-            RP2040.reset_odometry()
+        RP2040.reset_position()
     
     @timing_decorator
     def save_global_map(self):

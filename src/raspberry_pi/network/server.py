@@ -89,9 +89,9 @@ class CommandServer:
 
     def _process_command(self, command: str) -> None:
         logger.info(f"Received command: {command}")
+        tokens = command.split()
+        command_type = tokens.pop(0)
         try:
-            tokens = command.split()
-            command_type = tokens.pop(0)
             if command_type == "SYS":
                 return self._process_sys_command(tokens)
             elif command_type == "MAP":
@@ -101,7 +101,7 @@ class CommandServer:
             return "KO"
             
         except Exception as e:
-            logger.error(f"Error processing command: {e}")
+            logger.error(f"Error processing command: {e}", e)
             return "KO"
     
     def _process_sys_command(self, tokens: List[str]) -> str:
@@ -130,7 +130,7 @@ class CommandServer:
             self.robot.new_global_map(map_name)
             return "OK"
 
-        elif tokens[1] == "DIS":
+        elif command == "DIS":
             """ Discard Map
                 "MAP DIS" -> "OK"
                 discards the global map (does not eliminate the map file)
@@ -138,26 +138,26 @@ class CommandServer:
             self.robot.discard_global_map()
             return "OK"
 
-        elif tokens[1] == "SAV":
+        elif command == "SAV":
             """ Save Map
                 "MAP SAV" -> "OK"
             """
             self.robot.save_map()
             return "OK"
             
-        elif tokens[1] == "LOD":
+        elif command == "LOD":
             # Load Map
             # "MAP LOD <name>" -> "OK"
             pass
 
-        elif tokens[1] == "STR":
+        elif command == "STR":
             """ Start Mapping
                 "MAP STR" -> "OK"
             """
             self.robot.start_mapping()
             return "OK"
 
-        elif tokens[1] == "STP":
+        elif command == "STP":
             # Stop Mapping
             # "MAP STP" -> "OK"
             self.robot.stop_mapping()

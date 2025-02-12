@@ -16,7 +16,7 @@ class RobotConfig:
     GLOBAL_MAP_RESOLUTION: int
 ROBOT_CONFIG = RobotConfig(
     CONTROL_LOOP_INTERVAL = 0.1,
-    MAP_FOLDER = "./data/maps",
+    MAP_FOLDER = "../data/maps",
 
     BATTERY_MIN_MV = 10500,
     BATTERY_CHECK_INTERVAL = 5,
@@ -42,7 +42,7 @@ class ManualServerConfig:
 MANUAL_SERVER_CONFIG = ManualServerConfig(        
     PORT = 5501,  
     LIN_VEL = 270,
-    ANG_VEL = 1200,
+    ANG_VEL = 800,
 )
 
 @dataclass
