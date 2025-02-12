@@ -83,6 +83,7 @@ class ClientConnection:
             self.connection.send("CTL STP\n".encode())
         except Exception as e:
             print(f"Failed to stop control: {e}")
+    
 
 class DataReceiver:
     """

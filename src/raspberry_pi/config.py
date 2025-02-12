@@ -42,7 +42,7 @@ class ManualServerConfig:
 MANUAL_SERVER_CONFIG = ManualServerConfig(        
     PORT = 5501,  
     LIN_VEL = 270,
-    ANG_VEL = 800,
+    ANG_VEL = 1200,
 )
 
 @dataclass

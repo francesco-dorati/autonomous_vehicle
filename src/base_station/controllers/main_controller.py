@@ -38,11 +38,12 @@ class Controller:
     def new_map(self, entry):
         name = entry.get().strip()
         self.connection.new_global_map(name)
-        # self.model.new_global_map(name)
+        self.model.map_name = name
         # self.view.main_page.set_map(self.model.global_map_name)
     
     def discard_map(self):
         # self.model.discard_global_map()
+        self.model.map_name = None
         self.view.main_page.discard_map()
     
     # CONTROL
@@ -74,94 +75,6 @@ class Controller:
         print("controller updating data")
         if self.view and self.view.main_page.display_frame:
             self.view.main_page.display_frame.update(size, global_map, lidar_points, robot_pos)
-
-
-    # def set_manual_control(self, _type: str):
-    #     if self.model.control_type == "manual":
-    #         self.model.manual_control_type = _type
-    #         if _type == "keyboard":
-    #             self.stop_joypad_reading()
-    #             self.view.main_page.controls_frame.manual_frame.hide_joypad()
-    #             self.view.main_page.controls_frame.manual_frame.show_keyboard()
-    #             self.view.update_idletasks()
-    #             self.start_keyboard_reading()
-    #         elif _type == "joypad":
-    #             self.stop_keyboard_reading()
-    #             self.view.main_page.controls_frame.manual_frame.hide_keyboard()
-    #             self.view.main_page.controls_frame.manual_frame.show_joypad()
-    #             self.view.update_idletasks()
-    #             self.start_joypad_reading()
-        
-    # def start_keyboard_reading(self):
-    #     if self.model.control_type == "manual":
-    #         manual_frame = self.view.main_page.controls_frame.manual_frame
-    #         manual_frame.focus_set()
-    #         manual_frame.bind("<KeyPress>", self.key_event)
-    #         manual_frame.bind("<KeyRelease>", self.key_event)
-
-    # def stop_keyboard_reading(self):
-    #         manual_frame = self.view.main_page.controls_frame.manual_frame
-    #         manual_frame.focus_set()
-    #         manual_frame.bind("<KeyPress>", self.key_event)
-    #         manual_frame.bind("<KeyRelease>", self.key_event)
-    #         self.model.keyboard_buffer = {'x': 0, 'y': 0}
-
-    # def start_joypad_reading(self):
-    #     pygame.init()
-    #     pygame.joystick.init()
-    #     self.joypad_loop()
-
-    # def stop_joypad_reading(self):
-    #     pygame.joystick.quit()
-    #     pygame.quit()
-    #     self.model.joypad = None
-    #     self.model.joypad_buffer = {'x': 0, 'y': 0}
-
-
-    # def key_event(self, event):
-    #     key = event.keysym
-    #     if key.lower() in ['w', 's', 'a', 'd']:
-    #         if key.lower() == 'w':
-    #             if event.type == "2":
-    #                 self.model.keyboard_buffer['x'] = min(self.model.keyboard_buffer['x']+1, 1)
-    #             elif event.type == "3":
-    #                 self.model.keyboard_buffer['x'] = max(self.model.keyboard_buffer['x']-1, -1)
-    #         elif key == 's':
-    #             if event.type == "2":
-    #                 self.model.keyboard_buffer['x'] = max(self.model.keyboard_buffer['x']-1, -1)
-    #             elif event.type == "3":
-    #                 self.model.keyboard_buffer['x'] = min(self.model.keyboard_buffer['x']+1, 1)
-    #         elif key == 'a':
-    #             if event.type == "2":
-    #                 self.model.keyboard_buffer['y'] = min(self.model.keyboard_buffer['y']+1, 1)
-    #             elif event.type == "3":
-    #                 self.model.keyboard_buffer['y'] = max(self.model.keyboard_buffer['y']-1, -1)
-    #         elif key == 'd':
-    #             if event.type == "2":
-    #                 self.model.keyboard_buffer['y'] = max(self.model.keyboard_buffer['y']-1, -1)
-    #             elif event.type == "3":
-    #                 self.model.keyboard_buffer['y'] = min(self.model.keyboard_buffer['y']+1, 1)
-            
-    #         self.view.main_page.controls_frame.manual_frame.set_key(self.model.keyboard_buffer)
-
-    # def joypad_loop(self):
-    #     if self.model.control_type == "manual" and self.model.manual_control_type == "joypad":
-    #         pygame.event.pump()
-    #         if self.model.joypad:
-    #             # print(self.model.joypad)
-    #             self.model.joypad_buffer['x'] = float(-self.model.joypad.get_axis(1))
-    #             self.model.joypad_buffer['y'] = float(-self.model.joypad.get_axis(0))
-    #             self.view.main_page.controls_frame.manual_frame.set_joypad(self.model.joypad_buffer)
-    #         else:
-    #             if pygame.joystick.get_count() > 0:
-    #                 self.model.joypad = pygame.joystick.Joystick(0)
-    #                 self.model.joypad.init()
-    #                 self.view.main_page.controls_frame.manual_frame.connect_joypad()
-    #             else:
-    #                 self.model.joypad = None
-    #                 self.view.main_page.controls_frame.manual_frame.disconnect_joypad()
-
-    #         self.view.after(100, self.joypad_loop)
 
 
     def __periodic_ping(self):
