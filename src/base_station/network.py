@@ -1,7 +1,7 @@
 import socket
 import threading
 import time
-from typing import Tuple
+from typing import Tuple, List
 
 class ClientConnection:
     """
@@ -84,61 +84,92 @@ class ClientConnection:
         except Exception as e:
             print(f"Failed to stop control: {e}")
 
-
 class DataReceiver:
     """
-    A simple UDP server that listens on a specific port (e.g., 5502)
+    A simple TCP server that listens on a specific port (e.g., 5502)
     for display data and uses an update callback to notify the view.
+
+    Expected data format from the client:
+        DATA
+        <map_pixel_size>
+        GLOBAL_MAP
+        <global map string (or '-' if empty)>
+        LOCAL_MAP
+        <lidar points string (or '-' if empty)>
+        POSITION
+        <x> <y> <theta>  (or '-' if not available)
     """
-    def __init__(self, udp_port: int, update_callback, buffer_size: int = 2048):
-        self.udp_port = udp_port
+    def __init__(self, tcp_port: int, update_callback, buffer_size: int = 2048):
+        self.tcp_port = tcp_port
         self.update_callback = update_callback  # Function to update the view with new data
         self.buffer_size = buffer_size
         self.sock = None
-        self.thread = None
         self.running = False
+        self.server_thread = None
 
     def start(self):
-        """Starts the UDP server and spawns the worker thread."""
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(("", self.udp_port))
+        """Starts the TCP server and spawns the accept/handle thread."""
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind(("", self.tcp_port))
+        self.sock.listen(1)  # Only one client is expected to connect.
         self.running = True
-        self.thread = threading.Thread(target=self.worker, daemon=True)
-        self.thread.start()
+        self.server_thread = threading.Thread(target=self._accept_and_handle, daemon=True)
+        self.server_thread.start()
+        print(f"TCP server started on port {self.tcp_port}")
 
-    def worker(self):
-        """Worker thread that listens for UDP packets and processes them."""
+    def _accept_and_handle(self):
+        """
+        Accepts a single connection and handles data from that client.
+        When the client disconnects, it goes back to waiting for a new connection.
+        """
         while self.running:
+            print("Waiting for client connection...")
             try:
-                # If the socket is already closed, exit the loop
-                if self.sock.fileno() == -1:
-                    print("Socket is closed, stopping worker")
-                    break
-                data = self.sock.recv(self.buffer_size)
-                data = data.decode().strip()
-                ok, size, global_map, lidar_points, robot_pose = self.parse_data(data)
-                if ok:
-                    self.update_callback(size, global_map, lidar_points, robot_pose)
+                conn, addr = self.sock.accept()
+                print(f"Accepted connection from {addr}")
+                with conn:
+                    while self.running:
+                        data = conn.recv(self.buffer_size)
+                        if not data:
+                            # Client closed the connection.
+                            print("Client disconnected.")
+                            break
+                        data_str = data.decode().strip()
+                        ok, size, global_map, lidar_points, robot_pose = self.parse_data(data_str)
+                        if ok:
+                            self.update_callback(size, global_map, lidar_points, robot_pose)
             except Exception as e:
-                print("Error in display server worker:", e)
-                # Instead of calling stop() from within the worker, just break out of the loop.
+                print("Error in connection handling:", e)
+                # If an error occurs, break out of the loop and stop the server.
                 break
-            time.sleep(0.5)
-        # Cleanup after leaving the worker loop
+
+        print("Exiting server accept/handle loop.")
         self.running = False
         if self.sock:
             self.sock.close()
 
     def stop(self):
-        """Stops the UDP server and cleans up resources."""
+        """Stops the TCP server and cleans up resources."""
         self.running = False
         if self.sock:
             self.sock.close()
-        if self.thread and threading.current_thread() != self.thread:
-            self.thread.join()
-    
-    def parse_data(self, data):
-        """Parses the incoming data and returns the components."""
+        if self.server_thread and threading.current_thread() != self.server_thread:
+            self.server_thread.join()
+        print("TCP server stopped.")
+
+    def parse_data(self, data: str) -> Tuple[bool, int, List[List[int]], List[Tuple[float, float]], Tuple[float, float, float]]:
+        """
+        Parses the incoming data and returns its components.
+        Expected format (each item on a new line):
+            DATA
+            <size>
+            GLOBAL_MAP
+            <global map string or '-' if empty>
+            LOCAL_MAP
+            <lidar points string or '-' if empty>
+            POSITION
+            <x> <y> <theta> or '-' if not available
+        """
         lines = data.split("\n")
         try:
             print("RECEIVED DATA OK")
@@ -160,10 +191,10 @@ class DataReceiver:
             print("PARSED DATA OK")
             return True, size, global_map, lidar_points, robot_pos
         except AssertionError:
-            print("PARSED DATA ERROR, assertion failed")
+            print("PARSED DATA ERROR: assertion failed")
             return False, 0, None, None, None
         except Exception as e:
-            print("PARSED DATA ERROR, exception", e)
+            print("PARSED DATA ERROR: exception", e)
             return False, 0, None, None, None
 
 MANUAL_INTERVAL = 0.1
