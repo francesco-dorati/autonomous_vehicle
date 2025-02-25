@@ -1,7 +1,7 @@
 from raspberry_pi.config import ROBOT_CONFIG
 # from raspberry_pi.data_structures.states import CartPoint
 
-from typing import Tuple
+from typing import Tuple, List
 class Utils:
     PI_MRAD = 3141.592653
     MRAD_DEG = 17.4532925199
@@ -22,11 +22,21 @@ class Utils:
         return dist_mm // ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
     
     @staticmethod
-    def local_to_grid(grid_size_mm: int, local_point) -> Tuple[int, int]:
+    def local_to_grid(grid_size_mm: int, local_point: List) -> List[Tuple[int, int]]:
         """Converts a local point to grid point."""
+        grid_points = []
         grid_size = Utils.dist_to_grid(grid_size_mm)
-        gx = int(round(local_point.x / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (grid_size // 2))
-        gy = int(round(local_point.y / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (grid_size // 2))
-        return gx, gy
+        for point in local_point:
+            gx = int(round(point.x / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (grid_size // 2))
+            gy = int(round(point.y / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (grid_size // 2))
+            grid_points.append((gx, gy))
+        return grid_points
+    
+    # @staticmethod
+    # def local_to_world(local_point: CartPoint, position: Position) -> CartPoint:
+    #     """Converts a local point to global point."""
+    #     x = local_point.x * Utils.mrad_to_deg(position.th) + position.x
+    #     y = local_point.y * Utils.mrad_to_deg(position.th) + position.y
+    #     return CartPoint(x, y)
     
     

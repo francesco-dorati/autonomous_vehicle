@@ -13,6 +13,8 @@ class CartPoint:
         return f"x: {self.x}, y: {self.y}"
     def __repr__(self):
         return f"CartPoint({self.x:.2f}, {self.y:.2f})"
+    def get_position(self, th: int = 0):
+        return Position(self.x, self.y, 0)
 
 class PolarPoint:
     """
@@ -46,6 +48,10 @@ class Position:
         return f"pos({self.x}, {self.y}, {self.th})"
     def get_point(self) -> CartPoint:
         return CartPoint(self.x, self.y)
+    def __eq__(self, other):
+        if isinstance(other, Position):
+            return self.x == other.x and self.y == other.y and self.th == other.th
+        return False
     
 
     

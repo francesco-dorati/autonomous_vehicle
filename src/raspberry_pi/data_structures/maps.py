@@ -13,6 +13,11 @@ GlobalMap
 
 Returns:
     _type_: _description_
+
+Naming Conventions:
+    - world: refers to the external environment
+    - local: refers to the robot's position
+    all positions refers to world
 """
 
 import math
@@ -64,30 +69,238 @@ class LidarScan:
             return copy
 
 class OccupancyGrid:
+    """
+        Occupancy Grid
+        __origin_world (CartPoint): origin of the grid in world coordinates
+
+
+        - local refers to the grid's origin
+        - grid refers to the cell
+        - world refers to the center of the world
+        ()
+    """
     def __init__(self, size_mm: int):
         self.__size_mm: int = size_mm
         self.__grid_size: int = Utils.dist_to_grid(size_mm)
         self.__grid = None
+        self.__origin_world: Position = None
     
-    def get_size_mm(self):
-        return self.__size_mm
+    def set_origin_world(self, point: CartPoint):
+        self.__origin_world = point
 
-    def get_grid_size(self):
-        return self.__grid_size
+    # def set_from(self, other):
+    #     if self.__grid is not None:
+    #         logger.error("Trying to set grid from a non empty grid")
+    #         raise Exception("Trying to set grid from a non empty grid")
+  
+    #     origin: Position = self.get_origin_world()
+    #     other_origin: Position = other.get_origin_world()
+    #     if not origin or not other_origin or origin != other_origin:
+    #         logger.error("Trying to set grid from a grid without origin")
+    #         raise Exception("Trying to set grid from a grid without origin")
+        
+    #     self.__grid = np.full((self.__grid_size, self.__grid_size), -1, dtype=int)
+
+    #     if self.__grid_size >= other.get_grid_size():
+    #         # Our grid is larger: center the other grid into ours.
+    #         other_grid_size = other.get_grid_size()
+    #         off = (self.__grid_size - other_grid_size) // 2
+    #         self.__grid[off:off+other_grid_size, off:off+other_grid_size] = np.copy(other._OccupancyGrid__grid)
+    #     else:
+    #         # Our grid is smaller: extract the central subgrid of the other grid that fits into ours.
+    #         other_grid_size = other.get_grid_size()
+    #         off = (other_grid_size - self.__grid_size) // 2
+    #         self.__grid = np.copy(other._OccupancyGrid__grid[off:off+self.__grid_size, off:off+self.__grid_size])
+
+    def set_from(self, other):
+        if self.__grid is not None:
+            logger.error("Trying to set grid from a non empty grid")
+            raise Exception("Trying to set grid from a non empty grid")
     
-    
-    def set(self, gx, gy, val):
+        # Get origins (world coordinates) from both grids.
+        origin: CartPoint = self.get_origin_world()
+        other_origin: CartPoint = other.get_origin_world()
+        if not origin or not other_origin:
+            logger.error("One of the grids does not have a world origin set")
+            raise Exception("One of the grids does not have a world origin set")
+        
+        # Initialize our grid to unknown (-1)
+        self.__grid = np.full((self.__grid_size, self.__grid_size), -1, dtype=int)
+
+        # Resolution (mm per grid cell)
+        resolution = ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
+
+        # Compute displacement in world coordinates (mm) between our origin and other's origin.
+        dx_world = origin.x - other_origin.x
+        dy_world = origin.y - other_origin.y
+
+        # Convert the displacement into grid cell offsets (round to nearest integer).
+        dx_cells = round(dx_world / resolution)
+        dy_cells = round(dy_world / resolution)
+
+        # Get the size (number of cells) of the other grid.
+        other_grid_size = other.get_grid_size()
+
+        # Compute the base insertion offset:
+        # - Our grid's center is at (self.__grid_size//2, self.__grid_size//2)
+        # - Other grid's center is at (other_grid_size//2, other_grid_size//2)
+        # Then add the relative offset (dx_cells, dy_cells).
+        insert_x = (self.__grid_size // 2) - (other_grid_size // 2) + dx_cells
+        insert_y = (self.__grid_size // 2) - (other_grid_size // 2) + dy_cells
+
+        # Determine the overlapping region between our grid and the other grid.
+        # In our grid, valid indices: [0, self.__grid_size)
+        self_x_start = max(0, insert_x)
+        self_x_end   = min(self.__grid_size, insert_x + other_grid_size)
+        self_y_start = max(0, insert_y)
+        self_y_end   = min(self.__grid_size, insert_y + other_grid_size)
+        
+        # Corresponding indices in the other grid:
+        other_x_start = max(0, -insert_x)
+        other_x_end   = other_x_start + (self_x_end - self_x_start)
+        other_y_start = max(0, -insert_y)
+        other_y_end   = other_y_start + (self_y_end - self_y_start)
+
+        # Copy the overlapping region from the other grid into our grid.
+        self.__grid[self_x_start:self_x_end, self_y_start:self_y_end] = \
+            np.copy(other._OccupancyGrid__grid[other_x_start:other_x_end, other_y_start:other_y_end])
+
+    def set_free(self, gx, gy):
         if self.__grid is None:
             self.__grid = np.full((self.__grid_size, self.__grid_size), -1, dtype=int)
-        self.__grid[gx][gy] = val
-
-    def origin(self):
-        return ((self.__grid_size // 2), (self.__grid_size // 2))
+        self.__grid[gx][gy] = 0
+    def set_unknown(self, gx, gy):
+        if self.__grid is None:
+            self.__grid = np.full((self.__grid_size, self.__grid_size), -1, dtype=int)
+        self.__grid[gx][gy] = -1
+    def set_occupied(self, gx, gy):
+        if self.__grid is None:
+            self.__grid = np.full((self.__grid_size, self.__grid_size), -1, dtype=int)
+        self.__grid[gx][gy] = 1
     
-    def get_string(self):
+    def get_size_mm(self) -> int:
+        return self.__size_mm
+    def get_grid_size(self) -> int:
+        return self.__grid_size
+    def get_origin_world(self) -> CartPoint:
+        return self.__origin_world
+    def get(self, gx, gy) -> int:
+        if not (0 <= gx < self.__grid_size and 0 <= gy < self.__grid_size):
+            return -1
+        if self.__grid is None:
+            return -1
+        return self.__grid[gx][gy]
+    def get_string(self, row_sep: str = ";") -> str:
         if self.__grid is None:
             return "-"
         return ";".join([" ".join(map(str, row)) for row in self.__grid])
+    def get_copy(self):
+        copy_grid = OccupancyGrid(self.__size_mm)
+        copy_grid.set_origin_world(self.__origin_world) 
+        if self.__grid is not None:
+            copy_grid.__grid = np.copy(self.__grid)  # Deep copy of the grid array
+        return copy_grid
+    def get_grid(self) -> np.ndarray:
+        return self.__grid
+    def origin_grid(self):
+        return ((self.__grid_size // 2), (self.__grid_size // 2))
+
+    def are_inside(self, local_points: List[CartPoint]) -> bool:
+        grid_points = self.local_to_grid(local_points)
+        ok = True
+        for gx, gy in grid_points:
+            if not ok:
+                break
+            inside_x = (gx >= 0 and gx < self._grid_size)
+            inside_y = (gy >= 0 and gy < self._grid_size)
+            ok = ok and inside_x and inside_y
+        return ok
+
+    def local_to_grid(self, local_points: List[CartPoint]) -> List[Tuple[int, int]]:
+        """Converts a local point to grid point."""
+        grid_points = []
+        for point in local_points:
+            gx = int(round(point.x / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (self.__grid_size // 2))
+            gy = int(round(point.y / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (self.__grid_size // 2))
+            grid_points.append((gx, gy))
+        return grid_points
+    def local_to_world(self, position: Position, local_points: List[CartPoint]) -> List[CartPoint]:
+        pass
+    def other_to_local(self, other_position: Position, other_points: List[CartPoint]) -> List[CartPoint]:
+        other_theta_rad = other_position.th / 1000
+        world_points = []
+        for point in other_points:
+            x = other_position.x + point.x*np.cos(other_theta_rad) - point.y*np.sin(other_theta_rad)
+            y = other_position.y + point.x*np.sin(other_theta_rad) + point.y*np.cos(other_theta_rad)
+            world_points.append(CartPoint(x, y))
+        return world_points
+    
+    def ray_cast(self, local_point: CartPoint, local_obstacle_points: List[CartPoint]) -> None:
+        cast_origin: Tuple[int, int] =  self.local_to_grid([local_point])[0]
+        grid_points: List[Tuple[int, int]] = self.local_to_grid(local_obstacle_points)
+        for obstacle_grid_point in grid_points:
+            cells_between = self.__cells_between(cast_origin, obstacle_grid_point)
+            for grid_point in cells_between:
+                self.set_free(*grid_point)
+            self.set_occupied(*obstacle_grid_point)
+
+    def __cells_between(self, origin: Tuple[int, int], obstacle: Tuple[int, int]) -> List[Tuple[int, int]]:
+        x0, y0 = origin
+        x1, y1 = obstacle
+        if abs(x1-x0) > abs(y1-y0):
+            # HORIZONTAL
+            cells = self.__cells_between_h(x0, y0, x1, y1)
+        else:
+            # VERTICAL
+            cells = self.__cells_between_v(x0, y0, x1, y1)
+        return cells
+    def __cells_between_h(self, x0, y0, x1, y1):
+        cells = []
+        if x0 > x1:
+            x0, x1 = x1, x0
+            y0, y1 = y1, y0
+        dx = x1 - x0
+        dy = y1 - y0
+        dir = -1 if dy < 0 else 1
+        dy *= dir
+        if dx != 0:
+            y = y0
+            p = 2 * dy - dx
+            for i in range(dx + 1):
+                cells.append((x0 + i, y))
+                if p > 0:
+                    y += dir
+                    p -= 2 * dx
+                p += 2 * dy
+        return cells
+    def __cells_between_v(self, x0, y0, x1, y1):
+        cells = []
+        if y0 > y1:
+            x0, x1 = x1, x0
+            y0, y1 = y1, y0
+        dx = x1 - x0
+        dy = y1 - y0
+        dir = -1 if dx < 0 else 1
+        dx *= dir
+        if dy != 0:
+            x = x0
+            p = 2 * dx - dy
+            for i in range(dy + 1):
+                cells.append((x, y0 + i))
+                if p >= 0:
+                    x += dir
+                    p -= 2 * dy
+                p += 2 * dx
+        return cells
+    
+    # def local_to_world(self, position: Position, local_points: List[CartPoint]) -> List[CartPoint]:
+    #     global_points = []
+    #     robot_th_rad = position.th / 1000
+    #     for lx, ly in local_points:
+    #         x = position.x + lx*np.cos(robot_th_rad) - ly*np.sin(robot_th_rad)
+    #         y = position.y + lx*np.sin(robot_th_rad) + ly*np.cos(robot_th_rad)
+    #         global_points.append(CartPoint(x, y))
+    #     return global_points
 
 
 # can be extended as localmap as abstarct class and lidarmap, occupancy map as childs
@@ -239,13 +452,13 @@ class GlobalMap:
 
     def __init__(self, name: str):
         self.name: str = name
-        self._grid_size: int = ROBOT_CONFIG.GLOBAL_MAP_SIZE_MM // ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
-
-        self._grid = np.full((self._grid_size, self._grid_size), -1, dtype=int)
-        self.origin = lambda: ((self._grid_size // 2), (self._grid_size // 2))
+        self.__grid = OccupancyGrid(ROBOT_CONFIG.GLOBAL_MAP_SIZE_MM)
+        self.__grid.set_origin_world(CartPoint(0, 0))
+        
+        # self.origin = lambda: ((self._grid_size // 2), (self._grid_size // 2))
     
     def __repr__(self):
-        return f"global_map(size={self._grid_size})"
+        return f"global_map(size={self.__grid.get_grid_size()})"
 
     @timing_decorator
     def is_position_free(self, pos: Position) -> bool:
@@ -260,7 +473,7 @@ class GlobalMap:
             bool: if position is free
         """
         gx, gy = self._world_to_grid(pos)
-        return self._grid[gx][gy] == 0
+        return self._grid.get(gx, gy) == 0
 
     @timing_decorator
     def is_segment_free(self, pos1: Position, pos2: Position) -> bool:
@@ -278,7 +491,7 @@ class GlobalMap:
         pass
 
     @timing_decorator
-    def expand(self, position: Position, local_map: LocalMap) -> None:
+    def expand(self, robot_position: Position, local_map: LocalMap) -> None:
         """
         Expand
         Expands the map based on the local map and its position
@@ -287,18 +500,33 @@ class GlobalMap:
             position (Position): position of the local map
             local_map (LocalMap): local map of the envoironment
         """
-        local_points = local_map.get_certeisan_points()
-        for lx, ly in local_points:
-            robot_th_rad = position.th / 1000
-            obs_x = position.x + lx*np.cos(robot_th_rad) - ly*np.sin(robot_th_rad)
-            obs_y = position.y + lx*np.sin(robot_th_rad) + ly*np.cos(robot_th_rad)
-            obs_point = CartPoint(obs_x, obs_y) # global coordinates
-            robot_point = position.get_point()
-            if not self._is_inside(obs_point):
-                self._expand_grid()
-            self._ray_cast(robot_point, obs_point)
+        robot_point: CartPoint = robot_position.get_point()
+        local_points: List[CartPoint] = local_map.get_cartesian_points() # local based on robot position
+        global_points: List[CartPoint] = self.__grid.other_to_local(robot_position, local_points)
+        while not self.__grid.are_inside(global_points):
+            self.__expand_grid()
+        self.__grid.ray_cast(robot_point, local_points)
+        
+        # #####
+        # for point in global_points:
+        #     if not self._is_inside(point):
+        #     gx, gy = self._world_to_grid(point)
+        #     self._set_free(gx, gy)
 
-    def get_subsection(self, center_local: CartPoint, size: int) -> OccupancyGrid:
+        # for lx, ly in local_points:
+        #     robot_th_rad = position.th / 1000
+        #     obs_x = position.x + lx*np.cos(robot_th_rad) - ly*np.sin(robot_th_rad)
+        #     obs_y = position.y + lx*np.sin(robot_th_rad) + ly*np.cos(robot_th_rad)
+        #     obs_point = CartPoint(obs_x, obs_y) # global coordinates
+        #     robot_point = position.get_point()
+        #     if not self._is_inside(obs_point):
+        #         self._expand_grid()
+        #     self._ray_cast(robot_point, obs_point)
+
+    def get_copy(self) -> OccupancyGrid:
+        return self.__grid.get_copy()
+    
+    def get_subsection(self, size_mm: int, origin_world: CartPoint) -> OccupancyGrid:
         """
         Get Subsection
         Returns a subsection of the grid based on the position and size
@@ -310,7 +538,11 @@ class GlobalMap:
         Returns:
             OccupancyGrid: subsection of the grid
         """
-        subsection = OccupancyGrid(size)
+        subsection = OccupancyGrid(size_mm)
+        subsection.set_origin_world(origin_world)
+        subsection.set_from(self.__grid)
+        return subsection
+
         for lx in range(size):
             for ly in range(size):
                 current_global = CartPoint(
@@ -366,120 +598,120 @@ class GlobalMap:
 
 
 
-    def _expand_grid(self) -> None:
-        new_size = (self._grid_size*2)
-        new_grid = np.full((new_size, new_size), -1, dtype=int)
-        off = (new_size - self._grid_size) // 2
+    def __expand_grid(self) -> None:
+        """ Expand grid with one double the size """
+        new_size_mm = self.__grid.get_size_mm() * 2
+        new_grid = OccupancyGrid(new_size_mm)
+        new_grid.set_origin_world(self.__grid.get_origin_world())
+        new_grid.set_from(self.__grid)
+        self.__grid = new_grid
 
-        new_grid[off:off+self._grid_size, off:off+self._grid_size] = self._grid
-        self._grid_size = new_size
-        self._grid = new_grid
 
-    def _world_to_grid(self, p: CartPoint) -> tuple[int, int]:
-        """
-        World Position to Grid Position
-        Position (0, 0) world is center of grid
+    # def _world_to_grid(self, p: CartPoint) -> tuple[int, int]:
+        # """
+        # World Position to Grid Position
+        # Position (0, 0) world is center of grid
 
-        Args:
-            pos (Position): position reference to the starting point
+        # Args:
+        #     pos (Position): position reference to the starting point
 
-        Returns:
-            int, int: index of the position
-        """
-        gx = round(p.x / self.RESOLUTION) + (self._grid_size // 2)
-        gy = round(p.y / self.RESOLUTION) + (self._grid_size // 2)
-        return gx, gy
+        # Returns:
+        #     int, int: index of the position
+        # """
+        # gx = round(p.x / self.RESOLUTION) + (self._grid_size // 2)
+        # gy = round(p.y / self.RESOLUTION) + (self._grid_size // 2)
+        # return gx, gy
     
-    def _is_inside(self, p: CartPoint):
-        gx, gy = self._world_to_grid(p)
-        inside_x = (gx >= 0 and gx < self._grid_size)
-        inside_y = (gy >= 0 and gy < self._grid_size)
-        inside = inside_x and inside_y
-        return inside
+    # def _is_inside(self, p: CartPoint):
+    #     gx, gy = self._world_to_grid(p)
+    #     inside_x = (gx >= 0 and gx < self._grid_size)
+    #     inside_y = (gy >= 0 and gy < self._grid_size)
+    #     inside = inside_x and inside_y
+    #     return inside
         
-    def _get(self, p: CartPoint) -> int:
-        gx, gy = self._world_to_grid(p)
-        return self._grid[gx][gy]
+    # def _get(self, p: CartPoint) -> int:
+    #     gx, gy = self._world_to_grid(p)
+    #     return self._grid[gx][gy]
     
-    def _set_unknown(self, gx, gy) -> None:
-        self._grid[gx][gy] = -1
+    # def _set_unknown(self, gx, gy) -> None:
+    #     self._grid[gx][gy] = -1
     
-    def _set_free(self, gx, gy) -> None:
-        self._grid[gx][gy] = 0
+    # def _set_free(self, gx, gy) -> None:
+    #     self._grid[gx][gy] = 0
     
-    def _set_occupied(self, gx, gy) -> None:
-        self._grid[gx][gy] = 1 
+    # def _set_occupied(self, gx, gy) -> None:
+    #     self._grid[gx][gy] = 1 
 
-    def _ray_cast(self, robot_point: CartPoint, obs_point: CartPoint) -> None:
-        """
-        Ray Cast
-        Set the line between robot and obstacle as free
-            and the obstacle position as occupied
+    # def _ray_cast(self, robot_point: CartPoint, obs_point: CartPoint) -> None:
+    #     """
+    #     Ray Cast
+    #     Set the line between robot and obstacle as free
+    #         and the obstacle position as occupied
 
-        Args:
-            robot_pos (Position): position of the robot
-            obstacle_pos (Position): position of the obstacle
-        """
-        xr, yr = self._world_to_grid(robot_point)
-        xo, yo = self._world_to_grid(obs_point)
-        cells_between = self._cells_between(xr, yr, xo, yo)
-        for gx, gy in cells_between:
-            self._set_free(gx, gy)
-        self._set_occupied(xo, yo)
+    #     Args:
+    #         robot_pos (Position): position of the robot
+    #         obstacle_pos (Position): position of the obstacle
+    #     """
+    #     xr, yr = self._world_to_grid(robot_point)
+    #     xo, yo = self._world_to_grid(obs_point)
+    #     cells_between = self._cells_between(xr, yr, xo, yo)
+    #     for gx, gy in cells_between:
+    #         self._set_free(gx, gy)
+    #     self._set_occupied(xo, yo)
     
-    def _cells_between(self, x0, y0, x1, y1) -> list:
-        """
-        Cells Between
-        Returns:
-            list: list of (gx, gy), including initial and final values [(gx0, gy0), ..., (gx1, gy1)]
-        """
-        if abs(x1-x0) > abs(y1-y0):
-            # HORIZONTAL
-            cells = self._cells_between_h(x0, y0, x1, y1)
-        else:
-            # VERTICAL
-            cells = self._cells_between_v(x0, y0, x1, y1)
-        return cells
+    # def _cells_between(self, x0, y0, x1, y1) -> list:
+    #     """
+    #     Cells Between
+    #     Returns:
+    #         list: list of (gx, gy), including initial and final values [(gx0, gy0), ..., (gx1, gy1)]
+    #     """
+    #     if abs(x1-x0) > abs(y1-y0):
+    #         # HORIZONTAL
+    #         cells = self._cells_between_h(x0, y0, x1, y1)
+    #     else:
+    #         # VERTICAL
+    #         cells = self._cells_between_v(x0, y0, x1, y1)
+    #     return cells
     
-    def _cells_between_h(self, x0, y0, x1, y1):
-        cells = []
-        if x0 > x1:
-            x0, x1 = x1, x0
-            y0, y1 = y1, y0
-        dx = x1 - x0
-        dy = y1 - y0
-        dir = -1 if dy < 0 else 1
-        dy *= dir
-        if dx != 0:
-            y = y0
-            p = 2 * dy - dx
-            for i in range(dx + 1):
-                cells.append((x0 + i, y))
-                if p > 0:
-                    y += dir
-                    p -= 2 * dx
-                p += 2 * dy
-        return cells
+    # def _cells_between_h(self, x0, y0, x1, y1):
+    #     cells = []
+    #     if x0 > x1:
+    #         x0, x1 = x1, x0
+    #         y0, y1 = y1, y0
+    #     dx = x1 - x0
+    #     dy = y1 - y0
+    #     dir = -1 if dy < 0 else 1
+    #     dy *= dir
+    #     if dx != 0:
+    #         y = y0
+    #         p = 2 * dy - dx
+    #         for i in range(dx + 1):
+    #             cells.append((x0 + i, y))
+    #             if p > 0:
+    #                 y += dir
+    #                 p -= 2 * dx
+    #             p += 2 * dy
+    #     return cells
 
-    def _cells_between_v(self, x0, y0, x1, y1):
-        cells = []
-        if y0 > y1:
-            x0, x1 = x1, x0
-            y0, y1 = y1, y0
-        dx = x1 - x0
-        dy = y1 - y0
-        dir = -1 if dx < 0 else 1
-        dx *= dir
-        if dy != 0:
-            x = x0
-            p = 2 * dx - dy
-            for i in range(dy + 1):
-                cells.append((x, y0 + i))
-                if p >= 0:
-                    x += dir
-                    p -= 2 * dy
-                p += 2 * dx
-        return cells
+    # def _cells_between_v(self, x0, y0, x1, y1):
+    #     cells = []
+    #     if y0 > y1:
+    #         x0, x1 = x1, x0
+    #         y0, y1 = y1, y0
+    #     dx = x1 - x0
+    #     dy = y1 - y0
+    #     dir = -1 if dx < 0 else 1
+    #     dx *= dir
+    #     if dy != 0:
+    #         x = x0
+    #         p = 2 * dx - dy
+    #         for i in range(dy + 1):
+    #             cells.append((x, y0 + i))
+    #             if p >= 0:
+    #                 x += dir
+    #                 p -= 2 * dy
+    #             p += 2 * dx
+    #     return cells
     
 
     # def 

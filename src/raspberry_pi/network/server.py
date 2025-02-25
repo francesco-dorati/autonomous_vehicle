@@ -142,7 +142,7 @@ class CommandServer:
             """ Save Map
                 "MAP SAV" -> "OK"
             """
-            self.robot.save_map()
+            self.robot.save_global_map()
             return "OK"
             
         elif command == "LOD":
@@ -158,8 +158,9 @@ class CommandServer:
             return "OK"
 
         elif command == "STP":
-            # Stop Mapping
-            # "MAP STP" -> "OK"
+            """ Stop Mapping
+                "MAP STP" -> "OK"
+            """
             self.robot.stop_mapping()
             return "OK"
         return "KO"

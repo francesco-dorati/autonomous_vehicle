@@ -126,6 +126,7 @@ void send_motor_powers();
 void stop_motors();
 
 // // VELOCITY CONTROL
+#define MIN_W_VEL 10 // mm/s
 int target_robot_velocities_m[2] = {0, 0}; // vx (mm/s), vt (mrad/s)
 int target_wheel_velocities_m[2] = {0, 0}; // vl, vr (mm/s)
 double pid_goal_left = 0, pid_goal_right = 0; // PID goal
@@ -607,12 +608,19 @@ void velocity_control() {
         (wheels velocities are already calculated)
         reads: target_wheel_velocities_m[2]
         writes: target_powers[2] 
-    */
-    // update pid variables 
-    pid_actual_left = actual_wheel_velocities_m[0];
-    pid_actual_right = actual_wheel_velocities_m[1];
-    pid_goal_left = target_wheel_velocities_m[0];
-    pid_goal_right = target_wheel_velocities_m[1];
+    */   
+   // update pid variables 
+   pid_actual_left = actual_wheel_velocities_m[0];
+   pid_actual_right = actual_wheel_velocities_m[1];
+   pid_goal_left = target_wheel_velocities_m[0];
+   pid_goal_right = target_wheel_velocities_m[1];
+   
+   // floor small velocities
+    if (abs(pid_goal_left) < MIN_W_VEL && abs(pid_goal_right) < MIN_W_VEL) {
+        stop_motors();
+        return;
+    }
+
     // compute PID
     PID_LEFT.Compute();
     PID_RIGHT.Compute();

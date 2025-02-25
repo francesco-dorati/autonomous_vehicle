@@ -52,6 +52,26 @@ class Controller:
             self.model.map_name = None
             self.view.main_page.discard_map()
     
+    def save_map(self):
+        self.connection.save_map()
+
+    def toggle_mapping(self):
+        mapping_var = self.view.main_page.mapping_frame.mapping_var
+        checkbox = self.view.main_page.mapping_frame.mapping_checkbox
+
+        enabled = mapping_var.get()
+        checkbox.config(state="disabled")
+
+        if enabled:
+            ok = self.connection.start_mapping()
+        else:
+            ok = self.connection.stop_mapping()
+
+        if not ok:
+            mapping_var.set(not enabled)
+        checkbox.config(state="enabled")
+    
+    
     # CONTROL
     def set_control(self, control_type: str):
         if control_type == "manual":

@@ -9,11 +9,18 @@ class MappingFrame(tk.Frame):
         self.text_frame = tk.Frame(self) 
         self.map_label = tk.Label(self.text_frame, text="Map: ", font=("Arial", 15, 'bold'))
         self.map_name = tk.Label(self.text_frame, text="---")
-        self.mapping_checkbox = tk.Checkbutton(self.text_frame, text=" mapping", font=("Arial", 14))
+        self.mapping_var = tk.BooleanVar()
+        self.mapping_checkbox = tk.Checkbutton(
+            self.text_frame, 
+            text=" mapping", 
+            font=("Arial", 14),
+            variable=self.mapping_var,
+            command=self.controller.toggle_mapping
+        )
 
         self.map_frame = tk.Frame(self, borderwidth=2, relief='raised', bg='lightgray', width=200, height=200)
 
-        self.save_button = tk.Button(self, text="Save Map", font=("Arial", 15))
+        self.save_button = tk.Button(self, text="Save Map", font=("Arial", 15), command=self.controller.save_map)
         self.discard_button = tk.Button(self, text="Discard Map", font=("Arial", 15), command=self.controller.discard_map)
 
         self.new_map_button = tk.Button(self, text="New Map", font=("Arial", 15), command=self.new_map_popup)

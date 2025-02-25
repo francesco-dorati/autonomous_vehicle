@@ -111,8 +111,7 @@ class Robot:
         with self.__lock:
             return NANO.get_battery()
         
-    # MAPPING
-    
+    ### MAPPING ###
     @timing_decorator
     def new_global_map(self, name: str) -> None:
         """ New global map
@@ -148,61 +147,55 @@ class Robot:
         with self.__lock:
             if self.__global_map is None:
                 raise Exception("Global map not initialized")
-            g = self.__global_map.get_grid()
-        # TODO save it
+            grid: OccupancyGrid = self.__global_map.get_copy()
+        Drawer.save_global_map(self.__global_map.name, grid)
     
-
     @timing_decorator
     def load_global_map(self):
         pass
+
+    @timing_decorator
+    def start_mapping(self):
+        with self.__lock:
+            self.__mapping = True
+
+    @timing_decorator
+    def stop_mapping(self):
+        with self.__lock:
+            self.__mapping = False
         
     @timing_decorator
-    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[CartPoint], Optional[Position]]:
+    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[int, int], Optional[Position]]:
         """ Returns data
             - global map: Occupancy Grid
             - local map: list of points (inside the grid frame)
             - position: global coordinates
         """
-        global_map = OccupancyGrid(size_mm)
+        global_map: OccupancyGrid = OccupancyGrid(size_mm)
         lidar_points = []
         position = None
         with self.__lock:
             # GLOBAL MAP
             if self.__global_map and self.__actual_position:
-                global_map = self.__global_map.get_subsection(self.__actual_position, size_mm)
+                global_map = self.__global_map.get_subsection(size_mm, self.__actual_position)
             # LOCAL MAP
             if self.__local_map:
-                list_points = self.__local_map.get_cartesian_points(size_mm)
-                lidar_points: Tuple[int, int] = [Utils.local_to_grid(size_mm, p) for p in list_points]
+                local_points: List[CartPoint] = self.__local_map.get_cartesian_points(size_mm)
+                lidar_grid_points: List[Tuple[int, int]] = global_map.local_to_grid(local_points)
             # POSITION
             if self.__actual_position:
                 position = self.__actual_position
-        return global_map, lidar_points, position
+        # global_map = global_map.get_grid()
+        return global_map, lidar_grid_points, position
     
-        
-    @timing_decorator
-    def get_global_map_subsection(self, size) -> Optional[OccupancyGrid]:
-        """ Returns an occupancy grid
-            returns None if no global map
-        """
-        with self.__lock:
-            if self.__global_map is None or self.__actual_position is None:
-                return None
-            return self.__global_map.get_subsection(self.__actual_position, size)
-    
-    def get_local_points(self, size) -> Optional[List[CartPoint]]:
-        """ Returns a local map
-            returns None if no local map
-        """
-        with self.__lock:
-            return self.__local_map.get_subsection(size) if self.__local_map else None
-        
+    ### END MAP ###
+
     @timing_decorator
     def reset_odometry(self):
         RP2040.reset_odometry()
+############# END PUBLIC ##############
 
-
-############# PUBLIC ##############
+############# PRIVATE ##############
     def __start_control_loop(self):
         with self.__lock:
             if self.__control_thread is None:

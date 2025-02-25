@@ -87,6 +87,7 @@ class ClientConnection:
         except Exception as e:
             print(f"Failed to stop control: {e}")
     
+    # MAPPING COMMANDS
     def new_map(self, map_name: str) -> bool:
         """Sends a command to the robot to start a new map."""
         if not self.connection:
@@ -111,6 +112,42 @@ class ClientConnection:
             return response == "OK"
         except Exception as e:
             print(f"Failed to send discard map command: {e}")
+            return False
+    
+    def save_map(self) -> bool:
+        """Sends a command to the robot to save the current map."""
+        if not self.connection:
+            return
+        try:
+            self.connection.send("MAP SAV\n".encode())
+            response = self.connection.recv(32).decode().strip()
+            return response == "OK"
+        except Exception as e:
+            print(f"Failed to send save map command: {e}")
+            return False
+
+    def start_mapping(self) -> bool:
+        """Sends a command to the robot to start mapping."""
+        if not self.connection:
+            return
+        try:
+            self.connection.send("MAP STR\n".encode())
+            response = self.connection.recv(32).decode().strip()
+            return response == "OK"
+        except Exception as e:
+            print(f"Failed to send start mapping command: {e}")
+            return False
+        
+    def stop_mapping(self) -> bool:
+        """Sends a command to the robot to stop mapping."""
+        if not self.connection:
+            return
+        try:
+            self.connection.send("MAP STP\n".encode())
+            response = self.connection.recv(32).decode().strip()
+            return response == "OK"
+        except Exception as e:
+            print(f"Failed to send stop mapping command: {e}")
             return False
 
 class DataReceiver:
