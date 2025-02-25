@@ -165,26 +165,30 @@ class Robot:
             self.__mapping = False
         
     @timing_decorator
-    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[int, int], Optional[Position]]:
+    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[CartPoint], Optional[Position]]:
         """ Returns data
             - global map: Occupancy Grid
             - local map: list of points (inside the grid frame)
             - position: global coordinates
         """
         global_map: OccupancyGrid = OccupancyGrid(size_mm)
-        lidar_points = []
+        lidar_grid_points = []
         position = None
+        logger.info("Got data")
         with self.__lock:
             # GLOBAL MAP
             if self.__global_map and self.__actual_position:
                 global_map = self.__global_map.get_subsection(size_mm, self.__actual_position)
+            logger.info("Global m")
             # LOCAL MAP
             if self.__local_map:
                 local_points: List[CartPoint] = self.__local_map.get_cartesian_points(size_mm)
                 lidar_grid_points: List[Tuple[int, int]] = global_map.local_to_grid(local_points)
+            logger.info("local m")
             # POSITION
             if self.__actual_position:
                 position = self.__actual_position
+            logger.info("pos")
         # global_map = global_map.get_grid()
         return global_map, lidar_grid_points, position
     
@@ -233,10 +237,12 @@ class Robot:
                     global_map: GlobalMap = self.__global_map  # Store reference safely
                     mapping_enabled: bool = self.__mapping
                     control_type: str = self.__control_type  # Avoid repeated lock usage
+                logger.info("First lock released")
 
                 # 📡 Request sensor data (outside the lock)
                 local_map = Lidar.produce_local_map()
                 actual_pos = RP2040.get_position() if global_map else None
+                logger.info("Requested data")
 
                 # 🔒 LOCK 2 - Update shared state
                 with self.__lock:
@@ -255,7 +261,8 @@ class Robot:
                     elif control_type == self.ControlType.VELOCITY:
                         # TODO obstacle avoidance
                         target_velocity = self.__target_velocity
-                
+                logger.info("Second lock released")
+
                 # Control commands (outside the lock)
                 if control_type == self.ControlType.POSITION:
                     RP2040.set_target_position(target_position)
@@ -265,7 +272,7 @@ class Robot:
                 time.sleep(ROBOT_CONFIG.CONTROL_LOOP_INTERVAL)
 
         except Exception as e:
-            logger.error(f"Robot loop error: {e}")
+            logger.error(f"Robot loop error: {e}", e)
             
         finally:
             RP2040.stop_motors()

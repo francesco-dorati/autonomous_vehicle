@@ -32,7 +32,7 @@ class CommandServerConfig:
     HOST: str
     PORT: int
 COMMAND_SERVER_CONFIG = CommandServerConfig(
-    HOST = "192.168.1.103",          
+    HOST = "192.168.1.107",          
     PORT = 5500,       
 )
 

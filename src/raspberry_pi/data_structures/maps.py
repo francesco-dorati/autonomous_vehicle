@@ -538,6 +538,7 @@ class GlobalMap:
         Returns:
             OccupancyGrid: subsection of the grid
         """
+        # ERRRORR HERE
         subsection = OccupancyGrid(size_mm)
         subsection.set_origin_world(origin_world)
         subsection.set_from(self.__grid)
