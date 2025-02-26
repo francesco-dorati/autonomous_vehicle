@@ -2,6 +2,7 @@ import socket
 import threading
 import time
 from typing import Tuple, List
+import numpy as np
 
 class ClientConnection:
     """
@@ -165,7 +166,7 @@ class DataReceiver:
         POSITION
         <x> <y> <theta>  (or '-' if not available)
     """
-    def __init__(self, tcp_port: int, update_callback, buffer_size: int = 2048):
+    def __init__(self, tcp_port: int, update_callback, buffer_size: int = 4086):
         self.tcp_port = tcp_port
         self.update_callback = update_callback  # Function to update the view with new data
         self.buffer_size = buffer_size
@@ -238,26 +239,34 @@ class DataReceiver:
         """
         lines = data.split("\n")
         try:
-            # print("RECEIVED DATA OK")
-            # print(lines)
+            print("RECEIVED DATA OK")
+            print(lines)
             assert lines[0] == "DATA"
             size = int(lines[1])
+            print("DATA OK")
+
             assert lines[2] == "GLOBAL_MAP"
             global_map = None
             if lines[3] != "-":
-                global_map = [list(map(int, row.split())) for row in lines[3].split(";")]
+                global_map = np.frombuffer(data, dtype=np.uint8).reshape((size, size))
+            print("GLOBAL_MAP OK")
+
             assert lines[4] == "LOCAL_MAP"
             lidar_points = None
             if lines[5] != "-":
                 lidar_points = [tuple(map(float, point.split())) for point in lines[5].split(";")]
+            print("LOCAL_MAP OK")
+
             assert lines[6] == "POSITION"
             robot_pos = None
             if lines[7] != "-":
                 robot_pos = tuple(map(float, lines[7].split()))
-            # print("PARSED DATA OK")
+            
+            print("PARSED DATA OK")
+
             return True, size, global_map, lidar_points, robot_pos
-        except AssertionError:
-            print("PARSED DATA ERROR: assertion failed")
+        except AssertionError as e:
+            print("PARSED DATA ERROR: assertion failed", e)
             return False, 0, None, None, None
         except Exception as e:
             print("PARSED DATA ERROR: exception", e)

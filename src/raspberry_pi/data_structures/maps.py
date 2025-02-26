@@ -194,6 +194,14 @@ class OccupancyGrid:
         if self.__grid is None:
             return -1
         return self.__grid[gx][gy]
+    
+    def get_bytes(self) -> bytes:
+        """ get the bytes of the grid (shifted by 1) """
+        if self.__grid is None:
+            return b"-"
+        mapped = (self.__grid + 1) * (self.__grid != -1)
+        return mapped.astype(np.uint8).tobytes()
+    
     def get_string(self, row_sep: str = ";") -> str:
         if self.__grid is None:
             return "-"

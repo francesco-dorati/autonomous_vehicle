@@ -73,34 +73,35 @@ class DataTransmitter:
                 logger.debug("DATA TRANSMITTER start")
 
                 logger.debug("DATA TRANSMITTER getting data from robot")
-                payload = f"DATA\n{DATA_SERVER_CONFIG.SIZE_MM // ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n"
+                payload = b"DATA\n"
+                payload += f"{DATA_SERVER_CONFIG.SIZE_MM//ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n".encode()
                 global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
                 logger.debug("DATA TRANSMITTER got data from robot")
                 
                 # Append GLOBAL MAP section
                 logger.debug("DATA TRANSMITTER adding global map to payload...")
-                payload += "GLOBAL_MAP\n"
-                payload += "-"#f"{global_map.get_string()}\n"
+                payload += b"GLOBAL_MAP\n"
+                payload += global_map.get_bytes() + b"\n"
                 logger.debug(f"DATA TRANSMITTER global map size: {global_map.get_grid_size()}")
                 
                 # Append LOCAL MAP (lidar points) section
                 logger.debug("DATA TRANSMITTER adding local map to payload...")
-                payload += "LOCAL_MAP\n"
+                payload += b"LOCAL_MAP\n"
                 logger.debug(f"lidar points: {lidar_points}")
                 if len(lidar_points) > 0:
                     lidar_points_str = ";".join([f"{point[0]} {point[1]}" for point in lidar_points])
-                    payload += f"{lidar_points_str}\n"
+                    payload += f"{lidar_points_str}\n".encode()
                 else:
-                    payload += "-\n"
+                    payload += b"-\n"
                 
                 # Append POSITION section
                 logger.debug("DATA TRANSMITTER adding pos to payload...")
                 payload += "POSITION\n"
                 logger.debug(f"position: {position}")
                 if position:
-                    payload += f"{position.x} {position.y} {position.th}\n"
+                    payload += f"{position.x} {position.y} {position.th}\n".encode()
                 else:
-                    payload += "-\n"
+                    payload += b"-\n"
                 
                 # Send the complete payload via the established TCP connection
                 self._socket.sendall(payload.encode())

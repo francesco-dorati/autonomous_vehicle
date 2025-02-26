@@ -177,12 +177,13 @@ class Robot:
         global_map: OccupancyGrid = OccupancyGrid(size_mm)
         lidar_grid_points = []
         position = None
-        logger.info("Got data")
+        logger.info("ROBOT get data")
         with self.__lock:
             # GLOBAL MAP
             if self.__global_map and self.__actual_position:
                 global_map = self.__global_map.get_subsection(size_mm, self.__actual_position)
             logger.info("Global m")
+
             # LOCAL MAP
             if self.__local_map:
                 local_points: List[CartPoint] = self.__local_map.get_cartesian_points(size_mm)
