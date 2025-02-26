@@ -80,7 +80,7 @@ class DataTransmitter:
                 # Append GLOBAL MAP section
                 logger.debug("DATA TRANSMITTER adding global map to payload...")
                 payload += "GLOBAL_MAP\n"
-                payload += f"{global_map.get_string()}\n"
+                payload += "-"#f"{global_map.get_string()}\n"
                 logger.debug(f"DATA TRANSMITTER global map size: {global_map.get_grid_size()}")
                 
                 # Append LOCAL MAP (lidar points) section

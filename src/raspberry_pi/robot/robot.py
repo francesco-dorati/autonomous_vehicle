@@ -231,32 +231,41 @@ class Robot:
         Lidar.start_scan()
         try:
             while not self.__stop_loop_event.is_set():
-                logger.debug("Loop running")
+                logger.debug("LOOP start")
                 # 🔒 LOCK 1 - Read shared state
                 with self.__lock:
+                    logger.debug("LOOP acquired first lock")
                     if self.__control_type == self.ControlType.OFF:
-                        logger.info("LOOP Stopping control loop. (control OFF)")
+                        logger.info("LOOP stopping control loop. (control OFF)")
                         break
                     global_map: GlobalMap = self.__global_map  # Store reference safely
                     mapping_enabled: bool = self.__mapping
                     control_type: str = self.__control_type  # Avoid repeated lock usage
-                logger.debug(f"LOOP First lock released (mapping: {mapping_enabled})")
+
+                logger.debug(f"LOOP released first lock")
 
                 # 📡 Request sensor data (outside the lock)
                 local_map = Lidar.produce_local_map()
                 actual_pos = RP2040.get_position() if global_map else None
-                logger.debug("LOOP Requested data")
+
+                logger.debug("LOOP retreived data from external devices")
+                logger.debug(f"LOOP: control_type: {control_type}, mapping: {mapping_enabled}, position: {actual_pos}")
 
                 # 🔒 LOCK 2 - Update shared state
                 with self.__lock:
+                    logger.debug("LOOP acquired second lock")
+
                     self.__local_map = local_map
                     self.__actual_position = actual_pos
 
                     # 🗺️ Expand global map (if mapping is enabled)
                     if global_map and mapping_enabled: 
+                            logger.debug("LOOP expanding global map")
                             global_map.expand(self.__actual_position, self.__local_map)
                     
                     # 🎯 Control logic
+                    target_position = None
+                    target_velocity = (0, 0)
                     if control_type == self.ControlType.POSITION:
                         # TODO planning
                         target_position = self.__target_position
@@ -264,7 +273,9 @@ class Robot:
                     elif control_type == self.ControlType.VELOCITY:
                         # TODO obstacle avoidance
                         target_velocity = self.__target_velocity
+
                 logger.debug("LOOP Second lock released")
+                logger.debug(f"LOOP: target_position: {target_position}, target_velocity: {target_velocity}")
 
                 # Control commands (outside the lock)
                 if control_type == self.ControlType.POSITION:

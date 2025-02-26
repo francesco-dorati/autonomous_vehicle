@@ -18,33 +18,39 @@ class Drawer:
     def save_global_map(map_name, global_map: OccupancyGrid):
         """Draws the global map and save in folder."""
         def save():
-            # create the folder
-            logger.debug("inside draw thread")
-            map_folder = ROBOT_CONFIG.MAPS_FOLDER + "/" + map_name
-            logger.debug(f"Saving map on {map_folder}")
-            if not os.path.exists(map_folder):
-                os.makedirs(map_folder)
-            logger.debug(f"dir ok")
+            try:
+                # create the folder
+                logger.debug("inside draw thread")
+                map_folder = ROBOT_CONFIG.MAPS_FOLDER + "/" + map_name
+                logger.debug(f"Saving map on {map_folder}")
+                if not os.path.exists(map_folder):
+                    os.makedirs(map_folder)
+                logger.debug(f"dir ok")
 
-            # save the file
-            with open(f"{map_folder}/{map_name}.txt", "w") as f:
-                logger.debug("file opened")
-                f.write(global_map.get_string(row_sep="\n"))
-            logger.debug(f"Saved text on {map_folder}")
-            
-            # save the image
-            plt.figure(figsize=(8, 8))
-            plt.imshow(global_map.get_grid(), cmap='gray')
-            plt.gca().invert_yaxis()
-            plt.title("Global Map")
-            plt.xlabel("X")
-            plt.ylabel("Y")
-            plt.title(f"Global Map - {map_name}")
-            plt.axis('equal')
-            plt.grid(True)
-            plt.savefig(f"{map_folder}/{map_name}.png", format='png')
-            plt.close()
-            logger.debug(f"Saved map on {map_folder}")
+                # save the file
+                with open(f"{map_folder}/{map_name}.txt", "w") as f:
+                    logger.debug("file opened")
+                    f.write(global_map.get_string(row_sep="\n"))
+                logger.debug(f"Saved text on {map_folder}")
+                
+                # save the image
+                grid = global_map.get_grid()
+                if grid is not None:
+                    plt.figure(figsize=(8, 8))
+                    plt.imshow(global_map.get_grid(), cmap='gray')
+                    plt.gca().invert_yaxis()
+                    plt.title("Global Map")
+                    plt.xlabel("X")
+                    plt.ylabel("Y")
+                    plt.title(f"Global Map - {map_name}")
+                    plt.axis('equal')
+                    plt.grid(True)
+                    plt.savefig(f"{map_folder}/{map_name}.png", format='png')
+                    plt.close()
+                    logger.debug(f"Saved map on {map_folder}")
+                logger.debug("End of draw thread")
+            except Exception as e:
+                logger.error(f"Exception in Drawer.save_global_map: {e}")
 
         logger.debug("Saving global map")
         t = threading.Thread(target=save, daemon=True)
