@@ -116,6 +116,10 @@ class OccupancyGrid:
         if self.__grid is not None:
             logger.error("Trying to set grid from a non empty grid")
             raise Exception("Trying to set grid from a non empty grid")
+        if other.__grid is None:
+            logger.error("Trying to set grid from an empty grid")
+            self.__grid = None
+            return
     
         # Get origins (world coordinates) from both grids.
         origin: CartPoint = self.get_origin_world()
@@ -206,14 +210,16 @@ class OccupancyGrid:
         return ((self.__grid_size // 2), (self.__grid_size // 2))
 
     def are_inside(self, local_points: List[CartPoint]) -> bool:
+        logger.debug("Are inside?")
         grid_points = self.local_to_grid(local_points)
         ok = True
         for gx, gy in grid_points:
             if not ok:
                 break
-            inside_x = (gx >= 0 and gx < self._grid_size)
-            inside_y = (gy >= 0 and gy < self._grid_size)
+            inside_x = (gx >= 0 and gx < self.__grid_size)
+            inside_y = (gy >= 0 and gy < self.__grid_size)
             ok = ok and inside_x and inside_y
+        logger.debug(f"Are inside {ok}")
         return ok
 
     def local_to_grid(self, local_points: List[CartPoint]) -> List[Tuple[int, int]]:
@@ -337,22 +343,25 @@ class LocalMap:
         Returns:
             List[CartPoint]: list cartesian points in local coordinates (refers to position of the robot)
         """
+        # logger.debug("Get Cartesian Points")
         points = [] 
-        # print(self.__scan)
+        max_dist = (section_size//2)*ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION if section_size else None
         for p in self.__scan:
             # Convert angle from degrees to radians for trigonometric functions
-            # logger.debug(f"p: {p}")
-            angle_rad: float = p.th / 1000.0        # p.th already normalized
-            if p.r > 0:
-                cart_p = CartPoint(
-                    p.r * np.cos(angle_rad), 
-                    p.r * np.sin(angle_rad)
-                )
-                max_dist = (section_size//2)*ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
-                inside_section = section_size is None or (abs(cart_p.x) < max_dist and abs(cart_p.y) < max_dist)
-                if inside_section:
-                    points.append(cart_p)
-        logger.debug(points)
+        
+            try:
+                angle_rad: float = p.th / 1000.0        # p.th already normalized
+                if p.r > 0:
+                    cart_p = CartPoint(
+                        p.r * np.cos(angle_rad), 
+                        p.r * np.sin(angle_rad)
+                    )
+                    is_inside = max_dist is None or (abs(cart_p.x) < max_dist and abs(cart_p.y) < max_dist)
+                    if is_inside:
+                        points.append(cart_p)
+            except Exception as e:
+                logger.error(f"Error in get_cartesian_points {e}")
+                raise Exception("Error in get_cartesian_points")
         return points
 
     @timing_decorator
@@ -500,12 +509,19 @@ class GlobalMap:
             position (Position): position of the local map
             local_map (LocalMap): local map of the envoironment
         """
+        logger.debug("Expanding grid")
         robot_point: CartPoint = robot_position.get_point()
+        logger.debug("Expanding grid 1")
         local_points: List[CartPoint] = local_map.get_cartesian_points() # local based on robot position
+        logger.debug("Expanding grid 2")
         global_points: List[CartPoint] = self.__grid.other_to_local(robot_position, local_points)
+        logger.debug("Expanding grid 3")
         while not self.__grid.are_inside(global_points):
+            logger.debug("Grid too small, expanding it")
             self.__expand_grid()
+        logger.debug("Expanding grid 4")
         self.__grid.ray_cast(robot_point, local_points)
+        logger.debug("Expanding grid OK")
         
         # #####
         # for point in global_points:

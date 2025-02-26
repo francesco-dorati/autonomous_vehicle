@@ -9,7 +9,7 @@ from dataclasses import dataclass
 @dataclass
 class RobotConfig:
     CONTROL_LOOP_INTERVAL: float
-    MAP_FOLDER: str
+    MAPS_FOLDER: str
     SCANS_FOLDER: str
     BATTERY_MIN_MV: int
     BATTERY_CHECK_INTERVAL: float
@@ -17,7 +17,7 @@ class RobotConfig:
     GLOBAL_MAP_RESOLUTION: int
 ROBOT_CONFIG = RobotConfig(
     CONTROL_LOOP_INTERVAL = 0.1,
-    MAP_FOLDER = "../data/maps",
+    MAPS_FOLDER = "../data/maps",
     SCANS_FOLDER = "../data/scans",
 
     BATTERY_MIN_MV = 10500,

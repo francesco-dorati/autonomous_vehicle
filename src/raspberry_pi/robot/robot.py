@@ -123,7 +123,7 @@ class Robot:
                 raise Exception("Global map already initialized")
             self.__global_map = GlobalMap(name)
         RP2040.reset_position()
-        os.makedirs(f"{ROBOT_CONFIG.MAP_FOLDER}/{name}", exist_ok=True)
+        os.makedirs(f"{ROBOT_CONFIG.MAPS_FOLDER}/{name}", exist_ok=True)
             
     @timing_decorator
     def discard_global_map(self):
@@ -145,9 +145,11 @@ class Robot:
         """
         # both text and draw globalmap
         with self.__lock:
+            logger.debug("Copy map for saving")
             if self.__global_map is None:
                 raise Exception("Global map not initialized")
             grid: OccupancyGrid = self.__global_map.get_copy()
+        logger.debug("Saving map")
         Drawer.save_global_map(self.__global_map.name, grid)
     
     @timing_decorator
@@ -156,6 +158,7 @@ class Robot:
 
     @timing_decorator
     def start_mapping(self):
+        logger.debug("Starting mapping")
         with self.__lock:
             self.__mapping = True
 
@@ -228,21 +231,21 @@ class Robot:
         Lidar.start_scan()
         try:
             while not self.__stop_loop_event.is_set():
-                logger.info("Loop running")
+                logger.debug("Loop running")
                 # 🔒 LOCK 1 - Read shared state
                 with self.__lock:
                     if self.__control_type == self.ControlType.OFF:
-                        logger.info("Stopping control loop. (control OFF)")
+                        logger.info("LOOP Stopping control loop. (control OFF)")
                         break
                     global_map: GlobalMap = self.__global_map  # Store reference safely
                     mapping_enabled: bool = self.__mapping
                     control_type: str = self.__control_type  # Avoid repeated lock usage
-                logger.info("First lock released")
+                logger.debug(f"LOOP First lock released (mapping: {mapping_enabled})")
 
                 # 📡 Request sensor data (outside the lock)
                 local_map = Lidar.produce_local_map()
                 actual_pos = RP2040.get_position() if global_map else None
-                logger.info("Requested data")
+                logger.debug("LOOP Requested data")
 
                 # 🔒 LOCK 2 - Update shared state
                 with self.__lock:
@@ -261,7 +264,7 @@ class Robot:
                     elif control_type == self.ControlType.VELOCITY:
                         # TODO obstacle avoidance
                         target_velocity = self.__target_velocity
-                logger.info("Second lock released")
+                logger.debug("LOOP Second lock released")
 
                 # Control commands (outside the lock)
                 if control_type == self.ControlType.POSITION:
@@ -272,7 +275,7 @@ class Robot:
                 time.sleep(ROBOT_CONFIG.CONTROL_LOOP_INTERVAL)
 
         except Exception as e:
-            logger.error(f"Robot loop error: {e}", e)
+            logger.error(f"Robot loop error: {e}")
             
         finally:
             RP2040.stop_motors()

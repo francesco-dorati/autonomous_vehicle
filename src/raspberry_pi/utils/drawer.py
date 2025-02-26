@@ -3,6 +3,9 @@ from raspberry_pi.data_structures.states import CartPoint
 from raspberry_pi.config import ROBOT_CONFIG
 from raspberry_pi.utils.utils import Utils
 from raspberry_pi.data_structures.maps import OccupancyGrid
+from raspberry_pi.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 import os
 import datetime
@@ -16,13 +19,18 @@ class Drawer:
         """Draws the global map and save in folder."""
         def save():
             # create the folder
+            logger.debug("inside draw thread")
             map_folder = ROBOT_CONFIG.MAPS_FOLDER + "/" + map_name
+            logger.debug(f"Saving map on {map_folder}")
             if not os.path.exists(map_folder):
                 os.makedirs(map_folder)
+            logger.debug(f"dir ok")
 
             # save the file
             with open(f"{map_folder}/{map_name}.txt", "w") as f:
+                logger.debug("file opened")
                 f.write(global_map.get_map_string(row_sep="\n"))
+            logger.debug(f"Saved text on {map_folder}")
             
             # save the image
             plt.figure(figsize=(8, 8))
@@ -36,8 +44,11 @@ class Drawer:
             plt.grid(True)
             plt.savefig(f"{map_folder}/{map_name}.png", format='png')
             plt.close()
-    
+            logger.debug(f"Saved map on {map_folder}")
+
+        logger.debug("Saving global map")
         t = threading.Thread(target=save, daemon=True)
+        logger.debug("startng draw thread")
         t.start()
         return
         
