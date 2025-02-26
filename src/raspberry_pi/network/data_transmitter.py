@@ -71,23 +71,27 @@ class DataTransmitter:
             try:
                 # Build the payload
                 logger.debug("DATA TRANSMITTER start")
-
                 logger.debug("DATA TRANSMITTER getting data from robot")
-                payload = b"DATA\n"
-                payload += f"{DATA_SERVER_CONFIG.SIZE_MM//ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n".encode()
+
+                payload = bytearray(b"DATA\n")
+                payload.extend(f"{DATA_SERVER_CONFIG.SIZE_MM//ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n".encode())
+                
+                # get data from robot
                 global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
                 logger.debug("DATA TRANSMITTER got data from robot")
                 
-                # Append GLOBAL MAP section
                 logger.debug("DATA TRANSMITTER adding global map to payload...")
-                payload += b"GLOBAL_MAP\n"
-                payload += global_map.get_bytes() + b"\n"
                 logger.debug(f"DATA TRANSMITTER global map size: {global_map.get_grid_size()}")
-                
-                # Append LOCAL MAP (lidar points) section
+
+                # append global map
+                payload.extend(b"GLOBAL_MAP\n")
+                payload.extend(global_map.get_bytes())
+                payload.extend(b"\n")
+            
                 logger.debug("DATA TRANSMITTER adding local map to payload...")
-                payload += b"LOCAL_MAP\n"
-                logger.debug(f"lidar points: {lidar_points}")
+
+                # append global map
+                payload.extend(b"LOCAL_MAP\n")
                 if len(lidar_points) > 0:
                     lidar_points_str = ";".join([f"{point[0]} {point[1]}" for point in lidar_points])
                     payload += f"{lidar_points_str}\n".encode()
@@ -104,7 +108,11 @@ class DataTransmitter:
                     payload += b"-\n"
                 
                 # Send the complete payload via the established TCP connection
-                self._socket.sendall(payload.encode())
+                self._socket.sendall(payload)
+            except BrokenPipeError:
+                logger.error("Server connection lost.")
+                self.stop()
+                return
             except Exception as e:
                 logger.error(f"DataTransmitter error: {e}")
             time.sleep(DATA_SERVER_CONFIG.INTERVAL)
