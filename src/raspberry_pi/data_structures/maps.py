@@ -540,8 +540,11 @@ class GlobalMap:
         """
         # ERRRORR HERE
         subsection = OccupancyGrid(size_mm)
+        logger.info("Occupancy grid")
         subsection.set_origin_world(origin_world)
+        logger.info("Occupancy grid, set origin")
         subsection.set_from(self.__grid)
+        logger.info("Occupancy grid, set from")
         return subsection
 
         for lx in range(size):

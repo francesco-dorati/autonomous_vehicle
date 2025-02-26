@@ -49,6 +49,7 @@ class MappingFrame(tk.Frame):
 
     def disable(self):
         """ disable from user interaction"""
+        self.discard_map()
         self.map_label.config(state='disabled')
         self.map_name.config(text="---", state="disabled")
         self.mapping_checkbox.config(state='disabled')
@@ -73,6 +74,7 @@ class MappingFrame(tk.Frame):
     def discard_map(self):
         """ discard the current map """
         self.map_name.config(text="---")
+        self.mapping_var.set(False)
         self.mapping_checkbox.config(state='disabled')
         self.save_button.pack_forget()
         self.discard_button.pack_forget()
