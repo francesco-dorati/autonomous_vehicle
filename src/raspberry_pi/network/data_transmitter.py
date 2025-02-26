@@ -8,6 +8,8 @@ from raspberry_pi.utils.logger import get_logger
 from raspberry_pi.data_structures.maps import OccupancyGrid
 from raspberry_pi.data_structures.states import Position, CartPoint
 from raspberry_pi.config import DATA_SERVER_CONFIG, ROBOT_CONFIG
+import numpy as np
+import struct
 
 logger = get_logger(__name__)
 
@@ -69,46 +71,45 @@ class DataTransmitter:
         """Continuously collects data from the robot and sends it to the server."""
         while self._running:
             try:
-                # Build the payload
                 logger.debug("DATA TRANSMITTER start")
-                logger.debug("DATA TRANSMITTER getting data from robot")
-
                 payload = bytearray(b"DATA\n")
-                payload.extend(f"{DATA_SERVER_CONFIG.SIZE_MM//ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n".encode())
-                
-                # get data from robot
+                payload.extend(f"{DATA_SERVER_CONFIG.SIZE_MM // ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n".encode())
+
+                # Collect data from the robot
                 global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
-                logger.debug("DATA TRANSMITTER got data from robot")
                 
-                logger.debug("DATA TRANSMITTER adding global map to payload...")
-                logger.debug(f"DATA TRANSMITTER global map size: {global_map.get_grid_size()}")
-
-                # append global map
+                # Append global map data
                 payload.extend(b"GLOBAL_MAP\n")
-                payload.extend(global_map.get_bytes())
-                payload.extend(b"\n")
-            
-                logger.debug("DATA TRANSMITTER adding local map to payload...")
+                global_map_bytes = global_map.get_bytes()
+                payload.extend(struct.pack("I", len(global_map_bytes)))  # Add length of map data
+                payload.extend(global_map_bytes)
+                print(f"Sent global map of size: {len(global_map_bytes)} bytes")
 
-                # append global map
-                payload.extend(b"LOCAL_MAP\n")
-                if len(lidar_points) > 0:
-                    lidar_points_str = ";".join([f"{point[0]} {point[1]}" for point in lidar_points])
-                    payload += f"{lidar_points_str}\n".encode()
+                # Append lidar points data
+                payload.extend(b"\nLOCAL_MAP\n")
+                if lidar_points:
+                    lidar_array = np.array(lidar_points, dtype=np.int16)
+                    payload.extend(struct.pack("I", len(lidar_points)))  # Send number of points
+                    payload.extend(lidar_array.tobytes())
+                    print(f"Sent {len(lidar_points)} LIDAR points")
                 else:
-                    payload += b"-\n"
-                
-                # Append POSITION section
-                logger.debug("DATA TRANSMITTER adding pos to payload...")
-                payload += "POSITION\n"
-                logger.debug(f"position: {position}")
+                    payload.extend(struct.pack("I", 0))  # No points
+                    print("Sent empty LIDAR points")
+
+                # Append position data
+                payload.extend(b"\nPOSITION\n")
                 if position:
-                    payload += f"{position.x} {position.y} {position.th}\n".encode()
+                    payload.extend(f"{position.x} {position.y} {position.th}\n".encode())
+                    print(f"Sent position: ({position.x}, {position.y}, {position.th})")
                 else:
-                    payload += b"-\n"
-                
-                # Send the complete payload via the established TCP connection
-                self._socket.sendall(payload)
+                    payload.extend(b"-\n")
+                    print("Sent position: - (unknown)")
+
+                # Send data with a size prefix
+                total_length = struct.pack("I", len(payload))
+                self._socket.sendall(total_length + payload)
+                print(f"Total message size sent: {len(payload)} bytes")
+
             except BrokenPipeError:
                 logger.error("Server connection lost.")
                 self.stop()

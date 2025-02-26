@@ -182,17 +182,16 @@ class Robot:
             # GLOBAL MAP
             if self.__global_map and self.__actual_position:
                 global_map = self.__global_map.get_subsection(size_mm, self.__actual_position)
-            logger.info("Global m")
 
             # LOCAL MAP
             if self.__local_map:
                 local_points: List[CartPoint] = self.__local_map.get_cartesian_points(size_mm)
                 lidar_grid_points: List[Tuple[int, int]] = global_map.local_to_grid(local_points)
-            logger.info("local m")
+            
             # POSITION
             if self.__actual_position:
                 position = self.__actual_position
-            logger.info("pos")
+
         # global_map = global_map.get_grid()
         return global_map, lidar_grid_points, position
     
