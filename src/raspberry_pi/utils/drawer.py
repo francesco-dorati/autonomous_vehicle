@@ -29,7 +29,7 @@ class Drawer:
             # save the file
             with open(f"{map_folder}/{map_name}.txt", "w") as f:
                 logger.debug("file opened")
-                f.write(global_map.get_map_string(row_sep="\n"))
+                f.write(global_map.get_string(row_sep="\n"))
             logger.debug(f"Saved text on {map_folder}")
             
             # save the image

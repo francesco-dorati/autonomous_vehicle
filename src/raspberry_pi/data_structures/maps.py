@@ -197,7 +197,7 @@ class OccupancyGrid:
     def get_string(self, row_sep: str = ";") -> str:
         if self.__grid is None:
             return "-"
-        return ";".join([" ".join(map(str, row)) for row in self.__grid])
+        return row_sep.join([" ".join(map(str, row)) for row in self.__grid])
     def get_copy(self):
         copy_grid = OccupancyGrid(self.__size_mm)
         copy_grid.set_origin_world(self.__origin_world) 

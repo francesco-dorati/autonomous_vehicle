@@ -60,7 +60,7 @@ class Controller:
         checkbox = self.view.main_page.mapping_frame.mapping_checkbox
 
         enabled = mapping_var.get()
-        checkbox.config(state="enabled")
+        checkbox.config(state="active")
 
         if enabled:
             ok = self.connection.start_mapping()
