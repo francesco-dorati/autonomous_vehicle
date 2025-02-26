@@ -70,18 +70,21 @@ class DataTransmitter:
         while self._running:
             try:
                 # Build the payload
-                logger.info("Sending data...")
+                logger.debug("DATA TRANSMITTER start")
+
+                logger.debug("DATA TRANSMITTER getting data from robot")
                 payload = f"DATA\n{DATA_SERVER_CONFIG.SIZE_MM // ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n"
-                logger.info("Sending data 1...")
                 global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
+                logger.debug("DATA TRANSMITTER got data from robot")
                 
                 # Append GLOBAL MAP section
-                logger.info("Sending adding globalmap...")
+                logger.debug("DATA TRANSMITTER adding global map to payload...")
                 payload += "GLOBAL_MAP\n"
                 payload += f"{global_map.get_string()}\n"
+                logger.debug(f"DATA TRANSMITTER global map size: {global_map.get_grid_size()}")
                 
                 # Append LOCAL MAP (lidar points) section
-                logger.info("Sending adding localmap...")
+                logger.debug("DATA TRANSMITTER adding local map to payload...")
                 payload += "LOCAL_MAP\n"
                 logger.debug(f"lidar points: {lidar_points}")
                 if len(lidar_points) > 0:
@@ -91,7 +94,7 @@ class DataTransmitter:
                     payload += "-\n"
                 
                 # Append POSITION section
-                logger.info("Sending adding pos...")
+                logger.debug("DATA TRANSMITTER adding pos to payload...")
                 payload += "POSITION\n"
                 logger.debug(f"position: {position}")
                 if position:
