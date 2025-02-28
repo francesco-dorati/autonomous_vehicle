@@ -95,24 +95,25 @@ class DataTransmitter:
                 grid_size = global_map.get_grid_size()
                 grid_bytes = global_map.get_bytes()
 
-                logger.debug(f"DATA TRANSMITTER added grid size: {grid_size}")
+                logger.debug(f"DATA TRANSMITTER grid size: {grid_size}")
 
                 # lidar points
                 lidar_size = 0  # size in number of points
                 lidar_bytes = b""
                 if lidar_points:
                     lidar_size = len(lidar_points)
-                    for point in lidar_points:
-                        lidar_bytes += struct.pack("hh", point.x, point.y)
+                    for x, y in lidar_points:
+                        lidar_bytes += struct.pack("hh", x, y)
 
-                logger.debug(f"DATA TRANSMITTER added local points: {grid_size}")
+                logger.debug(f"DATA TRANSMITTER local points: {lidar_size}")
                 
                 # position
                 position_valid = position is not None
+                position_bytes = b""
                 if position_valid:
                     position_bytes = struct.pack("3i", *position)
 
-                logger.debug(f"DATA TRANSMITTER added position: {grid_size}")
+                logger.debug(f"DATA TRANSMITTER position: {position_valid}")
 
                 # compose payload
                 payload = grid_bytes + lidar_bytes + position_bytes
@@ -129,9 +130,9 @@ class DataTransmitter:
                 #   H   -> Numero dei punti (2 byte)
                 #   ?   -> Posizione Valida (1 byte)
                 header = struct.pack("4sHIHH?", b'RBT1', 1, len(compressed_payload),
-                                    grid_size, grid_size, lidar_size, position_valid)
+                                    grid_size, lidar_size, position_valid)
                 
-                logger.debug(f"DATA TRANSMITTER header: {header}")
+                logger.debug(f"DATA TRANSMITTER header bytes: {header}")
 
                 self._socket.sendall(header + compressed_payload)
 

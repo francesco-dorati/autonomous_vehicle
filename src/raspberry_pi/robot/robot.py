@@ -168,7 +168,7 @@ class Robot:
             self.__mapping = False
         
     @timing_decorator
-    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[CartPoint], Optional[Position]]:
+    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[Tuple[int, int]], Optional[Position]]:
         """ Returns data
             - global map: Occupancy Grid
             - local map: list of points (inside the grid frame)
