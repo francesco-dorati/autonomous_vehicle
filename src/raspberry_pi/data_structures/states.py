@@ -1,4 +1,5 @@
 from raspberry_pi.utils.utils import Utils
+import struct
 
 class CartPoint:
     """

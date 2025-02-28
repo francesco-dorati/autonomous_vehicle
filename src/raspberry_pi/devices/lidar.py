@@ -330,7 +330,7 @@ class Lidar(Device):
         try:
             while Lidar._scanning:
                 # calculate bytes to read
-                bytes_to_read = LIDAR_CONFIG.SCAN_PACKET_SIZE * LIDAR_CONFIG.SCAN_PACKETS_PER_TIME
+                bytes_to_read: int = LIDAR_CONFIG.SCAN_PACKET_SIZE * LIDAR_CONFIG.SCAN_PACKETS_PER_TIME
                 if Lidar._serial.in_waiting < bytes_to_read:
                     # t = time.time()
                     # print("SCANNING WAIT", Lidar._serial.in_waiting, " < ", bytes_to_read)

@@ -1,6 +1,7 @@
 import tkinter as tk
 from typing import List, Tuple
 import math
+import numpy as np
 
 class DisplayFrame(tk.Canvas):
     def __init__(self, parent, controller):
@@ -19,9 +20,9 @@ class DisplayFrame(tk.Canvas):
         # self.update(self.grid_size, None, None, None)
         
     def update(self, size: int, 
-                grid: List[List[int]], 
-                lidar_points: List[Tuple[int, int]], 
-                robot_pos: Tuple[int, int, int]):
+                grid: np.ndarray | None, 
+                lidar_points: List[Tuple[int, int]] | None, 
+                robot_pos: Tuple[int, int, int] | None):
         print("UPDATING DISPLAY")
         self.delete("all")
         self.grid_size = size
@@ -51,21 +52,22 @@ class DisplayFrame(tk.Canvas):
                 self.create_rectangle(y1, x1, y2, x2, fill="red", outline="")
 
         # POS
-        cx = self.cell_size()*self.grid_size // 2
-        cy = self.cell_size()*self.grid_size // 2
-        line_len = 3*self.cell_size()
         if robot_pos:
-            fx1 = cx - line_len*math.cos(int(robot_pos[2])/1000)
-            fy1 = cy - line_len*math.sin(int(robot_pos[2])/1000)
-            fx2 = cx - line_len*math.sin(int(robot_pos[2])/1000)
-            fy2 = cy - line_len*math.cos(int(robot_pos[2])/1000)
-        else:
-            fx1 = cx - line_len
-            fy1 = cy
-            fx2 = cx 
-            fy2 = cy - line_len
-        self.create_line(cy, cx, fy1, fx1, fill="red", width=2, arrow=tk.LAST, arrowshape=(3, 4, 4))
-        self.create_line(cy, cx, fy2, fx2, fill="green", width=2, arrow=tk.LAST, arrowshape=(3, 4, 4))
+            cx = self.cell_size()*self.grid_size // 2
+            cy = self.cell_size()*self.grid_size // 2
+            line_len = 3*self.cell_size()
+            if robot_pos:
+                fx1 = cx - line_len*math.cos(int(robot_pos[2])/1000)
+                fy1 = cy - line_len*math.sin(int(robot_pos[2])/1000)
+                fx2 = cx - line_len*math.sin(int(robot_pos[2])/1000)
+                fy2 = cy - line_len*math.cos(int(robot_pos[2])/1000)
+            else:
+                fx1 = cx - line_len
+                fy1 = cy
+                fx2 = cx 
+                fy2 = cy - line_len
+            self.create_line(cy, cx, fy1, fx1, fill="red", width=2, arrow=tk.LAST, arrowshape=(3, 4, 4))
+            self.create_line(cy, cx, fy2, fx2, fill="green", width=2, arrow=tk.LAST, arrowshape=(3, 4, 4))
 
         
         #pack(side='top', fill='both', expand=True, pady=10)

@@ -185,6 +185,8 @@ class OccupancyGrid:
     def get_size_mm(self) -> int:
         return self.__size_mm
     def get_grid_size(self) -> int:
+        if self.__grid is None:
+            return 0
         return self.__grid_size
     def get_origin_world(self) -> CartPoint:
         return self.__origin_world
@@ -199,13 +201,13 @@ class OccupancyGrid:
         """ get the bytes of the grid (shifted by 1) """
         if self.__grid is None:
             return b"-"
-        mapped = (self.__grid + 1) * (self.__grid != -1)
-        return mapped.astype(np.uint8).tobytes()
+        return self.__grid.astype(np.int8).tobytes()
     
     def get_string(self, row_sep: str = ";") -> str:
         if self.__grid is None:
             return "-"
         return row_sep.join([" ".join(map(str, row)) for row in self.__grid])
+    
     def get_copy(self):
         copy_grid = OccupancyGrid(self.__size_mm)
         copy_grid.set_origin_world(self.__origin_world) 

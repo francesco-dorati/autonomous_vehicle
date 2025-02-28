@@ -9,6 +9,7 @@ from raspberry_pi.data_structures.maps import OccupancyGrid
 from raspberry_pi.data_structures.states import Position, CartPoint
 from raspberry_pi.config import DATA_SERVER_CONFIG, ROBOT_CONFIG
 import numpy as np
+import zlib
 import struct
 
 logger = get_logger(__name__)
@@ -68,52 +69,80 @@ class DataTransmitter:
         logger.info("DataTransmitter stopped.")
     
     def _transmit_loop(self):
-        """Continuously collects data from the robot and sends it to the server."""
+        """
+        Il messaggio include nell'header:
+        * Magic number (4 byte)
+        * Versione (2 byte)
+        * Lunghezza del payload compresso (4 byte)
+        * Grid size (2 byte)
+        * Numero dei punti lidar (2 byte)
+
+        Il payload è la concatenazione di:
+        - I byte della griglia (occupancy grid, ottenuti con get_bytes())
+        - I punti (ogni punto è 2 interi, 4 byte in totale per punto)?
+        - La posizione (3 interi, 12 byte)
+        """
         while self._running:
             try:
                 logger.debug("DATA TRANSMITTER start")
-                payload = bytearray(b"DATA\n")
-                payload.extend(f"{DATA_SERVER_CONFIG.SIZE_MM // ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION}\n".encode())
 
                 # Collect data from the robot
                 global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
                 
-                # Append global map data
-                payload.extend(b"GLOBAL_MAP\n")
-                global_map_bytes = global_map.get_bytes()
-                payload.extend(struct.pack("I", len(global_map_bytes)))  # Add length of map data
-                payload.extend(global_map_bytes)
-                print(f"Sent global map of size: {len(global_map_bytes)} bytes")
+                logger.debug("DATA TRANSMITTER got data")
+                
+                # occupancy grid
+                grid_size = global_map.get_grid_size()
+                grid_bytes = global_map.get_bytes()
 
-                # Append lidar points data
-                payload.extend(b"\nLOCAL_MAP\n")
+                logger.debug(f"DATA TRANSMITTER added grid size: {grid_size}")
+
+                # lidar points
+                lidar_size = 0  # size in number of points
+                lidar_bytes = b""
                 if lidar_points:
-                    lidar_array = np.array(lidar_points, dtype=np.int16)
-                    payload.extend(struct.pack("I", len(lidar_points)))  # Send number of points
-                    payload.extend(lidar_array.tobytes())
-                    print(f"Sent {len(lidar_points)} LIDAR points")
-                else:
-                    payload.extend(struct.pack("I", 0))  # No points
-                    print("Sent empty LIDAR points")
+                    lidar_size = len(lidar_points)
+                    for point in lidar_points:
+                        lidar_bytes += struct.pack("hh", point.x, point.y)
 
-                # Append position data
-                payload.extend(b"\nPOSITION\n")
-                if position:
-                    payload.extend(f"{position.x} {position.y} {position.th}\n".encode())
-                    print(f"Sent position: ({position.x}, {position.y}, {position.th})")
-                else:
-                    payload.extend(b"-\n")
-                    print("Sent position: - (unknown)")
+                logger.debug(f"DATA TRANSMITTER added local points: {grid_size}")
+                
+                # position
+                position_valid = position is not None
+                if position_valid:
+                    position_bytes = struct.pack("3i", *position)
 
-                # Send data with a size prefix
-                total_length = struct.pack("I", len(payload))
-                self._socket.sendall(total_length + payload)
-                print(f"Total message size sent: {len(payload)} bytes")
+                logger.debug(f"DATA TRANSMITTER added position: {grid_size}")
+
+                # compose payload
+                payload = grid_bytes + lidar_bytes + position_bytes
+                compressed_payload = zlib.compress(payload)
+
+                logger.debug(f"DATA TRANSMITTER compressed payload size: {len(compressed_payload)}")
+
+                # Header
+                # Formato: "4sHIHH"
+                #   4s  -> Magic number (4 byte)
+                #   H   -> Versione (2 byte)
+                #   I   -> Lunghezza del payload compresso (4 byte)
+                #   H   -> Grid width (2 byte)
+                #   H   -> Numero dei punti (2 byte)
+                #   ?   -> Posizione Valida (1 byte)
+                header = struct.pack("4sHIHH?", b'RBT1', 1, len(compressed_payload),
+                                    grid_size, grid_size, lidar_size, position_valid)
+                
+                logger.debug(f"DATA TRANSMITTER header: {header}")
+
+                self._socket.sendall(header + compressed_payload)
+
+                logger.debug(f"DATA TRANSMITTER data sent.")
 
             except BrokenPipeError:
                 logger.error("Server connection lost.")
                 self.stop()
                 return
+            
             except Exception as e:
                 logger.error(f"DataTransmitter error: {e}")
+
             time.sleep(DATA_SERVER_CONFIG.INTERVAL)
