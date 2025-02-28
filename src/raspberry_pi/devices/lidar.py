@@ -184,8 +184,8 @@ class Lidar(Device):
         if not Lidar._serial:
             raise Lidar.ConnectionNotInitiated("Lidar connection not initiated")
         
-        if Lidar._scanning:
-            Lidar.stop_scan()
+        
+        Lidar.stop_scan()
         Lidar._thread = None
 
         Lidar._serial.close()

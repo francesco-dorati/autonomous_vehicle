@@ -33,7 +33,7 @@ def main():
         while True:
             battery_mv = robot.get_battery()
             logger.info(f"Battery voltage: {battery_mv} mV")
-            if battery_mv < robot_config.BATTERY_MIN_MV:
+            if battery_mv and battery_mv < robot_config.BATTERY_MIN_MV:
                 logger.error("Battery too low. Initiating shutdown.")
                 robot.stop()
                 command_server.stop()

@@ -84,7 +84,10 @@ class OccupancyGrid:
         self.__grid_size: int = Utils.dist_to_grid(size_mm)
         self.__grid = None
         self.__origin_world: Position = None
-    
+
+    def is_set(self):
+        return self.__grid is not None
+        
     def set_origin_world(self, point: CartPoint):
         self.__origin_world = point
 
@@ -185,8 +188,6 @@ class OccupancyGrid:
     def get_size_mm(self) -> int:
         return self.__size_mm
     def get_grid_size(self) -> int:
-        if self.__grid is None:
-            return 0
         return self.__grid_size
     def get_origin_world(self) -> CartPoint:
         return self.__origin_world
@@ -200,7 +201,7 @@ class OccupancyGrid:
     def get_bytes(self) -> bytes:
         """ get the bytes of the grid (shifted by 1) """
         if self.__grid is None:
-            return b"-"
+            return b""
         return self.__grid.astype(np.int8).tobytes()
     
     def get_string(self, row_sep: str = ";") -> str:
