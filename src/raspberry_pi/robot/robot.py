@@ -60,6 +60,7 @@ class Robot:
         """ Stops the robot (on connection lost).
             Stops the control loop.
         """
+        RP2040.stop_motors()
         self.set_control('off')
 
     ## CONTROL

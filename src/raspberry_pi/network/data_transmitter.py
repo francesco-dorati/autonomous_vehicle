@@ -84,64 +84,65 @@ class DataTransmitter:
         """
         while self._running:
             try:
-                logger.debug("DATA TRANSMITTER start")
+                if self._robot.get_control_type() != "off":
+                    logger.debug("DATA TRANSMITTER start")
 
-                # Collect data from the robot
-                global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
-                
-                logger.debug("DATA TRANSMITTER got data")
-                
-                # occupancy grid
-                grid_size = global_map.get_grid_size()
-                real_grid_size = grid_size if global_map.is_set() else 0
-                grid_bytes = global_map.get_bytes()
+                    # Collect data from the robot
+                    global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
+                    
+                    logger.debug("DATA TRANSMITTER got data")
+                    
+                    # occupancy grid
+                    grid_size = global_map.get_grid_size()
+                    real_grid_size = grid_size if global_map.is_set() else 0
+                    grid_bytes = global_map.get_bytes()
 
-                logger.debug(f"DATA TRANSMITTER grid size: {grid_size}")
+                    logger.debug(f"DATA TRANSMITTER grid size: {grid_size}")
 
-                # lidar points
-                lidar_size = 0  # size in number of points
-                lidar_bytes = b""
-                if lidar_points:
-                    lidar_size = len(lidar_points)
-                    logger.debug(f"packing lidar points: {lidar_points}")
-                    for x, y in lidar_points:
-                        lidar_bytes += struct.pack("<hh", x, y)
+                    # lidar points
+                    lidar_size = 0  # size in number of points
+                    lidar_bytes = b""
+                    if lidar_points:
+                        lidar_size = len(lidar_points)
+                        logger.debug(f"packing lidar points: {lidar_points}")
+                        for x, y in lidar_points:
+                            lidar_bytes += struct.pack("<hh", x, y)
 
-                logger.debug(f"DATA TRANSMITTER local points: {lidar_size}")
-                
-                # position
-                position_valid = position is not None
-                position_bytes = b""
-                if position_valid:
-                    position_bytes = struct.pack("3i", position.x, position.y, position.th)
+                    logger.debug(f"DATA TRANSMITTER local points: {lidar_size}")
+                    
+                    # position
+                    position_valid = position is not None
+                    position_bytes = b""
+                    if position_valid:
+                        position_bytes = struct.pack("3i", position.x, position.y, position.th)
 
-                logger.debug(f"DATA TRANSMITTER position: {position_valid}")
+                    logger.debug(f"DATA TRANSMITTER position: {position_valid}")
 
-                # compose payload
-                payload = grid_bytes + lidar_bytes + position_bytes
-                checksum = zlib.crc32(payload)
-                compressed_payload = zlib.compress(payload)
+                    # compose payload
+                    payload = grid_bytes + lidar_bytes + position_bytes
+                    checksum = zlib.crc32(payload)
+                    compressed_payload = zlib.compress(payload)
 
 
-                logger.debug(f"DATA TRANSMITTER compressed payload size: {len(compressed_payload)}, checksum {checksum}")
-                logger.debug(f"DATA TRANSMITTER normal payload size: {len(payload)}")
+                    logger.debug(f"DATA TRANSMITTER compressed payload size: {len(compressed_payload)}, checksum {checksum}")
+                    logger.debug(f"DATA TRANSMITTER normal payload size: {len(payload)}")
 
-                # Header
-                # Formato: "4sHIHH"
-                #   4s  -> Magic number (4 byte)
-                #   H   -> Versione (2 byte)
-                #   I   -> Lunghezza del payload compresso (4 byte)
-                #   H   -> Grid width (2 byte)
-                #   H   -> Numero dei punti (2 byte)
-                #   ?   -> Posizione Valida (1 byte)
-                header = struct.pack("4sHIHHH?", b'RBT1', 1, len(compressed_payload),
-                                    grid_size, real_grid_size, lidar_size, position_valid)
-                
-                logger.debug(f"DATA TRANSMITTER header bytes: {header}")
+                    # Header
+                    # Formato: "4sHIHH"
+                    #   4s  -> Magic number (4 byte)
+                    #   H   -> Versione (2 byte)
+                    #   I   -> Lunghezza del payload compresso (4 byte)
+                    #   H   -> Grid width (2 byte)
+                    #   H   -> Numero dei punti (2 byte)
+                    #   ?   -> Posizione Valida (1 byte)
+                    header = struct.pack("4sHIHHH?", b'RBT1', 1, len(compressed_payload),
+                                        grid_size, real_grid_size, lidar_size, position_valid)
+                    
+                    logger.debug(f"DATA TRANSMITTER header bytes: {header}")
 
-                self._socket.sendall(header + compressed_payload)
+                    self._socket.sendall(header + compressed_payload)
 
-                logger.debug(f"DATA TRANSMITTER data sent.")
+                    logger.debug(f"DATA TRANSMITTER data sent.")
 
             except BrokenPipeError:
                 logger.error("Server connection lost.")

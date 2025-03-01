@@ -354,7 +354,8 @@ class Lidar(Device):
                 # print(f"SCANNING OK {len(samples)}")
                 # add sample to scan
                 for angle, dist in samples:
-                    Lidar._scan.add_sample(angle, dist)
+                    if LIDAR_CONFIG.MIN_DIST_MM < dist < LIDAR_CONFIG.MAX_DIST_MM:
+                        Lidar._scan.add_sample(angle, dist)
                 
                 time.sleep(0.05)
 
