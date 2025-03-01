@@ -25,7 +25,7 @@ class DataReceiver:
         POSITION
         <x> <y> <theta>  (or '-' if not available)
     """
-    def __init__(self, tcp_port: int, update_callback, buffer_size: int = 4086):
+    def __init__(self, tcp_port: int, update_callback, buffer_size: int = 1024):
         self.tcp_port = tcp_port
         self.update_callback = update_callback  # Function to update the view with new data
         self.buffer_size = buffer_size
@@ -39,11 +39,11 @@ class DataReceiver:
         self.sock.bind(("", self.tcp_port))
         self.sock.listen(1)  # Only one client is expected to connect.
         self.running = True
-        self.server_thread = threading.Thread(target=self._accept_and_handle, daemon=True)
+        self.server_thread = threading.Thread(target=self._accept, daemon=True)
         self.server_thread.start()
         logger.info(f"DATA RECEIVER server started on port {self.tcp_port}")
 
-    def _accept_and_handle(self):
+    def _accept(self):
         """
         Accepts a single connection and handles data from that client.
         When the client disconnects, it goes back to waiting for a new connection.
@@ -60,8 +60,7 @@ class DataReceiver:
                             # Client closed the connection.
                             logger.info("Client disconnected. CLOSE DATA RECEIVER")
                             break
-                        data_str = data.decode().strip()
-                        ok, size, global_map, lidar_points, robot_pose = self.parse_data(data_str)
+                        ok, size, global_map, lidar_points, robot_pose = self.parse_data(data)
                         if ok:
                             self.update_callback(size, global_map, lidar_points, robot_pose)
             except Exception as e:
@@ -91,12 +90,12 @@ class DataReceiver:
         - position: tupla di 3 interi (x, y, theta)
         """
         try:
-            logger.debug("parsing received data, data size: ", len(data))
+            logger.debug(f"parsing received data, data size: {len(data)}")
             # read header
-            header_format = "4sHIHH?"
+            header_format = "4sHIHHH?"
             header_size = struct.calcsize(header_format)
             header = struct.unpack(header_format, data[:header_size])
-            magic, version, compressed_length, grid_size, num_points, position_valid = header
+            magic, version, compressed_length, grid_size, real_grid_size, num_points, position_valid = header
 
             logger.debug(f"parsed header: {header}")
 
@@ -107,33 +106,37 @@ class DataReceiver:
             # read payload
             compressed_payload = data[header_size: header_size + compressed_length]
             payload = zlib.decompress(compressed_payload)
+            checksum = zlib.crc32(payload)
 
+            logger.debug(f"payload checksum: {checksum}")
+            logger.debug(f"payload size: {len(payload)}")
+            
             # --- Deserializzazione della grid ---
             # La grid è composta da grid_size * grid_size byte
-            grid_np = None
-            if grid_size != 0:
-                grid_data_length = grid_size * grid_size
-                grid_bytes = payload[:grid_data_length]
-                grid_np: np.ndarray = np.frombuffer(grid_bytes, dtype=np.int8).reshape((grid_size, grid_size))
+            grid_data_length = real_grid_size * real_grid_size
+            grid: np.ndarray = None
+            if grid_data_length > 0:
+                grid_bytes, payload = payload[:grid_data_length], payload[grid_data_length:]
+                grid = np.frombuffer(grid_bytes, dtype=np.int8).reshape((grid_size, grid_size))
 
             # --- Deserializzazione dei punti ---
-            lidar_points = None
-            if num_points != 0:
-                points_data_start = grid_data_length
-                points_data_end = points_data_start + num_points * 4  # 4 byte per punto (2 H)
-                points_data = payload[points_data_start: points_data_end]
-                points_tuple = struct.unpack(f"{num_points * 2}i", points_data)
-                lidar_points: List[Tuple[int, int]] = [(points_tuple[i], points_tuple[i + 1]) for i in range(0, len(points_tuple), 2)]
+            points_data_length = num_points * 4  # 4 byte per punto (2 H)
+            lidar_points: List[Tuple[int, int]] = None
+            if points_data_length > 0:
+                points_data, payload = payload[:points_data_length], payload[points_data_length:]
+                points_tuple = struct.unpack(f"<{num_points * 2}h", points_data)
+                lidar_points = [(points_tuple[i], points_tuple[i + 1]) for i in range(0, len(points_tuple), 2)]
+            logger.debug(f"points data length: {points_data_length}")
 
             # --- Deserializzazione della posizione (3 int) ---
             position = None
             if position_valid:
-                position_data = payload[points_data_end:]
+                position_data = payload[:]
                 position: Tuple[int, int, int] = struct.unpack("3i", position_data)
 
-            return True, grid_size, grid_np, lidar_points, position
+            return True, grid_size, grid, lidar_points, position
 
         except Exception as e:
-            logger.error("PARSED DATA ERROR: exception", e)
+            logger.error(f"PARSED DATA ERROR: {e}")
             return False, 0, None, None, None
  
