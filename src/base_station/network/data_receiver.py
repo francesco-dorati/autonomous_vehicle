@@ -36,6 +36,7 @@ class DataReceiver:
     def start(self):
         """Starts the TCP server and spawns the accept/handle thread."""
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(("", self.tcp_port))
         self.sock.listen(1)  # Only one client is expected to connect.
         self.running = True
@@ -52,6 +53,7 @@ class DataReceiver:
             logger.info("Waiting for client connection...")
             try:
                 conn, addr = self.sock.accept()
+                conn.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 logger.info(f"Accepted connection from {addr}")
                 with conn:
                     while self.running:
