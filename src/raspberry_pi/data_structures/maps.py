@@ -55,17 +55,17 @@ class LidarScan:
                 self.__scan[angle_deg] = int(dist_mm)
                 # print("add sample ", angle_deg, dist_mm)
 
-        def get_copy(self) -> np.array[PolarPoint]:
+        def get_copy(self) -> List[PolarPoint]:
             """ LOCK
             Generates a copy of the scan
             Returns:
                 list[tuple[int, int]]
             """
-            copy: np.array[PolarPoint] = np.array([])
+            copy = []
             with self.__scan_lock:
                 for ang_deg, dist in enumerate(self.__scan):
                     ang_mrad = Utils.deg_to_mrad(ang_deg)
-                    np.append(copy, PolarPoint(dist, ang_mrad))
+                    copy.append(PolarPoint(dist, ang_mrad))
             return copy
 
 class OccupancyGrid:
@@ -233,36 +233,36 @@ class OccupancyGrid:
         logger.debug(f"Are inside {ok}")
         return ok
 
-    def local_to_grid(self, local_points: np.array[CartPoint]) -> np.array[Tuple[int, int]]:
+    def local_to_grid(self, local_points: List[CartPoint]) -> List[Tuple[int, int]]:
         """Converts a local point to grid point."""
-        grid_points = np.array([])
+        grid_points = []
         for point in local_points:
             gx = int(round(point.x / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (self.__grid_size // 2))
             gy = int(round(point.y / ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION) + (self.__grid_size // 2))
-            np.append(grid_points, (gx, gy))
+            grid_points.append((gx, gy))
         return grid_points
     
-    def local_to_world(self, position: Position, local_points: np.array[CartPoint]) -> np.array[CartPoint]:
+    def local_to_world(self, position: Position, local_points: List[CartPoint]) -> List[CartPoint]:
         pass
-    def other_to_local(self, other_position: Position, other_points: np.array[CartPoint]) -> np.array[CartPoint]:
+    def other_to_local(self, other_position: Position, other_points: List[CartPoint]) -> List[CartPoint]:
         other_theta_rad = other_position.th / 1000
-        world_points = np.array([])
+        world_points = []
         for point in other_points:
             x = other_position.x + point.x*np.cos(other_theta_rad) - point.y*np.sin(other_theta_rad)
             y = other_position.y + point.x*np.sin(other_theta_rad) + point.y*np.cos(other_theta_rad)
-            np.append(world_points, CartPoint(x, y))
+            world_points.append(CartPoint(x, y))
         return world_points
     
-    def ray_cast(self, local_point: CartPoint, local_obstacle_points: np.array[CartPoint]) -> None:
-        cast_origin: Tuple[int, int] =  self.local_to_grid(np.array([local_point]))[0]
-        grid_points: np.array[Tuple[int, int]] = self.local_to_grid(local_obstacle_points)
+    def ray_cast(self, local_point: CartPoint, local_obstacle_points: List[CartPoint]) -> None:
+        cast_origin: Tuple[int, int] =  self.local_to_grid([local_point])[0]
+        grid_points: List[Tuple[int, int]] = self.local_to_grid(local_obstacle_points)
         for obstacle_grid_point in grid_points:
             cells_between = self.__cells_between(cast_origin, obstacle_grid_point)
             for grid_point in cells_between:
                 self.set_free(*grid_point)
             self.set_occupied(*obstacle_grid_point)
 
-    def __cells_between(self, origin: Tuple[int, int], obstacle: Tuple[int, int]) -> np.array[Tuple[int, int]]:
+    def __cells_between(self, origin: Tuple[int, int], obstacle: Tuple[int, int]) -> List[Tuple[int, int]]:
         x0, y0 = origin
         x1, y1 = obstacle
         if abs(x1-x0) > abs(y1-y0):
@@ -271,7 +271,7 @@ class OccupancyGrid:
         else:
             # VERTICAL
             cells = self.__cells_between_v(x0, y0, x1, y1)
-        return np.array(cells)
+        return cells
     def __cells_between_h(self, x0, y0, x1, y1):
         cells = []
         if x0 > x1:
@@ -323,7 +323,7 @@ class OccupancyGrid:
 
 # can be extended as localmap as abstarct class and lidarmap, occupancy map as childs
 class LocalMap:
-    def __init__(self, scan: np.array[PolarPoint]):
+    def __init__(self, scan: List[PolarPoint]):
         """
         Local Map
         A list of position taken at 1° steps
@@ -332,23 +332,25 @@ class LocalMap:
             Lidar.Scan: scan object 
         """
         # print(scan)
-        self.__scan: np.array[PolarPoint] = scan
+        self.__scan: List[PolarPoint] = scan
         # print("SCAN: ", self._scan)
 
     def __repr__(self):
         return f"local_map()"
 
+    def get_size(self):
+        return len(self.__scan)
  
     @timing_decorator
-    def get_polar_points(self, section_radius: int = None) -> np.array[PolarPoint]:
+    def get_polar_points(self, section_radius: int = None) -> List[PolarPoint]:
         """Get polar coordinates of the scan            
         """
         if section_radius is None:
-            return np.array(self.__scan)
-        return np.array([coord for coord in self.__scan if coord.distance <= section_radius])
+            return [coord for coord in self.__scan]
+        return [coord for coord in self.__scan if coord.distance <= section_radius]
     
     @timing_decorator
-    def get_cartesian_points(self, section_size: int = None) -> np.array[CartPoint]:
+    def get_cartesian_points(self, section_size: int = None) -> List[CartPoint]:
         """Get cartesian coordinates of the scan (based on the center of the local map)
         Returns:
             List[CartPoint]: list cartesian points in local coordinates (refers to position of the robot)
@@ -371,7 +373,7 @@ class LocalMap:
             except Exception as e:
                 logger.error(f"Error in get_cartesian_points {e}")
                 raise Exception("Error in get_cartesian_points")
-        return np.array(points, dtype=CartPoint)
+        return points
 
     @timing_decorator
     def get_occupancy_grid(self) -> OccupancyGrid:
@@ -521,9 +523,9 @@ class GlobalMap:
         logger.debug("Expanding grid")
         robot_point: CartPoint = robot_position.get_point()
         logger.debug("Expanding grid 1")
-        local_points: np.array[CartPoint] = local_map.get_cartesian_points() # local based on robot position
+        local_points: List[CartPoint] = local_map.get_cartesian_points() # local based on robot position
         logger.debug("Expanding grid 2")
-        global_points: np.array[CartPoint] = self.__grid.other_to_local(robot_position, local_points)
+        global_points: List[CartPoint] = self.__grid.other_to_local(robot_position, local_points)
         logger.debug("Expanding grid 3")
         while not self.__grid.are_inside(global_points):
             logger.debug("Grid too small, expanding it")

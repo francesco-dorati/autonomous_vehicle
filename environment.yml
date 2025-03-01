@@ -12,6 +12,7 @@ dependencies:
   - pygame
   - matplotlib
   - ipykernel
+  - open3d
   - pip:
       - pyserial
       - rplidar-roboticia

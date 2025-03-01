@@ -91,6 +91,7 @@ class DataTransmitter:
                     global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
                     
                     logger.debug("DATA TRANSMITTER got data")
+                    # logger.debug(f"DATA TRANSMITTER lidar points: {lidar_points}")
                     
                     # occupancy grid
                     grid_size = global_map.get_grid_size()
@@ -104,7 +105,7 @@ class DataTransmitter:
                     lidar_bytes = b""
                     if lidar_points:
                         lidar_size = len(lidar_points)
-                        logger.debug(f"packing lidar points: {lidar_points}")
+                        # logger.debug(f"packing lidar points: {lidar_points}")
                         for x, y in lidar_points:
                             lidar_bytes += struct.pack("<hh", x, y)
 

@@ -172,7 +172,7 @@ class Robot:
             self.__mapping = False
         
     @timing_decorator
-    def get_data(self, size_mm) -> Tuple[OccupancyGrid, np.array[Tuple[int, int]], Optional[Position]]:
+    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[Tuple[int, int]], Optional[Position]]:
         """ Returns data
             - global map: Occupancy Grid
             - local map: list of points (inside the grid frame)
@@ -227,11 +227,13 @@ class Robot:
             else:
                 logger.info("Control thread already stopped")
 
-    def __visual_odometry(self, current_points: np.array[CartPoint], prev_points: np.array[CartPoint]):     
+    def __visual_odometry(self, current_points: List[CartPoint], prev_points: List[CartPoint]):     
         try:
+            t = time.time()
             # Converti entrambe le scansioni in point cloud 3D (aggiungendo z=0)
-            curr_pts = np.asarray(current_points)              # (M,2)
-            prev_pts = np.asarray(prev_points)  # (N,2)
+            curr_pts = np.array([[pt.x, pt.y] for pt in current_points], dtype=np.float64)
+            prev_pts = np.array([[pt.x, pt.y] for pt in prev_points], dtype=np.float64)
+  
             if prev_pts.size > 0 and curr_pts.size > 0:
                 pts_prev_3d = np.hstack([prev_pts, np.zeros((prev_pts.shape[0], 1))])
                 pts_curr_3d = np.hstack([curr_pts, np.zeros((curr_pts.shape[0], 1))])
@@ -253,11 +255,14 @@ class Robot:
                 # Estrai la traslazione stimata (in x, y, z)
                 delta_translation = transformation[:3, 3]
                 logger.info(f"Estimated translation (x,y,z): {delta_translation}")
-                # Qui puoi aggiornare la stima della posizione del robot,
-                # ad es. integrando delta_translation con la posizione attuale.
+                
+                dt = time.time() - t
+                logger.info(f"ICP time: {dt}")
+ 
                 return delta_translation
             else:
                 logger.warning("Scansioni ICP vuote!")
+
         except Exception as icp_e:
             logger.error(f"ICP localization error: {icp_e}")
 
@@ -291,43 +296,21 @@ class Robot:
                 
                 # IMPLEMENTAZIONE LOCALIZZAZIONE CON ICP
                 # Se è disponibile una scansione precedente, usa ICP per stimare la trasformazione.
-                if :
-                    try:
-                        # Converti entrambe le scansioni in point cloud 3D (aggiungendo z=0)
-                        pts_prev = np.asarray(self.__prev_local_map)  # (N,2)
-                        pts_curr = np.asarray(local_map)              # (M,2)
-                        if pts_prev.size > 0 and pts_curr.size > 0:
-                            pts_prev_3d = np.hstack([pts_prev, np.zeros((pts_prev.shape[0], 1))])
-                            pts_curr_3d = np.hstack([pts_curr, np.zeros((pts_curr.shape[0], 1))])
-                            
-                            pc_prev = o3d.geometry.PointCloud()
-                            pc_curr = o3d.geometry.PointCloud()
-                            pc_prev.points = o3d.utility.Vector3dVector(pts_prev_3d)
-                            pc_curr.points = o3d.utility.Vector3dVector(pts_curr_3d)
-                            
-                            # Imposta una soglia per ICP (da adattare alle unità del tuo sistema)
-                            threshold = 0.05  
-                            trans_init = np.eye(4)
-                            reg_result = o3d.pipelines.registration.registration_icp(
-                                pc_curr, pc_prev, threshold, trans_init,
-                                o3d.pipelines.registration.TransformationEstimationPointToPoint()
-                            )
-                            transformation = reg_result.transformation
-                            logger.info(f"ICP transformation:\n{transformation}")
-                            # Estrai la traslazione stimata (in x, y, z)
-                            delta_translation = transformation[:3, 3]
-                            logger.info(f"Estimated translation (x,y,z): {delta_translation}")
-                            # Qui puoi aggiornare la stima della posizione del robot,
-                            # ad es. integrando delta_translation con la posizione attuale.
-                        else:
-                            logger.warning("Scansioni ICP vuote!")
-                    except Exception as icp_e:
-                        logger.error(f"ICP localization error: {icp_e}")
+                if local_map.get_size() > 0:
+                    logger.info("Local map available for ICP localization.")
+                    cart_points = local_map.get_cartesian_points()
+                    if len(self.__prev_local_map) > 0:
+                        logger.debug("Previous local map available for ICP localization.")
+                        # logger.debug(f"cart points: {cart_points} ")
+                        # logger.debug(f"old points: {self.__prev_local_map}")
+                        delta_translation = self.__visual_odometry(cart_points, self.__prev_local_map)
+                    else:
+                        logger.debug("No previous local map available for ICP localization.")
+                    
+                    self.__prev_local_map = cart_points
                 else:
-                    logger.debug("No previous local map available for ICP localization.")
-
-                # Aggiorna la scansione precedente per la prossima iterazione
-                self.__prev_local_map = local_map
+                    logger.warning("No local map available for ICP localization.")
+                    
 
                 # 🔒 LOCK 2 - Update shared state
                 with self.__lock:

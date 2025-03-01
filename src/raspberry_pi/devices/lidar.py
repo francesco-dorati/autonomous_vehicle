@@ -317,7 +317,7 @@ class Lidar(Device):
         if not Lidar._scanning:
             raise Lidar.NotScanning("Lidar is not scanning")
         # create local map
-        copy: np.array[PolarPoint] = Lidar._scan.get_copy()
+        copy: List[PolarPoint] = Lidar._scan.get_copy()
         return LocalMap(copy)
 
     # PRIVATE
