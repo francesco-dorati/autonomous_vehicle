@@ -233,8 +233,10 @@ class Robot:
         try:
             t = time.time()
             # Converti entrambe le scansioni in point cloud 3D (aggiungendo z=0)
-            curr_pts = np.array([[pt.x, pt.y] for pt in current_points], dtype=np.float64)
-            prev_pts = np.array([[pt.x, pt.y] for pt in prev_points], dtype=np.float64)
+            # Convert from mm to m by dividing each coordinate by 1000.
+            curr_pts = np.array([[pt.x / 1000.0, pt.y / 1000.0] for pt in current_points], dtype=np.float64)
+            prev_pts = np.array([[pt.x / 1000.0, pt.y / 1000.0] for pt in prev_points], dtype=np.float64)
+
   
             if prev_pts.size > 0 and curr_pts.size > 0:
                 pts_prev_3d = np.hstack([prev_pts, np.zeros((prev_pts.shape[0], 1))])
@@ -246,7 +248,7 @@ class Robot:
                 pc_curr.points = o3d.utility.Vector3dVector(pts_curr_3d)
                 
                 # Imposta una soglia per ICP (da adattare alle unità del tuo sistema)
-                threshold = 5.0
+                threshold = 0.005
                 trans_init = np.eye(4)
                 reg_result = o3d.pipelines.registration.registration_icp(
                     pc_curr, pc_prev, threshold, trans_init,
@@ -256,12 +258,13 @@ class Robot:
                 logger.info(f"ICP transformation:\n{transformation}")
                 # Estrai la traslazione stimata (in x, y, z)
                 delta_translation = transformation[:3, 3]
-                logger.info(f"Estimated translation (x,y,z): {delta_translation}")
+                delta_translation_mm = delta_translation * 1000.0
+                logger.info(f"Estimated translation (x,y,z): {delta_translation_mm}")
                 
                 dt = time.time() - t
                 logger.info(f"ICP time: {dt}")
  
-                return delta_translation
+                return delta_translation_mm
             else:
                 logger.warning("Scansioni ICP vuote!")
 
@@ -311,7 +314,11 @@ class Robot:
                         # logger.debug(f"cart points: {cart_points} ")
                         # logger.debug(f"old points: {self.__prev_local_map}")
                         delta_translation = self.__visual_odometry(cart_points, self.__prev_local_map)
-                        actual_pos = Position(actual_pos.x + delta_translation[0], actual_pos.y + delta_translation[1], actual_pos.theta)
+                        actual_pos = Position(
+                            actual_pos.x + delta_translation[0],
+                            actual_pos.y + delta_translation[1],
+                            actual_pos.th
+                        )
                         logger.debug(f"Estimated position: {actual_pos}")
                     else:
                         logger.debug("No previous local map available for ICP localization.")
