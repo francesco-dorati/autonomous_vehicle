@@ -16,7 +16,7 @@ class RobotConfig:
     GLOBAL_MAP_SIZE_MM: int
     GLOBAL_MAP_RESOLUTION: int
 ROBOT_CONFIG = RobotConfig(
-    CONTROL_LOOP_INTERVAL = 0.3,
+    CONTROL_LOOP_INTERVAL = 0.2,
     MAPS_FOLDER = "../data/maps",
     SCANS_FOLDER = "../data/scans",
 
