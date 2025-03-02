@@ -36,10 +36,12 @@ class Robot:
         self.__target_velocity: Tuple[float, float] = (0, 0)
     
         self.__mapping: bool = False
-        self.__actual_position: Position = None
+        self.__actual_position: Position = Position(0,0,0)
         self.__local_map: LocalMap = None
         self.__prev_local_map: List[CartPoint] = []
         self.__global_map: GlobalMap = None
+
+        self.last_loop_time = time.time()
 
     def __del__(self):
         NANO.stop()
@@ -275,6 +277,10 @@ class Robot:
         try:
             while not self.__stop_loop_event.is_set():
                 logger.debug("LOOP start")
+                dt = time.time() - self.last_loop_time
+                logger.debug(f"LOOP time: {dt*1000}")
+                self.last_loop_time = time.time()
+
                 # 🔒 LOCK 1 - Read shared state
                 with self.__lock:
                     logger.debug("LOOP acquired first lock")
@@ -284,12 +290,13 @@ class Robot:
                     global_map: GlobalMap = self.__global_map  # Store reference safely
                     mapping_enabled: bool = self.__mapping
                     control_type: str = self.__control_type  # Avoid repeated lock usage
+                    actual_pos: Position = self.__actual_position
 
                 logger.debug(f"LOOP released first lock")
 
                 # 📡 Request sensor data (outside the lock)
                 local_map = Lidar.produce_local_map()
-                actual_pos = RP2040.get_position() if global_map else None
+                # actual_pos = RP2040.get_position() if global_map else None
 
                 logger.debug("LOOP retreived data from external devices")
                 logger.debug(f"LOOP: control_type: {control_type}, mapping: {mapping_enabled}, position: {actual_pos}")
@@ -304,13 +311,15 @@ class Robot:
                         # logger.debug(f"cart points: {cart_points} ")
                         # logger.debug(f"old points: {self.__prev_local_map}")
                         delta_translation = self.__visual_odometry(cart_points, self.__prev_local_map)
+                        actual_pos = Position(actual_pos.x + delta_translation[0], actual_pos.y + delta_translation[1], actual_pos.theta)
+                        logger.debug(f"Estimated position: {actual_pos}")
                     else:
                         logger.debug("No previous local map available for ICP localization.")
                     
                     self.__prev_local_map = cart_points
                 else:
                     logger.warning("No local map available for ICP localization.")
-                    
+            
 
                 # 🔒 LOCK 2 - Update shared state
                 with self.__lock:

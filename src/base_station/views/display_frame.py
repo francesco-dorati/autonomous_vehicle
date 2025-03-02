@@ -77,8 +77,8 @@ class DisplayFrame(tk.Canvas):
             cy = self.total_size // 2
 
             self.delete("robot_rect") 
-            width_pixels = 3 * self.cell_size()
-            height_pixels = 3 * self.cell_size()
+            width_pixels = 2 * self.cell_size()
+            height_pixels = 2 * self.cell_size()
             x1 = cx - width_pixels // 2
             y1 = cy - height_pixels // 2
             x2 = cx + width_pixels // 2
