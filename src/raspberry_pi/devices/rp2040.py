@@ -10,6 +10,7 @@ import time
 from typing import List
 import threading
 
+from raspberry_pi.robot.perception import Perception
 from raspberry_pi.devices.device import Device
 from raspberry_pi.data_structures.states import Position
 from raspberry_pi.utils.logger import get_logger, timing_decorator
@@ -19,6 +20,12 @@ logger = get_logger(__name__)
 
 class RP2040(Device):
     _serial_lock = threading.Lock()
+    _data_lock = threading.Lock()
+    _stop_event = threading.Event()
+    _serial: serial.Serial | None = None
+    _receiver_thread: threading.Thread | None = None
+    _odometry: Position | None = None
+
 
     @staticmethod
     @timing_decorator
@@ -106,30 +113,105 @@ class RP2040(Device):
             RP2040._serial.write(f"PID {kp} {ki} {kd}\n".encode())
 
     @staticmethod
+    def start_odometry():
+        # reset odometry
+        with RP2040._serial_lock:
+            RP2040._serial.write("ORS\n".encode())
+        with RP2040._data_lock:
+            RP2040._odometry = Position(0, 0, 0)
+        
+        RP2040._stop_event.clear()
+        RP2040._receiver_thread = threading.Thread(target=RP2040.__receiver_loop)
+        RP2040._receiver_thread.start()
+        
+        
+    @staticmethod
+    def stop_odometry():
+        RP2040._stop_event.set()
+        if RP2040._receiver_thread and RP2040._receiver_thread.is_alive():
+            RP2040._receiver_thread.join()
+        with RP2040._data_lock:    
+            RP2040._odometry = None
+
+    def __receiver_loop(self):
+        while not RP2040._stop_event.is_set():
+            try:
+                with RP2040._serial_lock:
+                    line = RP2040._serial.readline().decode().strip()
+
+                if line:
+                    try:
+                        logger.debug(f"Received: {line}")
+
+                        time, encoders, imu = line.split(";")
+                        c, time_raw = time.split(":")
+                        assert c == "T"
+                        dt_ms = int(time_raw)
+
+                        # read encoder data
+                        c, data = encoders.split(":")
+                        assert c == "ENC"
+                        enc_ds_mm, enc_dth_mrad = map(round, data.split(","))
+
+                        # read imu data
+                        c, data = imu.split(":")
+                        assert c == "IMU"
+                        imu_dth_mrad = None
+                        if data.strip() != "":
+                            imu_dth_mrad = map(int, data.split())
+                        
+                        logger.debug(f"dt: {dt_ms}, enc_ds: {enc_ds_mm}, enc_dth: {enc_dth_mrad}, imu_dth: {imu_dth_mrad}")
+
+                        # filter theta
+                        th_filtered = enc_dth_mrad
+                        if imu_dth_mrad is not None:
+                            th_filtered = Perception.filter_theta(self._odometry.th, enc_dth_mrad, imu_dth_mrad)
+                        
+                        logger.debug(f"theta filtered: {th_filtered}")
+
+                        # construct new odometry
+                        with RP2040._data_lock:
+                            RP2040._odometry = Perception.calculate_odometry(RP2040._odometry, enc_ds_mm, th_filtered)
+                            logger.debug(f"New Odometry: {RP2040._odometry}")
+                       
+                    except ValueError:
+                        logger.error(f"Invalid position data received: {line}")
+                    except AssertionError:
+                        logger.error(f"Invalid data format received: {line}")
+                    
+                else:
+                    logger.error("No data received from RP2040")
+
+            except Exception as e:
+                logger.error(f"Error in receiver loop: {e}")
+                break
+
+    @staticmethod
     @timing_decorator
-    def get_position() -> Position:
+    def get_position() -> Position | None:
         """
         Request odometry data from RP2040
 
-        Side:
-            writes to serial
-            awaits response
         Returns:
             Position: position of the robot
         """
-        with RP2040._serial_lock:
-            RP2040._serial.write("ORQ\n".encode())
-            line = RP2040._serial.readline().decode().strip()
-            if line:
-                try:
-                    x, y, th = map(int, line.split())
-                    return Position(x, y, th)
-                except ValueError:
-                    logger.error(f"Invalid position data received: {line}")
-                    return None
-            else:
-                logger.error("No data received from RP2040")
-                return None
+        with RP2040._data_lock:
+            return RP2040._odometry
+        
+        # with RP2040._serial_lock:
+            
+        #     RP2040._serial.write("ORQ\n".encode())
+        #     line = RP2040._serial.readline().decode().strip()
+        #     if line:
+        #         try:
+        #             x, y, th = map(int, line.split())
+        #             return Position(x, y, th)
+        #         except ValueError:
+        #             logger.error(f"Invalid position data received: {line}")
+        #             return None
+        #     else:
+        #         logger.error("No data received from RP2040")
+        #         return None
 
     @staticmethod
     # @timing_decorator
@@ -166,6 +248,8 @@ class RP2040(Device):
         """
         with RP2040._serial_lock:
             RP2040._serial.write("ORS\n".encode())
+        with RP2040._data_lock:
+            RP2040._odometry = Position(0, 0, 0)
 
     @staticmethod
     @timing_decorator
@@ -177,8 +261,9 @@ class RP2040(Device):
         """
         with RP2040._serial_lock:
             RP2040._serial.write(f"OST {pos.x} {pos.y} {pos.th}\n".encode())
+        with RP2040._data_lock:
+            RP2040._odometry = pos
        
-    
     @staticmethod
     @timing_decorator
     def follow_path(path: List[Position]):

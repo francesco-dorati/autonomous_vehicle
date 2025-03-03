@@ -32,7 +32,7 @@ class DisplayFrame(tk.Canvas):
                 robot_pos: Tuple[int, int, int] | None):
         try:
             logger.info("UPDATING DISPLAY")
-            logger.debug(f"Grid size: {size}, grid: {grid[0] if grid else None} ..., lidar_points: {lidar_points[0] if lidar_points else None} ..., robot_pos: {robot_pos}")
+            logger.debug(f"Grid size: {size}, grid: {grid[0] if grid is not None else None} ..., lidar_points: {lidar_points[0] if lidar_points is not None else None} ..., robot_pos: {robot_pos}")
 
             if size != self.grid_size:
                 logger.debug(f"Resizing display to {size}")
@@ -63,7 +63,7 @@ class DisplayFrame(tk.Canvas):
 
             # LIDAR
             self.delete("lidar")
-            if lidar_points:
+            if lidar_points is not None:
                 for x, y in lidar_points:
                     # x = -x # Invert x-axis
                     reversed_x = self.grid_size - x - 1

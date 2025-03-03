@@ -6,6 +6,7 @@
 /*    
     Motor Controller 
     Handles motor control, path following and encoders odometry calculations
+    When not in STALL sends odometry data via serial
 
     INPUTS (Serial1 115200) 
     ALL INPUTS ENDS WITH '\n'
@@ -18,18 +19,14 @@
 
     "PWR <pow_l> <pow_r>" 
         - set target power
-        - (pow_l, pow_r) in [-255, 255]
+        - (pow_l, pow_r) [int] in [-255, 255]
 
     "VEL <vx> <vt>" 
         - set target velocity
-        - (vx, vt) in [mm/s, mrad/s]
+        - (vx, vt) [int] in [mm/s, mrad/s]
 
     "PID <kp> <ki> <kd>"
         - change pid values
-
-    "ORQ" -> "<x> <y> <theta>"
-        - odometry request
-        - (x, y) in [mm], theta in [mrad], 
 
     "ORS"
         - reset odometry values
@@ -77,6 +74,7 @@ State control_state = STALL;
 const char END_CHAR = '\n';
 long last_serial_time = 0;
 void handle_serial();
+void transmit_odometry();
 
 // GENERAL
 class Position { // general unit
@@ -111,6 +109,12 @@ void left_tick();
 void right_tick();
 void reset_odometry();
 void update_odometry();
+
+// ODOMTERY
+long last_odometry_time_us = 0;
+long odometry_dtime_us = 0;
+long enc_dS_um, enc_dT_urad;
+long imu_dT_urad; 
 
 // POWER CONTROL
 #define MAX_POW 250
@@ -274,21 +278,23 @@ void loop() {
         // Serial1.write("HEllO!!\n");
         handle_serial();
         last_serial_time = millis();
+    } else {
+        // check time passed and put stall
     }
 
     // debug via usb serial
-    /* log */ debug_usb.check_connection();
-
-    // update odometry
-    update_odometry();
-
+    /* log */ debug_usb.check_connection();  
+    
     // stall
     if (control_state == STALL) {
         // stop motors???
         sleep(t_start);
         return;
     }
-
+    
+    // update odometry
+    update_odometry();
+    
     // position control
     if (control_state == POSITION_CONTROL && is_over(last_position_control_time, POSITION_CONTROL_INTERVAL)) {
         // calculate target robot velocities
@@ -307,6 +313,9 @@ void loop() {
 
     // send motor powers
     send_motor_powers();
+
+    // transmit odometry
+    transmit_odometry();
     
     // delay
     sleep(t_start);
@@ -406,19 +415,6 @@ void handle_serial() {
             PID_RIGHT.SetTunings(Kp, Ki, Kd);
             /* log */ debug_usb.serial.set_pid();
 
-        } else if (strcmp(command, "ORQ") == 0) {
-            // odometry request
-            // "ORQ" -> "<x> <y> <theta>"
-            int x_mm = actual_robot_position_u.x/1000;
-            int y_mm = actual_robot_position_u.y/1000;
-            int th_mm = actual_robot_position_u.th/1000;
-            Serial1.print(x_mm); // x
-            Serial1.print(" ");
-            Serial1.print(y_mm); // y
-            Serial1.print(" ");
-            Serial1.println(th_mm); // theta
-            /* log */ debug_usb.serial.request_odometry(x_mm, y_mm, th_mm);
-
         } else if (strcmp(command, "ORS") == 0) {
             // odometry reset
             // "ORS"
@@ -489,6 +485,20 @@ void handle_serial() {
     }
 }
 
+void transmit_odometry() {
+    // "T <time> ENC <ticks_l> <ticks_r> <d_ticks_l> <d_ticks_r> <d_time_us> <dL_um> <dR_um> <dS_um> <dT_urad>"
+    String message = "";
+    message += "T:";
+    message += String(odometry_dtime_us);
+    message += ";ENC:";
+    message += String(enc_dS_um);
+    message += ",";
+    message += String(enc_dT_urad);
+    message += ";IMU: ";
+    // message += String(imu_dT_urad);
+    Serial1.println(message);
+}
+
 // ODOMETRY
 void left_tick() { 
     if (digitalRead(LB_ENCODER_PIN) == HIGH) ticks_l++;  // Forward
@@ -504,6 +514,8 @@ void reset_odometry() {
     prev_ticks_l = 0;
     prev_ticks_r = 0;
     prev_time_encoder_us = micros();
+    enc_dS_um = 0;
+    enc_dT_urad = 0;
     actual_wheel_velocities_m[0] = 0;
     actual_wheel_velocities_m[1] = 0;
     actual_robot_velocities_m[0] = 0; 
@@ -518,6 +530,11 @@ void update_odometry() {
         reads: ticks_l, ticks_r
         writes: actual_wheel_velocities_m[2], actual_robot_velocities_m[2], actual_robot_position_u[3]
     */
+    // calcola delta time
+    if last_odometry_time_us != 0
+        odometry_dtime_us = micros() - last_odometry_time_us;
+    last_odometry_time_us = micros();
+
     // delta ticks
     long d_ticks_l = ticks_l - prev_ticks_l;
     long d_ticks_r = ticks_r - prev_ticks_r;
@@ -532,8 +549,8 @@ void update_odometry() {
     long dL_um = (d_ticks_l * WHEEL_CIRCUMFERENCE_UM) / COUNTS_PER_REV;
     long dR_um = (d_ticks_r * WHEEL_CIRCUMFERENCE_UM) / COUNTS_PER_REV;
 
-    long dS_um = (dL_um + dR_um) / 2; // um
-    long dT_urad = (dR_um - dL_um) * 1000 / WHEEL_DISTANCE_MM; // urad
+    enc_dS_um = (dL_um + dR_um) / 2; // um
+    enc_dT_urad = (dR_um - dL_um) * 1000 / WHEEL_DISTANCE_MM; // urad
 
     // wheel velocities
     // (um*1000)/us = nm/us = mm/s
@@ -544,7 +561,7 @@ void update_odometry() {
     // (um*1000)/us = nm/us = mm/s
     actual_robot_velocities_m[0] = (dS_um * 1000)/ d_time_us; 
     actual_robot_velocities_m[1] = (dT_urad * 1000) / d_time_us;
-    
+
 
     // robot position
     // actual_robot_position_u.x += dS_um * cos(actual_robot_position_u.th/1000000.0); // um

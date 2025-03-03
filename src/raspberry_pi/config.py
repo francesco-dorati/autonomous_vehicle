@@ -67,7 +67,7 @@ class RP2040Config:
 RP2040_CONFIG = RP2040Config(
     PORT="/dev/ttyAMA0",
     BAUD_RATE=115200,
-    TIMEOUT= 1,
+    TIMEOUT= 0.01,
 )
 
 @dataclass
