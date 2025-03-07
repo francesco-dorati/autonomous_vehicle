@@ -531,7 +531,7 @@ void update_odometry() {
         writes: actual_wheel_velocities_m[2], actual_robot_velocities_m[2], actual_robot_position_u[3]
     */
     // calcola delta time
-    if last_odometry_time_us != 0
+    if (last_odometry_time_us != 0)
         odometry_dtime_us = micros() - last_odometry_time_us;
     last_odometry_time_us = micros();
 
@@ -559,22 +559,22 @@ void update_odometry() {
 
     // robot velocities
     // (um*1000)/us = nm/us = mm/s
-    actual_robot_velocities_m[0] = (dS_um * 1000)/ d_time_us; 
-    actual_robot_velocities_m[1] = (dT_urad * 1000) / d_time_us;
+    actual_robot_velocities_m[0] = (enc_dS_um * 1000)/ d_time_us; 
+    actual_robot_velocities_m[1] = (enc_dT_urad * 1000) / d_time_us;
 
 
     // robot position
     // actual_robot_position_u.x += dS_um * cos(actual_robot_position_u.th/1000000.0); // um
     // actual_robot_position_u.y += dS_um * sin(actual_robot_position_u.th/1000000.0); // um
-    actual_robot_position_u.x += dS_um * cos((actual_robot_position_u.th + dT_urad/2)/1000000.0); // um
-    actual_robot_position_u.y += dS_um * sin((actual_robot_position_u.th + dT_urad/2)/1000000.0); // um
-    actual_robot_position_u.th += dT_urad; // urad
+    actual_robot_position_u.x += enc_dS_um * cos((actual_robot_position_u.th + enc_dT_urad/2)/1000000.0); // um
+    actual_robot_position_u.y += enc_dS_um * sin((actual_robot_position_u.th + enc_dT_urad/2)/1000000.0); // um
+    actual_robot_position_u.th += enc_dT_urad; // urad
     actual_robot_position_u.th = normalize_angle_urad(actual_robot_position_u.th);
 
 
     //DEBUG
     /* log */ debug_usb.odometry.log(ticks_l, ticks_r, d_ticks_l, d_ticks_r, d_time_us, 
-                                                    dL_um, dR_um, dS_um, dT_urad);
+                                                    dL_um, dR_um, enc_dS_um, enc_dT_urad);
 }
 
 // POWER CONTROL
