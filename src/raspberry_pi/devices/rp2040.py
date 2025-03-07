@@ -142,7 +142,8 @@ class RP2040(Device):
                 if line:
                     try:
                         logger.debug(f"Received: {line}")
-
+                        
+                        # parse data
                         time, encoders, imu = line.split(";")
                         c, time_raw = time.split(":")
                         assert c == "T"
@@ -174,13 +175,14 @@ class RP2040(Device):
                             RP2040._odometry = Perception.calculate_odometry(RP2040._odometry, enc_ds_mm, th_filtered)
                             logger.debug(f"New Odometry: {RP2040._odometry}")
                        
-                    except ValueError:
+                    except ValueError as e:
                         logger.error(f"Invalid position data received: {line}")
-                    except AssertionError:
+                        return
+                    except AssertionError as e:
                         logger.error(f"Invalid data format received: {line}")
+                        return
                     
-                else:
-                    logger.error("No data received from RP2040")
+                time.sleep(RP2040_CONFIG.RECEIVER_DELAY)
 
             except Exception as e:
                 logger.error(f"Error in receiver loop: {e}")
