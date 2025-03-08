@@ -191,18 +191,23 @@ class Robot:
         position = None
         logger.info("ROBOT get data")
         with self.__lock:
-            # GLOBAL MAP
-            if self.__global_map and self.__actual_position:
-                global_map = self.__global_map.get_subsection(self.__actual_position, size_mm)
-
-            # LOCAL MAP
-            if self.__local_map:
-                local_points: List[CartPoint] = self.__local_map.get_cartesian_points(section_size=size_mm)
-                lidar_grid_points: List[Tuple[int, int]] = global_map.local_to_grid(local_points)
-            
             # POSITION
             if self.__actual_position:
                 position = self.__actual_position
+
+            # GLOBAL MAP
+            if self.__global_map and self.__actual_position:
+                global_map = self.__global_map.get_subsection(
+                    origin_world=self.__actual_position.get_point(), 
+                    size_mm=size_mm)
+
+            # LOCAL MAP
+            if self.__local_map:
+                local_points: List[CartPoint] = self.__local_map.get_cartesian_points(
+                    map_poisition=Position(0, 0, self.__actual_position.th), # rotate based on robot orientation
+                    section_size=size_mm)
+                lidar_grid_points: List[Tuple[int, int]] = global_map.local_to_grid(local_points)
+            
 
         # global_map = global_map.get_grid()
         return global_map, lidar_grid_points, position
