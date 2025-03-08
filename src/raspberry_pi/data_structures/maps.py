@@ -138,8 +138,8 @@ class OccupancyGrid:
         resolution = ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
 
         # Compute displacement in world coordinates (mm) between our origin and other's origin.
-        dx_world = origin.x - other_origin.x
-        dy_world = origin.y - other_origin.y
+        dx_world = other_origin.x - origin.x
+        dy_world = other_origin.y - origin.y
 
         # Convert the displacement into grid cell offsets (round to nearest integer).
         dx_cells = round(dx_world / resolution)

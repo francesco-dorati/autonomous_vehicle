@@ -53,6 +53,10 @@ class Position:
         if isinstance(other, Position):
             return self.x == other.x and self.y == other.y and self.th == other.th
         return False
+    def __add__(self, other):
+        if isinstance(other, Position):
+            return Position(self.x + other.x, self.y + other.y, Utils.normalize_mrad(self.th + other.th))
+        return NotImplemented
     def __sub__(self, other):
         if isinstance(other, Position):
             return Position(self.x - other.x, self.y - other.y, Utils.normalize_mrad(self.th - other.th))

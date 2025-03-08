@@ -339,17 +339,17 @@ class Robot:
                     logger.info("Position valid for ICP localization.")
                     logger.debug(f"Delta Position {delta_position}")
 
-                    if len(self.__prev_local_map) > 0:
+                    if False and len(self.__prev_local_map) > 0:
                         logger.debug("Previous local map available for ICP localization.")
                         # logger.debug(f"cart points: {cart_points} ")
                         # logger.debug(f"old points: {self.__prev_local_map}")
-                        delta_translation = Perception.visual_odometry(cart_points, self.__prev_local_map)
-                        # actual_pos = Position(
-                        #     actual_pos.x + delta_translation[0],
-                        #     actual_pos.y + delta_translation[1],
-                        #     actual_pos.th
-                        # )
-                        logger.debug(f"ICP translation: delta_x: {delta_translation[0]} delta_y: {delta_translation[0]}")
+                        fitness, delta_position = Perception.visual_odometry(delta_position, cart_points, self.__prev_local_map)
+                        if fitness > 0.8:
+                            logger.debug(f"Adding ICP; delta x{delta_position.x} delta_y: {delta_position.y}")
+                            current_position = current_position + delta_position
+                        else:
+                            logger.debug(f"Fitness too low: {fitness}")
+
                         # Drawer.draw_lidar_points(cart_points)
                         # Drawer.draw_lidar_points(self.__prev_local_map)
                     else:

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from raspberry_pi.data_structures.states import CartPoint, Position
 import open3d as o3d
 import numpy as np
@@ -25,7 +25,7 @@ class Perception:
         return Position(x, y, th)
 
     @staticmethod
-    def visual_odometry(current_points: List[CartPoint], prev_points: List[CartPoint]):
+    def visual_odometry(estimated_pos: Position, current_points: List[CartPoint], prev_points: List[CartPoint]) -> Tuple[float, Position]:
         try:
             t = time.time()
             # Converti entrambe le scansioni in point cloud 3D (aggiungendo z=0)
@@ -47,32 +47,39 @@ class Perception:
                 
                 # Imposta una soglia per ICP (da adattare alle unità del tuo sistema)
                 threshold = 0.1
-                trans_init = np.identity(4)
+                trans_init = trans_init = np.array([
+                    [np.cos(estimated_pos.th/1000.0), -np.sin(estimated_pos.th/1000.0), 0, estimated_pos.x/1000.0],  # mm -> m
+                    [np.sin(estimated_pos.th/1000.0), np.cos(estimated_pos.th/1000.0),  0, estimated_pos.y/1000.0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]
+                ])
                 reg_result = o3d.pipelines.registration.registration_icp(
                     pc_curr, pc_prev, threshold, trans_init,
                     o3d.pipelines.registration.TransformationEstimationPointToPoint(),
                     o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=500)
                 )
                 logger.info(f"ICP transformation m:\n{reg_result.transformation}")
-                transformation = reg_result.transformation * 1000.0  # Converti in mm
+                transformation = reg_result.transformation  
                 logger.info(f"ICP transformation mm:\n{transformation}")
                 logger.info(f"ICP Fitness: {reg_result.fitness}")  # Percentuale di punti corrispondenti
                 logger.info(f"ICP RMSE: {reg_result.inlier_rmse}")  # Errore medio quadratico
 
                 # Estrai la traslazione stimata (in x, y, z)
-                delta_translation = transformation[:3, 3]
-                x = delta_translation[0]
-                y = -delta_translation[1]
-                # delta_translation_mm = delta_translation 
-                logger.info(f"ICP Estimated translation (x,y,z): x: {x} y: {y}")
-                
-                # pc_curr.transform(transformation)
-                # Drawer.draw_icp(pc_curr, pc_prev)
+                delta_translation = transformation[:3, 3]*1000
+                dx: int = round(delta_translation[0])
+                dy: int = round(-delta_translation[1])
+                # Calculate delta_theta (rotation angle)
+                rotation_matrix = transformation[:2, :2]  # Get the 2x2 rotation matrix
+                dth: int = round(-np.arctan2(rotation_matrix[1, 0], rotation_matrix[0, 0])*1000)  # Compute the angle
+                dP = Position(dx, dy, dth)
+
+                logger.info(f"ICP Estimated translation (x,y,z): {dP}")
 
                 dt = time.time() - t
-                logger.info(f"ICP time: {dt}")
- 
-                return x, y, 0
+                logger.info(f"ICP time: {dt:.3f}")
+
+                return reg_result.fitness, dP
+            
             else:
                 logger.warning("Scansioni ICP vuote!")
 
