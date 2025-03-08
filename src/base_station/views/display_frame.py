@@ -91,7 +91,7 @@ class DisplayFrame(tk.Canvas):
             if robot_pos:
                 fx1 = cx - line_len*math.cos(int(robot_pos[2])/1000)
                 fy1 = cy - line_len*math.sin(int(robot_pos[2])/1000)
-                fx2 = cx - line_len*math.sin(int(robot_pos[2])/1000)
+                fx2 = cx + line_len*math.sin(int(robot_pos[2])/1000)
                 fy2 = cy - line_len*math.cos(int(robot_pos[2])/1000)
             else:
                 fx1 = cx - line_len
