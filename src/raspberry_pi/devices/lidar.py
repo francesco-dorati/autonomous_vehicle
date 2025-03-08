@@ -283,15 +283,15 @@ class Lidar(Device):
         # if not Lidar.ping():
         #     raise Lidar.ConnectionFailed("Ping failed")
         
+        # write stop command
+        Lidar._serial.write(LIDAR_CONFIG.STOP_COMMAND)
+
         # stop reading
         if Lidar._scanning:
             Lidar._scanning = False
-            Lidar._thread.join()
         Lidar._scan = None
 
-        # write stop command
-        Lidar._serial.write(LIDAR_CONFIG.STOP_COMMAND)
-        time.sleep(0.01)
+        time.sleep(0.1)
         Lidar._serial.flush()
     
     @staticmethod

@@ -24,7 +24,10 @@ class RP2040(Device):
     _stop_event = threading.Event()
     _serial: serial.Serial | None = None
     _receiver_thread: threading.Thread | None = None
-    _odometry: Position | None = None
+
+    _data_valid: bool = False 
+    _delta_s_um: int = 0
+    _delta_th_urad: int = 0
 
 
     @staticmethod
@@ -122,7 +125,9 @@ class RP2040(Device):
             with RP2040._serial_lock:
                 RP2040._serial.write("ORS\n".encode())
             with RP2040._data_lock:
-                RP2040._odometry = Position(0, 0, 0)
+                RP2040._data_valid = True
+                RP2040._delta_s_um = 0
+                RP2040._delta_th_urad = 0
             
             logger.debug("REALLY Starting odometry thread")
             RP2040._stop_event.clear()
@@ -140,8 +145,26 @@ class RP2040(Device):
             RP2040._receiver_thread.join()
             RP2040._receiver_thread = None
         with RP2040._data_lock:    
-            RP2040._odometry = None
-        
+            RP2040._data_valid = False
+    
+    @staticmethod
+    @timing_decorator
+    def get_odometry(prev_position: Position) -> Position | None:
+        """
+        Request odometry data from RP2040
+
+        Returns:
+            Position: position of the robot
+        """
+        with RP2040._data_lock:
+            out = None
+            if RP2040._data_valid:
+                dS_mm = round(RP2040._delta_s_um/1000.0)
+                dTh_mm = round(RP2040._delta_th_urad/1000.0)
+                out = Perception.calculate_odometry(prev_position, dS_mm, dTh_mm)
+                RP2040._delta_s_um = 0
+                RP2040._delta_th_urad = 0
+            return out
 
     @staticmethod
     def __receiver_loop():
@@ -163,35 +186,39 @@ class RP2040(Device):
                         time_data, encoders_data, imu_data = line.split(";")
                         c, time_raw = time_data.split(":")
                         assert c == "T"
-                        dt_ms = float(int(time_raw)/1000.0)
+                        dt_us = int(time_raw)
 
                         # read encoder data
                         c, data = encoders_data.split(":")
                         assert c == "ENC"
-                        enc_ds_mm, enc_dth_mrad = (round(int(d)/1000.0) for d in data.split(","))
+                        enc_ds_um, enc_dth_urad = map(int, data.split(","))
                         # map(round, map(float, data.split(",")))
 
                         # read imu data
                         c, data = imu_data.split(":")
                         assert c == "IMU"
-                        imu_dth_mrad = None
+                        imu_dth_urad = None
                         if data.strip() != "":
-                            imu_dth_mrad = round(int(data)/1000.0)
+                            imu_dth_urad = int(data)
                         
-                        logger.debug(f"dt: {dt_ms}, enc_ds: {enc_ds_mm}, enc_dth: {enc_dth_mrad}, imu_dth: {imu_dth_mrad}")
+                        logger.debug(f"dt: {dt_us}, enc_ds: {enc_ds_um}, enc_dth: {enc_dth_urad}, imu_dth: {imu_dth_urad}")
 
                         # filter theta
-                        dth_filtered = enc_dth_mrad
-                        if False and imu_dth_mrad is not None:
-                            th_filtered = Perception.filter_theta(RP2040._odometry.th, enc_dth_mrad, imu_dth_mrad)
+                        # dth_filtered = enc_dth_urad
+                        # if False and imu_dth_mrad is not None:
+                        #     th_filtered = Perception.filter_theta(RP2040._odometry.th, enc_dth_mrad, imu_dth_mrad)
                         
-                        logger.debug(f"theta filtered: {dth_filtered}")
+                        # logger.debug(f"theta filtered: {dth_filtered}")
 
                         # construct new odometry
                         with RP2040._data_lock:
-                            # RP2040._odometry = Position(RP2040._odometry.x+enc_ds_mm, RP2040._odometry.y, RP2040._odometry.th)
-                            RP2040._odometry = Perception.calculate_odometry(RP2040._odometry, enc_ds_mm, dth_filtered)
-                            logger.debug(f"New Odometry: {RP2040._odometry}")
+                            RP2040._delta_s_um += enc_ds_um
+                            RP2040._delta_th_urad += enc_dth_urad
+                            logger.debug(f"Delta s so far: {RP2040._delta_s_um} ")
+                            logger.debug(f"Delta th so far: {RP2040._delta_th_urad}")
+                            # # RP2040._odometry = Position(RP2040._odometry.x+enc_ds_mm, RP2040._odometry.y, RP2040._odometry.th)
+                            # RP2040._odometry = Perception.calculate_odometry(RP2040._odometry, enc_ds_um, dth_filtered)
+                            # logger.debug(f"New Odometry: {RP2040._odometry}")
                        
                     except ValueError as e:
                         logger.error(f"Invalid position data received: {line}")
@@ -206,18 +233,7 @@ class RP2040(Device):
                 logger.error(f"Error in odometry receiver loop: {e}")
                 break
 
-    @staticmethod
-    @timing_decorator
-    def get_position() -> Position | None:
-        """
-        Request odometry data from RP2040
 
-        Returns:
-            Position: position of the robot
-        """
-        with RP2040._data_lock:
-            return RP2040._odometry
-        
         # with RP2040._serial_lock:
             
         #     RP2040._serial.write("ORQ\n".encode())

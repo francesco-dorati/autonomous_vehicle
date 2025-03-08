@@ -204,8 +204,9 @@ class Robot:
             # LOCAL MAP
             if self.__local_map:
                 local_points: List[CartPoint] = self.__local_map.get_cartesian_points(
-                    map_poisition=Position(0, 0, self.__actual_position.th), # rotate based on robot orientation
+                    map_position=Position(0, 0, self.__actual_position.th), # rotate based on robot orientation
                     section_size=size_mm)
+            
                 lidar_grid_points: List[Tuple[int, int]] = global_map.local_to_grid(local_points)
             
 
@@ -317,33 +318,38 @@ class Robot:
                     global_map: GlobalMap = self.__global_map  # Store reference safely
                     mapping_enabled: bool = self.__mapping
                     control_type: str = self.__control_type  # Avoid repeated lock usage
-                    actual_pos: Position = self.__actual_position
+                    last_position: Position = self.__actual_position
 
                 logger.debug(f"LOOP released first lock")
 
                 # 📡 Request sensor data (outside the lock)
                 local_map = Lidar.produce_local_map()
-                actual_pos = RP2040.get_position()
+                current_position = RP2040.get_odometry(last_position)
 
                 logger.debug("LOOP retreived data from external devices")
-                logger.debug(f"LOOP: control_type: {control_type}, mapping: {mapping_enabled}, position: {actual_pos}")
+                logger.debug(f"LOOP: control_type: {control_type}, mapping: {mapping_enabled}, position: {current_position}")
                 
                 # IMPLEMENTAZIONE LOCALIZZAZIONE CON ICP
                 # Se è disponibile una scansione precedente, usa ICP per stimare la trasformazione.
-                if False and local_map.get_size() > 0:
-                    logger.info("Local map available for ICP localization.")
+                if current_position and local_map.get_size() > 0:
+                    delta_position: Position = current_position - last_position
                     cart_points = local_map.get_cartesian_points()
+
+                    logger.info("Local map available for ICP localization.")
+                    logger.info("Position valid for ICP localization.")
+                    logger.debug(f"Delta Position {delta_position}")
+
                     if len(self.__prev_local_map) > 0:
                         logger.debug("Previous local map available for ICP localization.")
                         # logger.debug(f"cart points: {cart_points} ")
                         # logger.debug(f"old points: {self.__prev_local_map}")
                         delta_translation = Perception.visual_odometry(cart_points, self.__prev_local_map)
-                        actual_pos = Position(
-                            actual_pos.x + delta_translation[0],
-                            actual_pos.y + delta_translation[1],
-                            actual_pos.th
-                        )
-                        logger.debug(f"Estimated position: {actual_pos}")
+                        # actual_pos = Position(
+                        #     actual_pos.x + delta_translation[0],
+                        #     actual_pos.y + delta_translation[1],
+                        #     actual_pos.th
+                        # )
+                        logger.debug(f"ICP translation: delta_x: {delta_translation[0]} delta_y: {delta_translation[0]}")
                         # Drawer.draw_lidar_points(cart_points)
                         # Drawer.draw_lidar_points(self.__prev_local_map)
                     else:
@@ -359,7 +365,7 @@ class Robot:
                     logger.debug("LOOP acquired second lock")
 
                     self.__local_map = local_map
-                    self.__actual_position = actual_pos
+                    self.__actual_position = current_position
 
                     # 🗺️ Expand global map (if mapping is enabled)
                     if global_map and mapping_enabled: 
