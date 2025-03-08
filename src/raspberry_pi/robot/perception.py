@@ -1,9 +1,10 @@
 from typing import List
-from raspberry_pi.data_structures.states import CartPoint
+from raspberry_pi.data_structures.states import CartPoint, Position
 import open3d as o3d
 import numpy as np
 import time
 from raspberry_pi.utils.logger import get_logger
+from raspberry_pi.utils.utils import Utils
 
 logger = get_logger(__name__)
 
@@ -15,12 +16,13 @@ class Perception:
         return int(Perception.ALPHA*(prev_th_urad+enc_th_urad) + (1-Perception.ALPHA)*imu_th_urad)
     
     @staticmethod
-    def calculate_odometry(prev_odom, ds_mm, th_mrad) -> CartPoint:
-        x = prev_odom.x + ds_mm * np.cos(prev_odom.th/1000.0 + th_mrad/2000.0)
-        y = prev_odom.y + ds_mm * np.sin(prev_odom.th/1000.0 + th_mrad/2000.0)
-        th = prev_odom.th + np.degrees(th_mrad)
-        return CartPoint(x, y, th)
-
+    def calculate_odometry(prev_odom: Position, ds_mm: float, dth_mrad: float) -> Position:
+        logger.debug(f"received ds {ds_mm}, th_mrad: {dth_mrad}")
+        x = prev_odom.x + ds_mm * np.cos(prev_odom.th/1000.0 + dth_mrad/2000.0)
+        y = prev_odom.y + ds_mm * np.sin(prev_odom.th/1000.0 + dth_mrad/2000.0)
+        th = prev_odom.th + dth_mrad
+        th = Utils.normalize_mrad(th)
+        return Position(x, y, th)
 
     @staticmethod
     def visual_odometry(current_points: List[CartPoint], prev_points: List[CartPoint]):

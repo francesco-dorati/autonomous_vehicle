@@ -32,12 +32,13 @@ class RP2040(Device):
     def start() -> None:
         try:
             RP2040._serial = serial.Serial(RP2040_CONFIG.PORT, RP2040_CONFIG.BAUD_RATE, timeout=RP2040_CONFIG.TIMEOUT)
-            time.sleep(2)
+            time.sleep(3)
             if not RP2040.ping(): # check connection
                 RP2040.stop()
                 raise Device.ConnectionFailed
             logger.info("RP2040 connection established.")
-        except serial.SerialException:
+        except serial.SerialException as e:
+            logger.error(f"Error {e}")
             raise Device.ConnectionFailed
 
     @staticmethod
@@ -55,6 +56,7 @@ class RP2040(Device):
             try:
                 RP2040._serial.write("PNG\n".encode())
                 png = RP2040._serial.readline().decode().strip()
+                logger.info(f"ping received {png}")
                 return png == "PNG"
             except Exception as e:
                 logger.error(f"Ping failed: {e}")
@@ -114,15 +116,21 @@ class RP2040(Device):
 
     @staticmethod
     def start_odometry():
-        # reset odometry
-        with RP2040._serial_lock:
-            RP2040._serial.write("ORS\n".encode())
-        with RP2040._data_lock:
-            RP2040._odometry = Position(0, 0, 0)
-        
-        RP2040._stop_event.clear()
-        RP2040._receiver_thread = threading.Thread(target=RP2040.__receiver_loop)
-        RP2040._receiver_thread.start()
+        try:
+            logger.debug("Starting odometry thread")
+            # reset odometry
+            with RP2040._serial_lock:
+                RP2040._serial.write("ORS\n".encode())
+            with RP2040._data_lock:
+                RP2040._odometry = Position(0, 0, 0)
+            
+            logger.debug("REALLY Starting odometry thread")
+            RP2040._stop_event.clear()
+            RP2040._receiver_thread = threading.Thread(target=RP2040.__receiver_loop, daemon=True)
+            RP2040._receiver_thread.start()
+        except Exception as e:
+            logger.error(f"Error in odometry, {e}")
+            return
         
         
     @staticmethod
@@ -130,49 +138,59 @@ class RP2040(Device):
         RP2040._stop_event.set()
         if RP2040._receiver_thread and RP2040._receiver_thread.is_alive():
             RP2040._receiver_thread.join()
+            RP2040._receiver_thread = None
         with RP2040._data_lock:    
             RP2040._odometry = None
+        
 
-    def __receiver_loop(self):
+    @staticmethod
+    def __receiver_loop():
+        logger.info("Starting odometry receiver")
         while not RP2040._stop_event.is_set():
             try:
                 with RP2040._serial_lock:
-                    line = RP2040._serial.readline().decode().strip()
-
+                    if RP2040._serial.in_waiting > 0:
+                        line = RP2040._serial.readline().decode().strip()
+                    else:
+                        time.sleep(RP2040_CONFIG.RECEIVER_DELAY)
+                        continue
+            
                 if line:
                     try:
-                        logger.debug(f"Received: {line}")
+                        logger.debug(f"ODOMETRY Received: {line}")
                         
                         # parse data
-                        time, encoders, imu = line.split(";")
-                        c, time_raw = time.split(":")
+                        time_data, encoders_data, imu_data = line.split(";")
+                        c, time_raw = time_data.split(":")
                         assert c == "T"
-                        dt_ms = int(time_raw)
+                        dt_ms = float(int(time_raw)/1000.0)
 
                         # read encoder data
-                        c, data = encoders.split(":")
+                        c, data = encoders_data.split(":")
                         assert c == "ENC"
-                        enc_ds_mm, enc_dth_mrad = map(round, data.split(","))
+                        enc_ds_mm, enc_dth_mrad = (round(int(d)/1000.0) for d in data.split(","))
+                        # map(round, map(float, data.split(",")))
 
                         # read imu data
-                        c, data = imu.split(":")
+                        c, data = imu_data.split(":")
                         assert c == "IMU"
                         imu_dth_mrad = None
                         if data.strip() != "":
-                            imu_dth_mrad = map(int, data.split())
+                            imu_dth_mrad = round(int(data)/1000.0)
                         
                         logger.debug(f"dt: {dt_ms}, enc_ds: {enc_ds_mm}, enc_dth: {enc_dth_mrad}, imu_dth: {imu_dth_mrad}")
 
                         # filter theta
-                        th_filtered = enc_dth_mrad
-                        if imu_dth_mrad is not None:
-                            th_filtered = Perception.filter_theta(self._odometry.th, enc_dth_mrad, imu_dth_mrad)
+                        dth_filtered = enc_dth_mrad
+                        if False and imu_dth_mrad is not None:
+                            th_filtered = Perception.filter_theta(RP2040._odometry.th, enc_dth_mrad, imu_dth_mrad)
                         
-                        logger.debug(f"theta filtered: {th_filtered}")
+                        logger.debug(f"theta filtered: {dth_filtered}")
 
                         # construct new odometry
                         with RP2040._data_lock:
-                            RP2040._odometry = Perception.calculate_odometry(RP2040._odometry, enc_ds_mm, th_filtered)
+                            # RP2040._odometry = Position(RP2040._odometry.x+enc_ds_mm, RP2040._odometry.y, RP2040._odometry.th)
+                            RP2040._odometry = Perception.calculate_odometry(RP2040._odometry, enc_ds_mm, dth_filtered)
                             logger.debug(f"New Odometry: {RP2040._odometry}")
                        
                     except ValueError as e:
@@ -185,7 +203,7 @@ class RP2040(Device):
                 time.sleep(RP2040_CONFIG.RECEIVER_DELAY)
 
             except Exception as e:
-                logger.error(f"Error in receiver loop: {e}")
+                logger.error(f"Error in odometry receiver loop: {e}")
                 break
 
     @staticmethod
