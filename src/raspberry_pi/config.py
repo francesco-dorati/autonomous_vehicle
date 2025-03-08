@@ -64,11 +64,12 @@ class RP2040Config:
     PORT: str
     BAUD_RATE: int
     TIMEOUT: float
+    RECEIVER_DELAY: float
 RP2040_CONFIG = RP2040Config(
     PORT="/dev/ttyAMA0",
     BAUD_RATE=115200,
-    TIMEOUT= 0,
-    RECEIVER_DELAY=0.005
+    TIMEOUT=0.2,
+    RECEIVER_DELAY=0.01
 )
 
 @dataclass

@@ -242,16 +242,16 @@ class OccupancyGrid:
             grid_points.append((gx, gy))
         return grid_points
     
-    def local_to_world(self, position: Position, local_points: List[CartPoint]) -> List[CartPoint]:
-        pass
-    def other_to_local(self, other_position: Position, other_points: List[CartPoint]) -> List[CartPoint]:
-        other_theta_rad = other_position.th / 1000
-        world_points = []
-        for point in other_points:
-            x = other_position.x + point.x*np.cos(other_theta_rad) - point.y*np.sin(other_theta_rad)
-            y = other_position.y + point.x*np.sin(other_theta_rad) + point.y*np.cos(other_theta_rad)
-            world_points.append(CartPoint(x, y))
-        return world_points
+    # def local_to_world(self, position: Position, local_points: List[CartPoint]) -> List[CartPoint]:
+    #     pass
+    # def other_to_local(self, other_position: Position, other_points: List[CartPoint]) -> List[CartPoint]:
+    #     other_theta_rad = other_position.th / 1000
+    #     world_points = []
+    #     for point in other_points:
+    #         x = other_position.x + point.x*np.cos(other_theta_rad) - point.y*np.sin(other_theta_rad)
+    #         y = other_position.y + point.x*np.sin(other_theta_rad) + point.y*np.cos(other_theta_rad)
+    #         world_points.append(CartPoint(x, y))
+    #     return world_points
     
     def ray_cast(self, local_point: CartPoint, local_obstacle_points: List[CartPoint]) -> None:
         cast_origin: Tuple[int, int] =  self.local_to_grid([local_point])[0]
@@ -350,7 +350,7 @@ class LocalMap:
         return [coord for coord in self.__scan if coord.distance <= section_radius]
     
     @timing_decorator
-    def get_cartesian_points(self, section_size: int = None) -> List[CartPoint]:
+    def get_cartesian_points(self, map_position: Position | None = None, section_size: int = None) -> List[CartPoint]:
         """Get cartesian coordinates of the scan (based on the center of the local map)
         Returns:
             List[CartPoint]: list cartesian points in local coordinates (refers to position of the robot)
@@ -361,15 +361,13 @@ class LocalMap:
         for p in self.__scan:
             # Convert angle from degrees to radians for trigonometric functions
             try:
-                angle_rad: float = p.th / 1000.0        # p.th already normalized
-                if p.r > 0:
+                angle_rad: float = (p.th + map_position.th)/1000.0 if map_position else p.th/1000.0      # p.th already normalized
+                if p.r > 0 and (max_dist is None or p.r < section_size):
                     cart_p = CartPoint(
-                        p.r * np.cos(angle_rad), 
-                        p.r * np.sin(angle_rad)
+                        p.r*np.cos(angle_rad) + (map_position.x if map_position else 0), 
+                        p.r*np.sin(angle_rad) + (map_position.y if map_position else 0)
                     )
-                    is_inside = max_dist is None or (abs(cart_p.x) < max_dist and abs(cart_p.y) < max_dist)
-                    if is_inside:
-                        points.append(cart_p)
+                    points.append(cart_p)
             except Exception as e:
                 logger.error(f"Error in get_cartesian_points {e}")
                 raise Exception("Error in get_cartesian_points")
@@ -522,16 +520,21 @@ class GlobalMap:
         """
         logger.debug("Expanding grid")
         robot_point: CartPoint = robot_position.get_point()
+
         logger.debug("Expanding grid 1")
-        local_points: List[CartPoint] = local_map.get_cartesian_points() # local based on robot position
-        logger.debug("Expanding grid 2")
-        global_points: List[CartPoint] = self.__grid.other_to_local(robot_position, local_points)
+        obstacle_points: List[CartPoint] = local_map.get_cartesian_points(robot_position) # local based on robot position
+        
+        # logger.debug("Expanding grid 2")
+        # obstacle_points_global: List[CartPoint] = self.__grid.other_to_local(robot_position, local_points)
+        
         logger.debug("Expanding grid 3")
-        while not self.__grid.are_inside(global_points):
+        while not self.__grid.are_inside(obstacle_points):
             logger.debug("Grid too small, expanding it")
             self.__expand_grid()
+
         logger.debug("Expanding grid 4")
-        self.__grid.ray_cast(robot_point, local_points)
+        self.__grid.ray_cast(robot_point, obstacle_points)
+
         logger.debug("Expanding grid OK")
         
         # #####
@@ -553,7 +556,7 @@ class GlobalMap:
     def get_copy(self) -> OccupancyGrid:
         return self.__grid.get_copy()
     
-    def get_subsection(self, size_mm: int, origin_world: CartPoint) -> OccupancyGrid:
+    def get_subsection(self, origin_world: CartPoint, size_mm: int, ) -> OccupancyGrid:
         """
         Get Subsection
         Returns a subsection of the grid based on the position and size
@@ -568,8 +571,10 @@ class GlobalMap:
         # ERRRORR HERE
         subsection = OccupancyGrid(size_mm)
         logger.info("Occupancy grid")
+
         subsection.set_origin_world(origin_world)
         logger.info("Occupancy grid, set origin")
+        
         subsection.set_from(self.__grid)
         logger.info("Occupancy grid, set from")
         return subsection

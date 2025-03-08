@@ -193,11 +193,11 @@ class Robot:
         with self.__lock:
             # GLOBAL MAP
             if self.__global_map and self.__actual_position:
-                global_map = self.__global_map.get_subsection(size_mm, self.__actual_position)
+                global_map = self.__global_map.get_subsection(self.__actual_position, size_mm)
 
             # LOCAL MAP
             if self.__local_map:
-                local_points: List[CartPoint] = self.__local_map.get_cartesian_points(size_mm)
+                local_points: List[CartPoint] = self.__local_map.get_cartesian_points(section_size=size_mm)
                 lidar_grid_points: List[Tuple[int, int]] = global_map.local_to_grid(local_points)
             
             # POSITION
@@ -325,7 +325,7 @@ class Robot:
                 
                 # IMPLEMENTAZIONE LOCALIZZAZIONE CON ICP
                 # Se è disponibile una scansione precedente, usa ICP per stimare la trasformazione.
-                if local_map.get_size() > 0:
+                if False and local_map.get_size() > 0:
                     logger.info("Local map available for ICP localization.")
                     cart_points = local_map.get_cartesian_points()
                     if len(self.__prev_local_map) > 0:
