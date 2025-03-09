@@ -304,25 +304,23 @@ class Robot:
         RP2040.start_odometry()
         try:
             while not self.__stop_loop_event.is_set():
-                logger.debug("LOOP start")
+                logger.debug("#### LOOP start")
                 dt = time.time() - self.last_loop_time
                 logger.debug(f"LOOP time: {dt*1000}")
                 self.last_loop_time = time.time()
 
                 # 🔒 LOCK 1 - Read shared state
                 with self.__lock:
-                    logger.debug("LOOP acquired first lock")
-                    if self.__control_type == self.ControlType.OFF:
-                        logger.info("LOOP stopping control loop. (control OFF)")
-                        break
+                    control_type: str = self.__control_type  # Avoid repeated lock usage
                     global_map: GlobalMap = self.__global_map  # Store reference safely
                     mapping_enabled: bool = self.__mapping
-                    control_type: str = self.__control_type  # Avoid repeated lock usage
                     last_position: Position = self.__actual_position
-
-                logger.debug(f"LOOP released first lock")
+                logger.debug(f"LOOP data retreived.")
 
                 # 📡 Request sensor data (outside the lock)
+                if control_type == self.ControlType.OFF:
+                    logger.info("LOOP stopping control loop. (control OFF)")
+                    break
                 local_map = Lidar.produce_local_map()
                 current_position = RP2040.get_odometry(last_position)
 

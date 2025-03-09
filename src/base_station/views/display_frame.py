@@ -76,30 +76,47 @@ class DisplayFrame(tk.Canvas):
             cx = self.total_size // 2
             cy = self.total_size // 2
 
-            self.delete("robot_rect") 
-            width_pixels = 2 * self.cell_size()
-            height_pixels = 2 * self.cell_size()
-            x1 = cx - width_pixels // 2
-            y1 = cy - height_pixels // 2
-            x2 = cx + width_pixels // 2
-            y2 = cy + height_pixels // 2
-            self.create_rectangle(x1, y1, x2, y2, fill='blue', width=2, tags="robot_rect")
+            width_robot = 2 * self.cell_size()
+            height_robot = 2 * self.cell_size()
+            line_len = 3 * self.cell_size()
+            x1 = cx - width_robot // 2
+            y1 = cy - height_robot // 2
+            x2 = cx + width_robot // 2
+            y2 = cy + height_robot // 2
+            polygon_points = [
+                (x1, y1),  # Top-left
+                (x2, y1),  # Top-right
+                (x2, y2),  # Bottom-right
+                (x1, y2)   # Bottom-left
+            ]
 
-            self.delete("pos_x")
-            self.delete("pos_y")
-            line_len = 3*self.cell_size()
             if robot_pos:
-                fx1 = cx - line_len*math.cos(int(robot_pos[2])/1000)
-                fy1 = cy - line_len*math.sin(int(robot_pos[2])/1000)
-                fx2 = cx + line_len*math.sin(int(robot_pos[2])/1000)
-                fy2 = cy - line_len*math.cos(int(robot_pos[2])/1000)
+                rotation_rad = int(robot_pos[2])/1000
+                
+                arrow_x = cx - line_len*math.cos(rotation_rad)
+                arrow_y = cy - line_len*math.sin(rotation_rad)
+                
+                rotated_polygon = []
+                for (px, py) in polygon_points:
+                    # Apply rotation transformation to each vertex
+                    rotated_x = cx + (px - cx) * math.cos(-rotation_rad) - (py - cy) * math.sin(-rotation_rad)
+                    rotated_y = cy + (px - cx) * math.sin(-rotation_rad) + (py - cy) * math.cos(-rotation_rad)
+                    rotated_polygon.append(rotated_x)
+                    rotated_polygon.append(rotated_y)
+                # x1 = cx + (x1 - cx) * math.cos(rotation_rad) - (y1 - cy) * math.sin(rotation_rad)
+                # y1 = cy + (x1 - cx) * math.sin(rotation_rad) - (y1 - cy) * math.cos(rotation_rad)
+                # x2 = cx + (x2 - cx) * math.cos(rotation_rad) + (y2 - cy) * math.sin(rotation_rad)
+                # y2 = cy + (x2 - cx) * math.sin(rotation_rad) + (y2 - cy) * math.cos(rotation_rad)
             else:
-                fx1 = cx - line_len
-                fy1 = cy
-                fx2 = cx 
-                fy2 = cy - line_len
-            self.create_line(cy, cx, fy1, fx1, fill="red", width=2, arrow=tk.LAST, arrowshape=(3, 4, 4), tags="pos_x")
-            self.create_line(cy, cx, fy2, fx2, fill="green", width=2, arrow=tk.LAST, arrowshape=(3, 4, 4), tags="pos_y")
+                arrow_x = cx - line_len
+                arrow_y = cy 
+                rotated_polygon = [point for p in polygon_points for point in p]
+
+            self.delete("robot_rect") 
+            self.create_polygon(rotated_polygon, fill='blue', width=2, tags="robot_rect")
+            self.delete("pos_x")
+            self.create_line(cy, cx, arrow_y, arrow_x, fill="red", width=2, arrow=tk.LAST, arrowshape=(3, 4, 4), tags="pos_x")
+
 
         except Exception as e:
             logger.error(f"UPDATE DISPLAY ERROR: {e}")
