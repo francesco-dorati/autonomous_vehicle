@@ -1,15 +1,14 @@
-# Two-Wheeled Robot
-![manual interface](./img/manual_interface.png)
+# Autonomous Mobile Robot
+<!-- [manual interface](./img/manual_interface.png) -->
 ## Introduction
-Manual control via a **graphical interface** with camera and sensors feedback.  
-**Odometry** and **obstacle detection** capabilities for accurate positioning and movement.  
-Working on expanding the project with LIDAR integration, **autonomous mapping** and **real-time path planning** capabilities.  
-
+The aim of this project is to build an autonomous mobile robot capable of **localization**, **mapping** and **autonomous planning** in real-time.
+This project is still under development.
 
 ### Main Components
 - Raspberry Pi 
 - Arduino nano
 - Arduino RP2040 Connect
+- RP Lidar
 - [Full components list...](docs/compnents_list.md)
 
 ## Software Details
@@ -17,20 +16,7 @@ Working on expanding the project with LIDAR integration, **autonomous mapping** 
 #### Main Controller  (RaspberryPi)
 Controls the central loop of the robot, handles connections with client and robot controllers.  
 [[main.py](src/raspberry_pi/main.py), [manual.py](src/raspberry_pi/manual.py)]
-```
-MAIN LOOP:
-- check battery voltage
-- if main socket has received:
-  - handle command
-- IDLE/MANUAL/AUTONOMOUS
-- data and camera transmit
 
-MANUAL:
-- get sensors data
-- get manual socket command
-- calculate moto powers
-- send motor commands
-```
 #### Sensor Controller (Arduino RP2040)
 Controls 4 distance sensors, 2 motor encoders and battery voltage.
 Calculates robot odometry with motor encoders (expanding with IMU).
