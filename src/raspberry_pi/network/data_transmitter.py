@@ -104,11 +104,8 @@ class DataTransmitter:
                     lidar_size = 0  # size in number of points
                     lidar_bytes = b""
                     if lidar_points:
-                        lidar_size = len(lidar_points)
-                        # logger.debug(f"packing lidar points: {lidar_points}")
-                        for x, y in lidar_points:
-                            lidar_bytes += struct.pack("<hh", x, y)
-
+                        flattened = lidar_points.flatten()
+                        lidar_bytes = struct.pack(f"<{flattened.size}h", *flattened)
                     logger.debug(f"DATA TRANSMITTER local points: {lidar_size}")
                     
                     # position

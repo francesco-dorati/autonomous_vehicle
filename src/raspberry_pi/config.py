@@ -13,8 +13,9 @@ class RobotConfig:
     SCANS_FOLDER: str
     BATTERY_MIN_MV: int
     BATTERY_CHECK_INTERVAL: float
-    GLOBAL_MAP_SIZE_MM: int
-    GLOBAL_MAP_RESOLUTION: int
+    GLOBAL_MAP_SIZE_MM: float
+    GLOBAL_MAP_RESOLUTION: float
+
 ROBOT_CONFIG = RobotConfig(
     CONTROL_LOOP_INTERVAL = 0.2,
     MAPS_FOLDER = "../data/maps",
@@ -23,9 +24,11 @@ ROBOT_CONFIG = RobotConfig(
     BATTERY_MIN_MV = 10500,
     BATTERY_CHECK_INTERVAL = 5,
 
-    GLOBAL_MAP_SIZE_MM = 10000,
-    GLOBAL_MAP_RESOLUTION = 100,
+    GLOBAL_MAP_SIZE_MM = 10,
+    GLOBAL_MAP_RESOLUTION = 0.1,
 )
+
+    
 
 @dataclass
 class CommandServerConfig:

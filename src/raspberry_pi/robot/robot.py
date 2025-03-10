@@ -4,7 +4,7 @@ import os
 import numpy as np
 from typing import Tuple, Optional, List
 
-from raspberry_pi.robot.perception import Perception
+from raspberry_pi.robot.perception import ExtendedKalmanFilter, VisualOdometry
 
 from raspberry_pi.devices.rp2040 import RP2040
 from raspberry_pi.devices.nano import NANO
@@ -46,6 +46,8 @@ class Robot:
         self.__local_map: LocalMap = None
         self.__prev_local_map: List[CartPoint] = []
         self.__global_map: GlobalMap = None
+
+        self.__ekf: ExtendedKalmanFilter = None
 
         self.last_loop_time = time.time()
 
@@ -180,14 +182,14 @@ class Robot:
             self.__mapping = False
         
     @timing_decorator
-    def get_data(self, size_mm) -> Tuple[OccupancyGrid, List[Tuple[int, int]], Optional[Position]]:
+    def get_data(self, size_m) -> Tuple[OccupancyGrid, List[Tuple[int, int]], Optional[Position]]:
         """ Returns data
             - global map: Occupancy Grid
             - local map: list of points (inside the grid frame)
             - position: global coordinates
         """
-        global_map: OccupancyGrid = OccupancyGrid(size_mm)
-        lidar_grid_points = []
+        global_map: OccupancyGrid = OccupancyGrid(size_m)
+        lidar_grid_points = np.array([])
         position = None
         logger.info("ROBOT get data")
         with self.__lock:
@@ -199,15 +201,14 @@ class Robot:
             if self.__global_map and self.__actual_position:
                 global_map = self.__global_map.get_subsection(
                     origin_world=self.__actual_position.get_point(), 
-                    size_mm=size_mm)
+                    size_mm=size_m)
 
             # LOCAL MAP
             if self.__local_map:
-                local_points: List[CartPoint] = self.__local_map.get_cartesian_points(
+                lidar_points = self.__local_map.get_cartesian_points(
                     map_position=Position(0, 0, self.__actual_position.th), # rotate based on robot orientation
-                    section_size=size_mm)
-            
-                lidar_grid_points: List[Tuple[int, int]] = global_map.local_to_grid(local_points)
+                    section_size=size_m)
+                lidar_grid_points = Utils.local_to_grid(lidar_points, size_m)
             
 
         # global_map = global_map.get_grid()
@@ -302,68 +303,50 @@ class Robot:
         i = 0
         Lidar.start_scan()
         RP2040.start_odometry()
+        VisualOdometry.init()
+        self.__ekf = ExtendedKalmanFilter()
         try:
             while not self.__stop_loop_event.is_set():
-                logger.debug("#### LOOP start")
                 dt = time.time() - self.last_loop_time
-                logger.debug(f"LOOP time: {dt*1000}")
                 self.last_loop_time = time.time()
+
+                logger.debug("#### LOOP start")
+                logger.debug(f"LOOP time: {dt*1000}")
 
                 # 🔒 LOCK 1 - Read shared state
                 with self.__lock:
                     control_type: str = self.__control_type  # Avoid repeated lock usage
                     global_map: GlobalMap = self.__global_map  # Store reference safely
                     mapping_enabled: bool = self.__mapping
-                    last_position: Position = self.__actual_position
-                logger.debug(f"LOOP data retreived.")
 
-                # 📡 Request sensor data (outside the lock)
+                logger.debug(f"LOOP data retreived.")
                 if control_type == self.ControlType.OFF:
                     logger.info("LOOP stopping control loop. (control OFF)")
                     break
-                local_map = Lidar.produce_local_map()
-                current_position = RP2040.get_odometry(last_position)
 
-                logger.debug("LOOP retreived data from external devices")
-                logger.debug(f"LOOP: control_type: {control_type}, mapping: {mapping_enabled}, position: {current_position}")
-                
-                # IMPLEMENTAZIONE LOCALIZZAZIONE CON ICP
-                # Se è disponibile una scansione precedente, usa ICP per stimare la trasformazione.
-                if current_position and local_map.get_size() > 0:
-                    delta_position: Position = current_position - last_position
-                    cart_points = local_map.get_cartesian_points()
+                # Encoders Odometry caluclation
+                ds_mm, dth_mm = RP2040.get_encoder_data()
+                self.__ekf.predict(ds_mm, dth_mm)
 
-                    logger.info("Local map available for ICP localization.")
-                    logger.info("Position valid for ICP localization.")
-                    logger.debug(f"Delta Position {delta_position}")
+                logger.debug(f"LOOP: ds_mm: {ds_mm}, dth_mm: {dth_mm}")
+                logger.debug(f"LOOP: EKF predicted position: {self.__ekf.get_position()}")
 
-                    if False and len(self.__prev_local_map) > 0:
-                        logger.debug("Previous local map available for ICP localization.")
-                        # logger.debug(f"cart points: {cart_points} ")
-                        # logger.debug(f"old points: {self.__prev_local_map}")
-                        fitness, delta_position = Perception.visual_odometry(delta_position, cart_points, self.__prev_local_map)
-                        if fitness > 0.8:
-                            logger.debug(f"Adding ICP; delta x{delta_position.x} delta_y: {delta_position.y}")
-                            current_position = current_position + delta_position
-                        else:
-                            logger.debug(f"Fitness too low: {fitness}")
+                # Visual Odometry calculation
+                local_map = Lidar.get_local_map()
+                fitness, z = VisualOdometry.compute(local_map.get_cartesian_points())
+                self.__ekf.update(z, fitness)
 
-                        # Drawer.draw_lidar_points(cart_points)
-                        # Drawer.draw_lidar_points(self.__prev_local_map)
-                    else:
-                        logger.debug("No previous local map available for ICP localization.")
-                    
-                    self.__prev_local_map = cart_points
-                else:
-                    logger.warning("No local map available for ICP localization.")
-            
+                logger.debug(f"LOOP: Visual Odometry z: {z}, finess: {fitness}")
+                logger.debug(f"LOOP: EKF estimated position: {self.__ekf.get_position()}")
+
+                logger.debug(f"LOOP: control_type: {control_type}, mapping: {mapping_enabled}")
 
                 # 🔒 LOCK 2 - Update shared state
                 with self.__lock:
                     logger.debug("LOOP acquired second lock")
 
                     self.__local_map = local_map
-                    self.__actual_position = current_position
+                    self.__actual_position = self.__ekf.get_position()
 
                     # 🗺️ Expand global map (if mapping is enabled)
                     if global_map and mapping_enabled: 
@@ -396,6 +379,7 @@ class Robot:
             logger.error(f"Robot loop error: {e}")
             
         finally:
+            self.__ekf = None
             RP2040.stop_odometry()
             RP2040.stop_motors()
             Lidar.stop_scan()

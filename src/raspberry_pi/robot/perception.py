@@ -5,24 +5,163 @@ import numpy as np
 import time
 from raspberry_pi.utils.logger import get_logger
 from raspberry_pi.utils.utils import Utils
+from raspberry_pi.config import ROBOT_CONFIG
 
 logger = get_logger(__name__)
+
+class VisualOdometry:
+    __prev_points_3d: np.array = []
+    __last_time: float = 0
+
+    @staticmethod
+    def init(self):
+        VisualOdometry.__prev_points = []
+        VisualOdometry.__last_time = time.time()
+
+    @staticmethod
+    def compute(current_points: np.array) -> Tuple[float, Position]:
+        """_summary_
+
+        Args:
+            current_points (np.array): (M, 2) array of 2D points
+
+        Returns:
+            float: fitness
+            np.array: 
+        """
+        try:
+            logger.debug(f"ICP compute")
+            start_t = time.time()
+            dt = (start_t-VisualOdometry.__last_time)*1000
+            logger.debug(f"ICP time since last compute: {dt:.1f} ms")
+
+            if len(current_points) == 0:
+                logger.error("Empty scan")
+                raise Exception("Empty scan in visual odometry")
+            
+            curr_points_3d = np.hstack([current_points, np.zeros((current_points.shape[0], 1))])
+            if VisualOdometry.__prev_points.size == 0:
+                logger.debug("ICP previous points empty")
+                VisualOdometry.__prev_points = curr_points_3d
+                VisualOdometry.__last_time = time.time()
+                return 0, Position(0, 0, 0)
+
+            pc_curr = o3d.geometry.PointCloud()
+            pc_prev = o3d.geometry.PointCloud()
+            pc_curr.points = o3d.utility.Vector3dVector(curr_points_3d)
+            pc_prev.points = o3d.utility.Vector3dVector(VisualOdometry.__prev_points_3d)
+
+            # ICP computation
+            threshold = ROBOT_CONFIG.GLOBAL_MAP_RESOLUTION
+            trans_init = np.identity(4)
+            reg_result = o3d.pipelines.registration.registration_icp(
+                pc_curr, pc_prev, threshold, trans_init,
+                o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+                o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=1000)
+            )
+            transformation = reg_result.transformation  
+
+            # Extract the estimated translation (in x, y, z)
+            delta_translation = transformation[:3, 3]
+            rotation_matrix = transformation[:2, :2] 
+            dx = delta_translation[0]
+            dy = -delta_translation[1]
+            dth = -np.arctan2(rotation_matrix[1, 0], rotation_matrix[0, 0])  # Compute the angle
+            z = Position(dx, dy, dth)
+
+            logger.info(f"ICP transformation m:\n{reg_result.transformation}")
+            logger.info(f"ICP Fitness: {reg_result.fitness}")  # Percentuale di punti corrispondenti
+            logger.info(f"ICP RMSE: {reg_result.inlier_rmse}")  # Errore medio quadratico
+            logger.info(f"ICP Estimated translation (x,y,z): {z}")
+            dt = (time.time() - start_t)*1000
+            logger.info(f"ICP time: {dt:.1f} ms")
+                
+            return reg_result.fitness, z
+
+        except Exception as icp_e:
+            logger.error(f"ICP localization error: {icp_e}")
+        
+
+class ExtendedKalmanFilter:
+    def __init__(self):
+        self.x = Position(0, 0, 0)
+        
+        # Initial covariance 
+        self.P = np.eye(3)
+
+        # Process noise covariance
+        self.Q = np.diag([ROBOT_CONFIG.ODOMETRY_POS_NOISE, 
+                          ROBOT_CONFIG.ODOMETRY_POS_NOISE, 
+                          ROBOT_CONFIG.ODOMETRY_TH_NOISE])
+        
+        # Measurement noise covariance – based on ICP uncertainty
+        self.base_R = np.diag([20**2, 20**2, 10**2])
+        
+
+    def predict(self, ds_m: float, dth_rad: float):
+        # Odometry calculations
+        theta_rad = self.x.th + dth_rad/2  
+        dx = ds_m * np.cos(theta_rad)
+        dy = ds_m * np.sin(theta_rad)
+        
+        # Predict new state
+        self.x.vect += np.array([dx, dy, dth_rad])
+        self.x.normalize_th()
+        
+        # Compute the Jacobian of the process model with respect to state:
+        F = np.array([
+            [1, 0, -ds_m * np.sin(theta_rad)],
+            [0, 1,  ds_m * np.cos(theta_rad)],
+            [0, 0, 1]
+        ])
+        # Propagate the covariance
+        self.P = F @ self.P @ F.T + self.Q
+
+        logger.debug(f"EKF Predict: state={self.x}, P={self.P}")
+
+    def update(self, z: Position, fitness: float):
+        """
+        z: measurement vector from ICP [dx, dy, dtheta] (mm, mm, mrad)
+        fitness: ICP fitness score in [0, 1] (higher is better)
+        """
+        # Scale factor for the measurement noise; for example, if fitness is 1.0, factor=1,
+        # if fitness drops, factor increases.
+        k = 5.0  # Tuning parameter (adjust based on experiments)
+        factor = 1.0 + k * (1.0 - fitness)
+        R_effective = self.base_R * factor
+        
+        H = np.eye(3)  # Measurement model: identity
+        y = z.vect - self.x.vect  # Innovation (residual)
+        S = H @ self.P @ H.T + R_effective
+        K = self.P @ H.T @ np.linalg.inv(S)
+        
+        self.x.vect = self.x.vect + K @ y
+        self.P = (np.eye(3) - K @ H) @ self.P
+        
+        logger.debug(f"EKF Update: fitness={fitness}, factor={factor}")
+        logger.debug(f"Measurement z={z.vect}, state after update={self.x}, P={self.P}")
+    
+    def get_position(self) -> Position:
+        return Position(self.x.x, self.x.y, self.x.th)
+
+
+
 
 class Perception:
     ALPHA = 0.98
 
-    @staticmethod
-    def filter_theta(prev_th_urad, enc_th_urad, imu_th_urad) -> int:
-        return int(Perception.ALPHA*(prev_th_urad+enc_th_urad) + (1-Perception.ALPHA)*imu_th_urad)
+    # @staticmethod
+    # def filter_theta(prev_th_urad, enc_th_urad, imu_th_urad) -> int:
+    #     return int(Perception.ALPHA*(prev_th_urad+enc_th_urad) + (1-Perception.ALPHA)*imu_th_urad)
     
-    @staticmethod
-    def calculate_odometry(prev_odom: Position, ds_mm: float, dth_mrad: float) -> Position:
-        logger.debug(f"received ds {ds_mm}, th_mrad: {dth_mrad}")
-        x = prev_odom.x + ds_mm * np.cos(prev_odom.th/1000.0 + dth_mrad/2000.0)
-        y = prev_odom.y + ds_mm * np.sin(prev_odom.th/1000.0 + dth_mrad/2000.0)
-        th = prev_odom.th + dth_mrad
-        th = Utils.normalize_mrad(th)
-        return Position(x, y, th)
+    # @staticmethod
+    # def calculate_odometry(prev_odom: Position, ds_mm: float, dth_mrad: float) -> Position:
+    #     logger.debug(f"received ds {ds_mm}, th_mrad: {dth_mrad}")
+    #     x = prev_odom.x + ds_mm * np.cos(prev_odom.th/1000.0 + dth_mrad/2000.0)
+    #     y = prev_odom.y + ds_mm * np.sin(prev_odom.th/1000.0 + dth_mrad/2000.0)
+    #     th = prev_odom.th + dth_mrad
+    #     th = Utils.normalize_mrad(th)
+    #     return Position(x, y, th)
 
     @staticmethod
     def visual_odometry(estimated_pos: Position, current_points: List[CartPoint], prev_points: List[CartPoint]) -> Tuple[float, Position]:
@@ -47,7 +186,7 @@ class Perception:
                 
                 # Imposta una soglia per ICP (da adattare alle unità del tuo sistema)
                 threshold = 0.1
-                trans_init = trans_init = np.array([
+                trans_init = np.array([
                     [np.cos(estimated_pos.th/1000.0), -np.sin(estimated_pos.th/1000.0), 0, estimated_pos.x/1000.0],  # mm -> m
                     [np.sin(estimated_pos.th/1000.0), np.cos(estimated_pos.th/1000.0),  0, estimated_pos.y/1000.0],
                     [0, 0, 1, 0],

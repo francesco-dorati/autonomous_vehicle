@@ -133,10 +133,11 @@ class Lidar(Device):
     # SCAN_PACKET_SIZE = 5 # bytes
     # SCAN_PACKETS_PER_TIME = 200
 
-    _serial: Optional[serial.Serial] = None
-    _thread: Optional[threading.Thread] = None
-    _scan: Optional[LidarScan] = None
+    _serial: serial.Serial | None = None
+    _thread: threading.Thread | None = None
+    _scan: np.array | None = None
     _scanning: bool = False
+    _data_lock = threading.Lock()
 
     class NotScanning(Exception):
         pass
@@ -184,8 +185,7 @@ class Lidar(Device):
         """
         if not Lidar._serial:
             raise Lidar.ConnectionNotInitiated("Lidar connection not initiated")
-        
-        
+         
         Lidar.stop_scan()
         Lidar._thread = None
 
@@ -247,7 +247,7 @@ class Lidar(Device):
             raise Lidar.ConnectionFailed("Ping failed")
         
         # initialize variables
-        Lidar._scan = LidarScan()
+        Lidar._scan = np.zeros((360, 1), dtype=np.float32)
         Lidar._scanning = True
 
         # send start command
@@ -306,7 +306,7 @@ class Lidar(Device):
     
     @staticmethod
     @timing_decorator
-    def produce_local_map() -> LocalMap:
+    def get_local_map() -> LocalMap:
         """ PURE
         Produces LocalMap from current scan
         Raises:
@@ -317,7 +317,9 @@ class Lidar(Device):
         if not Lidar._scanning:
             raise Lidar.NotScanning("Lidar is not scanning")
         # create local map
-        copy: List[PolarPoint] = Lidar._scan.get_copy()
+        with Lidar._data_lock:
+            copy = np.copy(Lidar._scan)
+            Lidar._scan = np.zeros((360, 1), dtype=np.float32)
         return LocalMap(copy)
 
     # PRIVATE
@@ -356,8 +358,8 @@ class Lidar(Device):
                 # add sample to scan
                 for angle, dist in samples:
                     if LIDAR_CONFIG.MIN_DIST_MM < dist < LIDAR_CONFIG.MAX_DIST_MM:
-                        Lidar._scan.add_sample(angle, dist)
-                
+                        with Lidar._data_lock:
+                            np.insert(Lidar._scan, int(angle), dist)
                 time.sleep(0.05)
 
         except Lidar.InvalidDataReceived as e:
@@ -425,8 +427,9 @@ class Lidar(Device):
             if s == ns or c == 0:
                 if misalignment == packet_size:
                     Lidar._serial.reset_input_buffer()
-                    break
-                    # raise Lidar.InvalidDataReceived("Invalid data received")
+                    logger.error("Lidar misalignment error")
+                    break 
+
                 misalignment += 1
                 continue 
 
