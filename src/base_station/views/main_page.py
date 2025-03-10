@@ -49,7 +49,7 @@ class MainPage(tk.Frame):
         # self.stop_button.pack(side='right', pady=20, padx=20)
         self.mapping_frame.enable()
         self.controls_frame.enable()
-        self.controls_frame.disable_auto()
+        # self.controls_frame.disable_auto()
     
     def disconnect(self):
         # self.stop_button.pack_forget()
@@ -65,11 +65,11 @@ class MainPage(tk.Frame):
         if map_name is None:
             return
         self.mapping_frame.set_map(map_name)
-        self.controls_frame.enable_auto()
+        # self.controls_frame.enable_auto()
 
     def discard_map(self):
         self.mapping_frame.discard_map()
-        self.controls_frame.disable_auto()
+        # self.controls_frame.disable_auto()
    
     def set_control(self, type: str):
         if type == 'off':

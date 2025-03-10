@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from raspberry_pi.data_structures.states import CartPoint, Position
+from raspberry_pi.data_structures.states import CartPoint, Position, State
 import open3d as o3d
 import numpy as np
 import time
@@ -10,12 +10,12 @@ from raspberry_pi.config import ROBOT_CONFIG
 logger = get_logger(__name__)
 
 class VisualOdometry:
-    __prev_points_3d: np.array = []
+    __prev_points_3d: np.array = np.array([])
     __last_time: float = 0
 
     @staticmethod
     def init(self):
-        VisualOdometry.__prev_points = []
+        VisualOdometry.__prev_points_3d = np.array([])
         VisualOdometry.__last_time = time.time()
 
     @staticmethod
@@ -42,7 +42,7 @@ class VisualOdometry:
             curr_points_3d = np.hstack([current_points, np.zeros((current_points.shape[0], 1))])
             if VisualOdometry.__prev_points.size == 0:
                 logger.debug("ICP previous points empty")
-                VisualOdometry.__prev_points = curr_points_3d
+                VisualOdometry.__prev_points_3d = curr_points_3d
                 VisualOdometry.__last_time = time.time()
                 return 0, Position(0, 0, 0)
 
@@ -84,36 +84,48 @@ class VisualOdometry:
 
 class ExtendedKalmanFilter:
     def __init__(self):
-        self.x = Position(0, 0, 0)
+        self.x = State(0, 0, 0, 0, 0)
         
         # Initial covariance 
-        self.P = np.eye(3)
+        self.P = np.eye(5)
 
         # Process noise covariance
-        self.Q = np.diag([ROBOT_CONFIG.ODOMETRY_POS_NOISE, 
-                          ROBOT_CONFIG.ODOMETRY_POS_NOISE, 
-                          ROBOT_CONFIG.ODOMETRY_TH_NOISE])
+        self.Q = np.diag([
+            0.01,  # x noise
+            0.01,  # y noise
+            0.01,   # θ noise
+            0.01,  # v noise 
+            0.01   # w noise 
+        ])
         
         # Measurement noise covariance – based on ICP uncertainty
-        self.base_R = np.diag([20**2, 20**2, 10**2])
+        self.base_R = np.diag([20**2, 20**2, 10**2, 1.0, 1.0])
         
 
-    def predict(self, ds_m: float, dth_rad: float):
+    def predict(self, ds_m: float, dth_rad: float, dt_s: float):
         # Odometry calculations
         theta_rad = self.x.th + dth_rad/2  
         dx = ds_m * np.cos(theta_rad)
         dy = ds_m * np.sin(theta_rad)
-        
+        v = ds_m / dt_s if dt_s > 0 else 0
+        w = dth_rad / dt_s if dt_s > 0 else 0
+
         # Predict new state
-        self.x.vect += np.array([dx, dy, dth_rad])
-        self.x.normalize_th()
+        self.x.vect[0] += dx
+        self.x.vect[1] += dy
+        self.x.vect[2] += dth_rad
+        self.x.vect[2] = Utils.normalize_rad(self.x.th)
+        self.x.vect[3] = v  
+        self.x.vect[4] = w
         
         # Compute the Jacobian of the process model with respect to state:
-        F = np.array([
-            [1, 0, -ds_m * np.sin(theta_rad)],
-            [0, 1,  ds_m * np.cos(theta_rad)],
-            [0, 0, 1]
-        ])
+        F = np.eye(5)
+        F[0, 2] = -dy
+        F[1, 2] = dx
+        F[0, 3] = np.cos(theta_rad)
+        F[1, 3] = np.sin(theta_rad)
+        F[2, 4] = dt_s
+
         # Propagate the covariance
         self.P = F @ self.P @ F.T + self.Q
 
@@ -130,13 +142,13 @@ class ExtendedKalmanFilter:
         factor = 1.0 + k * (1.0 - fitness)
         R_effective = self.base_R * factor
         
-        H = np.eye(3)  # Measurement model: identity
+        H = np.eye(5)  # Measurement model: identity
         y = z.vect - self.x.vect  # Innovation (residual)
         S = H @ self.P @ H.T + R_effective
         K = self.P @ H.T @ np.linalg.inv(S)
         
         self.x.vect = self.x.vect + K @ y
-        self.P = (np.eye(3) - K @ H) @ self.P
+        self.P = (np.eye(5) - K @ H) @ self.P
         
         logger.debug(f"EKF Update: fitness={fitness}, factor={factor}")
         logger.debug(f"Measurement z={z.vect}, state after update={self.x}, P={self.P}")

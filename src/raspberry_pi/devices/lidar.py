@@ -359,7 +359,7 @@ class Lidar(Device):
                 for angle, dist in samples:
                     if LIDAR_CONFIG.MIN_DIST_MM < dist < LIDAR_CONFIG.MAX_DIST_MM:
                         with Lidar._data_lock:
-                            np.insert(Lidar._scan, int(angle), dist)
+                            Lidar._scan[int(angle)] = dist
                 time.sleep(0.05)
 
         except Lidar.InvalidDataReceived as e:

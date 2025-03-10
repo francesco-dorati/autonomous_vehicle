@@ -325,20 +325,19 @@ class Robot:
                     break
 
                 # Encoders Odometry caluclation
-                ds_mm, dth_mm = RP2040.get_encoder_data()
-                self.__ekf.predict(ds_mm, dth_mm)
+                dt_s, ds_m, dth_m = RP2040.get_odometry_data()
+                self.__ekf.predict(ds_m=ds_m, dth_rad=dth_m, dt_s=dt_s)
 
-                logger.debug(f"LOOP: ds_mm: {ds_mm}, dth_mm: {dth_mm}")
+                logger.debug(f"LOOP: ds_m: {ds_m}, dth_m: {dth_m}")
                 logger.debug(f"LOOP: EKF predicted position: {self.__ekf.get_position()}")
 
                 # Visual Odometry calculation
                 local_map = Lidar.get_local_map()
                 fitness, z = VisualOdometry.compute(local_map.get_cartesian_points())
-                self.__ekf.update(z, fitness)
+                self.__ekf.update(z=z, fitness=fitness)
 
                 logger.debug(f"LOOP: Visual Odometry z: {z}, finess: {fitness}")
                 logger.debug(f"LOOP: EKF estimated position: {self.__ekf.get_position()}")
-
                 logger.debug(f"LOOP: control_type: {control_type}, mapping: {mapping_enabled}")
 
                 # 🔒 LOCK 2 - Update shared state

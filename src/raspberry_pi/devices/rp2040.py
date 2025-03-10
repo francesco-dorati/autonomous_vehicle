@@ -26,6 +26,7 @@ class RP2040(Device):
     _receiver_thread: threading.Thread | None = None
 
     _data_valid: bool = False 
+    _delta_t_us: int = 0
     _delta_s_um: int = 0
     _delta_th_urad: int = 0
 
@@ -149,7 +150,7 @@ class RP2040(Device):
     
     @staticmethod
     @timing_decorator
-    def get_odometry(prev_position: Position) -> Position | None:
+    def get_odometry_data(prev_position: Position) -> Position | None:
         """
         Request odometry data from RP2040
 
@@ -159,12 +160,16 @@ class RP2040(Device):
         with RP2040._data_lock:
             out = None
             if RP2040._data_valid:
-                dS_mm = round(RP2040._delta_s_um/1000.0)
-                dTh_mm = round(RP2040._delta_th_urad/1000.0)
-                out = Perception.calculate_odometry(prev_position, dS_mm, dTh_mm)
+                dT_s = RP2040._delta_t_us/1000000.0
+                dS_m = RP2040._delta_s_um/1000000.0
+                dTh_m = RP2040._delta_th_urad/1000000.0
+
+                # out = Perception.calculate_odometry(prev_position, dS_mm, dTh_mm)
+                RP2040._delta_t_us = 0
                 RP2040._delta_s_um = 0
                 RP2040._delta_th_urad = 0
-            return out
+
+            return dT_s, dS_m, dTh_m
 
     @staticmethod
     def __receiver_loop():
@@ -203,15 +208,8 @@ class RP2040(Device):
                         
                         logger.debug(f"dt: {dt_us}, enc_ds: {enc_ds_um}, enc_dth: {enc_dth_urad}, imu_dth: {imu_dth_urad}")
 
-                        # filter theta
-                        # dth_filtered = enc_dth_urad
-                        # if False and imu_dth_mrad is not None:
-                        #     th_filtered = Perception.filter_theta(RP2040._odometry.th, enc_dth_mrad, imu_dth_mrad)
-                        
-                        # logger.debug(f"theta filtered: {dth_filtered}")
-
-                        # construct new odometry
                         with RP2040._data_lock:
+                            RP2040._delta_t_us += dt_us
                             RP2040._delta_s_um += enc_ds_um
                             RP2040._delta_th_urad += enc_dth_urad
                             logger.debug(f"Delta s so far: {RP2040._delta_s_um} ")
