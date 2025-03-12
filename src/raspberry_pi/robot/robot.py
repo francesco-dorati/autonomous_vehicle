@@ -10,7 +10,7 @@ from raspberry_pi.devices.rp2040 import RP2040
 from raspberry_pi.devices.nano import NANO
 from raspberry_pi.devices.lidar import Lidar
 
-from raspberry_pi.data_structures.states import Position, CartPoint
+from raspberry_pi.data_structures.states import Position, CartPoint, State
 from raspberry_pi.data_structures.maps import LocalMap, GlobalMap, OccupancyGrid
 
 from raspberry_pi.utils.logger import get_logger, timing_decorator
@@ -42,9 +42,9 @@ class Robot:
         self.__target_velocity: Tuple[float, float] = (0, 0)
     
         self.__mapping: bool = False
-        self.__actual_position: Position = Position(0,0,0)
+        self.__actual_state: State = State()
         self.__local_map: LocalMap = None
-        self.__prev_local_map: List[CartPoint] = []
+        # self.__prev_local_map: List[CartPoint] = []
         self.__global_map: GlobalMap = None
 
         self.__ekf: ExtendedKalmanFilter = None
@@ -186,33 +186,33 @@ class Robot:
         """ Returns data
             - global map: Occupancy Grid
             - local map: list of points (inside the grid frame)
-            - position: global coordinates
+            - state: global coordinates
         """
         global_map: OccupancyGrid = OccupancyGrid(size_m)
         lidar_grid_points = np.array([])
-        position = None
+        state = None
         logger.info("ROBOT get data")
         with self.__lock:
             # POSITION
-            if self.__actual_position:
-                position = self.__actual_position
+            if self.__actual_state:
+                state = self.__actual_state
 
             # GLOBAL MAP
             if self.__global_map and self.__actual_position:
                 global_map = self.__global_map.get_subsection(
-                    origin_world=self.__actual_position.get_point(), 
+                    origin_world=self.__actual_state.get_position().get_point(), 
                     size_mm=size_m)
 
             # LOCAL MAP
             if self.__local_map:
                 lidar_points = self.__local_map.get_cartesian_points(
-                    map_position=Position(0, 0, self.__actual_position.th), # rotate based on robot orientation
+                    map_position=Position(0, 0, self.__actual_state.th), # rotate based on robot orientation
                     section_size=size_m)
                 lidar_grid_points = Utils.local_to_grid(lidar_points, size_m)
             
 
         # global_map = global_map.get_grid()
-        return global_map, lidar_grid_points, position
+        return global_map, lidar_grid_points, state
     
     ### END MAP ###
 
@@ -345,7 +345,7 @@ class Robot:
                     logger.debug("LOOP acquired second lock")
 
                     self.__local_map = local_map
-                    self.__actual_position = self.__ekf.get_position()
+                    self.__actual_state = self.__ekf.get_position()
 
                     # 🗺️ Expand global map (if mapping is enabled)
                     if global_map and mapping_enabled: 

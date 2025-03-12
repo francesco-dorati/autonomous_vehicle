@@ -88,7 +88,7 @@ class State:
         v (int): m/s
         w (int): rad/s
     """
-    def __init__(self, x, y, th, v, w):
+    def __init__(self, x=0, y=0, th=0, v=0, w=0):
         self.vect = np.array([x, y, th, v, w], dtype=np.float64)
     
     @property

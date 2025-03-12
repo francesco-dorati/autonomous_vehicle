@@ -62,12 +62,12 @@ class ManualFrame(tk.Frame):
         self.title = tk.Label(self, text="Manual Control Mode", font=("Arial", 15, "bold"))
         self.key_text_size = 15
 
-        self.frame = tk.Frame(self)
+        # self.frame = tk.Frame(self)
         self.controller = controller
         
         # self.keyboard_frame = tk.Frame(self)
         # wasd Frame
-        self.keyboard_frame = tk.Frame(self.frame)
+        self.keyboard_frame = tk.Frame(self)
         # W
         self.forward = tk.Label(self.keyboard_frame, text="W ↑", font=("Arial", self.key_text_size))
         self.forward.grid(row=0, column=1, padx=8, pady=8)
@@ -83,7 +83,7 @@ class ManualFrame(tk.Frame):
 
         # self.joypad_label = tk.Label(self.joypad_frame, text="Joypad", font=("Arial", 15, "bold"))
         # self.joypad_label.pack(side='top', fill='x', pady=10)
-        self.joypad_frame = tk.Frame(self.frame)
+        self.joypad_frame = tk.Frame(self)
         self.joypad_canvas_size = 100
         self.joypad_point_radius = 10
         mid = self.joypad_canvas_size//2
@@ -181,121 +181,50 @@ class AutoFrame(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.title = tk.Label(self, text="Autonomous Control Mode", font=("Arial", 15, "bold"))
+        self.title.pack(side='top', fill='x', pady=10)
         self.key_text_size = 15
 
-        self.frame = tk.Frame(self)
         self.controller = controller
-        
-        # self.keyboard_frame = tk.Frame(self)
-        # wasd Frame
-        self.keyboard_frame = tk.Frame(self.frame)
-        # W
-        self.forward = tk.Label(self.keyboard_frame, text="W ↑", font=("Arial", self.key_text_size))
-        self.forward.grid(row=0, column=1, padx=8, pady=8)
-        # S
-        self.backward = tk.Label(self.keyboard_frame, text="S ↓", font=("Arial", self.key_text_size))
-        self.backward.grid(row=1, column=1, padx=8, pady=8)
-        # A
-        self.left = tk.Label(self.keyboard_frame, text="A ←", font=("Arial", self.key_text_size))
-        self.left.grid(row=1, column=0, padx=8, pady=8)
-        # D
-        self.right = tk.Label(self.keyboard_frame, text="D →", font=("Arial", self.key_text_size))
-        self.right.grid(row=1, column=2, padx=8, pady=8)
 
-        # self.joypad_label = tk.Label(self.joypad_frame, text="Joypad", font=("Arial", 15, "bold"))
-        # self.joypad_label.pack(side='top', fill='x', pady=10)
-        self.joypad_frame = tk.Frame(self.frame)
-        self.joypad_canvas_size = 100
-        self.joypad_point_radius = 10
-        mid = self.joypad_canvas_size//2
-        self.joypad_scale = mid - self.joypad_point_radius - 5
-        self.joypad_canvas = tk.Canvas(self.joypad_frame, width=self.joypad_canvas_size, height=self.joypad_canvas_size, bg="lightgray")
-        self.joypad_canvas.create_line(mid, 0, mid, self.joypad_canvas_size, fill="black")  # Y-axis
-        self.joypad_canvas.create_line(0, mid, self.joypad_canvas_size, mid, fill="black")  # X-axis
-        self.joypad_canvas.create_oval(mid - self.joypad_scale, mid - self.joypad_scale, mid + self.joypad_scale, mid + self.joypad_scale, outline="black", width=2)
-        self.joypad_point = self.joypad_canvas.create_oval(0, 0, 0, 0, fill="gray")
-        self.joypad_canvas.pack(side='left', fill='none')
+        self.input_frame = tk.Frame(self) 
+        self.input_frame.pack(side='left', fill='x', pady=10)
 
-        self.buttons_frame = tk.Frame(self.frame)
-        self.switch_button = tk.Button(self.buttons_frame, font=("Arial", 16), width=15, height=1)
-        self.switch_button.pack(side='top', fill='x', padx=10, pady=5)
-        self.exit_button = tk.Button(self.buttons_frame, text="⛔  stop", font=("Arial", 16, "bold"), command=lambda: self.controller.set_control("off"),  width=15, height=1)
+        self.x_frame = tk.Frame(self.input_frame)
+        self.x_frame.pack(side='top', fill='x', pady=5)
+        self.x_label = tk.Label(self.x_frame, text="X: ", font=("Arial", self.key_text_size))
+        self.x_label.pack(side='left')
+        self.x_entry = tk.Entry(self.x_frame, font=("Arial", self.key_text_size), width=5)
+        self.x_entry.pack(side='left')
+
+        self.y_frame = tk.Frame(self.input_frame)
+        self.y_frame.pack(side='top', fill='x', pady=5)
+        self.y_label = tk.Label(self.y_frame, text="Y: ", font=("Arial", self.key_text_size))
+        self.y_label.pack(side='left')
+        self.y_entry = tk.Entry(self.y_frame, font=("Arial", self.key_text_size), width=5)
+        self.y_entry.pack(side='left')
+
+        self.theta_frame = tk.Frame(self.input_frame)
+        self.theta_frame.pack(side='top', fill='x', pady=5)
+        self.theta_label = tk.Label(self.theta_frame, text="θ: ", font=("Arial", self.key_text_size))
+        self.theta_label.pack(side='left')
+        self.theta_entry = tk.Entry(self.theta_frame, font=("Arial", self.key_text_size), width=5)
+        self.theta_entry.pack(side='left')
+
+        self.buttons_frame = tk.Frame(self)
+        self.pack(side='right', fill='x', pady=10)
+
+        self.control_button = tk.Button(self.buttons_frame, font=("Arial", 16), width=15, height=1)
+        self.control_button.pack(side='top', fill='x', padx=10, pady=5)
+        self.exit_button = tk.Button(self.buttons_frame, text="🚪 Exit", font=("Arial", 16, "bold"), command=lambda: self.controller.set_control("off"),  width=15, height=1)
         self.exit_button.pack(side='top', fill='x', padx=10, pady=5)
     
     def show(self):
         self.pack(side='top', fill='x', pady=10)
-        self.title.pack(side='top', fill='x', pady=10)
-        self.frame.pack(side='top', fill='x')
-        self.frame.grid_columnconfigure(0, weight=1)  # Keyboard area
-        self.frame.grid_columnconfigure(1, weight=1)  # Empty space
-        self.frame.grid_columnconfigure(2, weight=1)  # Buttons
-        if self.controller.input_handler:
-            self.controller.input_handler.set_input("keyboard")
-        self.buttons_frame.grid(row=0, column=2, padx=20, pady=10, sticky='e')
+        self.control_button.config(text="🚀  start", command=lambda: self.controller.set_control("auto"))
+        self.control_button.config(command=lambda: 0)
     
     def hide(self):
         self.pack_forget()
 
-    def show_keyboard(self):
-        # self.keyboard_frame.pack(side='left', fill='y', pady=10, padx=20)
-        self.keyboard_frame.grid(row=0, column=0, padx=20, pady=10, sticky='w')
-        self.forward.config(state='normal', bg='lightgray', fg='black', relief='raised')
-        # self.forward.grid(row=0, column=1, padx=8, pady=8)
-        self.backward.config(state='normal', bg='lightgray', fg='black', relief='raised')
-        # self.backward.grid(row=1, column=1, padx=8, pady=8)
-        self.left.config(state='normal', bg='lightgray', fg='black', relief='raised')
-        # self.left.grid(row=1, column=0, padx=8, pady=8)
-        self.right.config(state='normal', bg='lightgray', fg='black', relief='raised')
-        # self.right.grid(row=1, column=2, padx=8, pady=8)
-        
-        self.switch_button.config(text="🎮  joypad", command=lambda: self.controller.input_handler.set_input('joypad'))
-    
-    def hide_keyboard(self):
-        self.keyboard_frame.grid_forget()
 
-    def show_joypad(self):
-        self.joypad_frame.grid(row=0, column=0, padx=20, pady=10, sticky='w')
-        self.switch_button.config(text="⌨️  keyboard", command=lambda: self.controller.input_handler.set_input("keyboard"))
-        # self.joypad_canvas.pack(side='left', fill='none', pady=10)
-
-    def hide_joypad(self):
-        self.joypad_frame.grid_forget()
-    
-    def set_joypad(self, j):
-        x = j['x']
-        y = j['y']
-        mid = self.joypad_canvas_size//2
-        canvas_x = mid - y * self.joypad_scale
-        canvas_y = mid - x * self.joypad_scale 
-        self.joypad_canvas.coords(self.joypad_point, canvas_x - self.joypad_point_radius, canvas_y - self.joypad_point_radius,
-                           canvas_x + self.joypad_point_radius, canvas_y + self.joypad_point_radius)
-        # self.joypad_label.config(text=f"Joypad: {x:.2f}, {y:.2f}")
-    
-    def connect_joypad(self):
-        self.joypad_canvas.itemconfig(self.joypad_point, fill="red")
-
-    def disconnect_joypad(self):
-        self.joypad_canvas.itemconfig(self.joypad_point, fill="grey")    
-    def set_key(self, k):
-        x = k['x']
-        y = k['y']
-        if x == 1:
-            self.forward.config(bg='black', fg='white', relief='sunken')
-            self.backward.config(bg='lightgray', fg='black', relief='raised')
-        elif x == 0:
-            self.forward.config(bg='lightgray', fg='black', relief='raised')
-            self.backward.config(bg='lightgray', fg='black', relief='raised')
-        elif x == -1:
-            self.forward.config(bg='lightgray', fg='black', relief='raised')
-            self.backward.config(bg='black', fg='white', relief='sunken')
-        
-        if y == 1:
-            self.left.config(bg='black', fg='white', relief='sunken')
-            self.right.config(bg='lightgray', fg='black', relief='raised')
-        elif y == 0:
-            self.left.config(bg='lightgray', fg='black', relief='raised')
-            self.right.config(bg='lightgray', fg='black', relief='raised')
-        elif y == -1:
-            self.left.config(bg='lightgray', fg='black', relief='raised')
-            self.right.config(bg='black', fg='white', relief='sunken')
-
+  

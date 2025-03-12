@@ -3,6 +3,7 @@ from .components.camera_frame import CameraFrame
 from .controls_frame import ControlsFrame
 from .mapping_frame import MappingFrame
 from .display_frame import DisplayFrame
+from .odometry_frame import OdometryFrame
 
 class MainPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -33,7 +34,7 @@ class MainPage(tk.Frame):
         self.right_frame = tk.Frame(self.main_frame)
         self.right_frame.place(relx=left_portion, rely=padding, relwidth=(1-left_portion-2*padding), relheight=(1-2*padding))
         # CAMERA
-        self.odometry_frame = OdometryFrame(self.right_frame)
+        self.odometry_frame = OdometryFrame(self.right_frame, controller)
         self.odometry_frame.pack(side='top', fill='x', pady=10)
         # MAPPING
         self.mapping_frame = MappingFrame(self.right_frame, controller)
@@ -171,81 +172,6 @@ class ControlssFrame(tk.Frame):
             elif show == -1:
                 self.boost.config(state='disabled', bg='lightgray', fg='black', relief='sunken')
     
-
-class OdometryFrame(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.config(borderwidth=1, relief='raised')
-
-        # VELOCITY
-        self.velocity_frame = tk.Frame(self, borderwidth=1, relief='solid')
-        # self.velocity_frame.grid(row=0, column=0, sticky='nsew')
-        self.velocity_frame.pack(side='left', fill='both', expand=True)
-        self.velocity_label = tk.Label(self.velocity_frame, text="Velocity", font=("Arial", 16))
-        self.velocity_label.pack(side='top', fill='x', pady=10, padx=35)
-        self.velocity = tk.Label(self.velocity_frame, text="-.--", font=("Arial", 22))
-        self.velocity.pack(side='top', fill='x', pady=10, padx=35)
-        self.unit_label = tk.Label(self.velocity_frame, text="cm/s", font=("Arial", 16))
-        self.unit_label.pack(side='top', fill='x', pady=10, padx=35)
-
-        # POSITION
-        self.position_frame = tk.Frame(self, borderwidth=1, relief='solid')
-        self.position_frame.pack(side='left', fill='both', expand=True)
-        self.position_label = tk.Label(self.position_frame, text="Position", font=("Arial", 16))
-        self.position_label.pack(side='top', fill='x', pady=10, padx=30)
-
-
-        self.coord_frame = tk.Frame(self.position_frame)
-        self.coord_frame.pack(side='top', fill='both', expand=True, pady=5, padx=10)
-        units_size = 15
-        # X
-        self.x_frame = tk.Frame(self.coord_frame)
-        self.x_frame.pack(side='top', fill='x', pady=5, padx=30)
-        self.x_label = tk.Label(self.x_frame, text="x:  ", font=("Arial", units_size))
-        self.x_label.pack(side='left')
-        self.x = tk.Label(self.x_frame, text="--", font=("Arial", units_size))
-        self.x.pack(side='left')
-        self.x_unit = tk.Label(self.x_frame, text="  cm", font=("Arial", units_size))
-        self.x_unit.pack(side='left')
-        # Y
-        self.y_frame = tk.Frame(self.coord_frame)
-        self.y_frame.pack(side='top', fill='x', pady=5, padx=30)
-        self.y_label = tk.Label(self.y_frame, text="y:  ", font=("Arial", units_size))
-        self.y_label.pack(side='left')
-        self.y = tk.Label(self.y_frame, text="--", font=("Arial", units_size))
-        self.y.pack(side='left')
-        self.y_unit = tk.Label(self.y_frame, text="  cm", font=("Arial", units_size))
-        self.y_unit.pack(side='left')
-        # THETA
-        self.theta_frame = tk.Frame(self.coord_frame)
-        self.theta_frame.pack(side='top', fill='x', pady=5, padx=30)
-        self.theta_label = tk.Label(self.theta_frame, text="θ:  ", font=("Arial", units_size))
-        self.theta_label.pack(side='left')
-        self.theta = tk.Label(self.theta_frame, text="--", font=("Arial", units_size))
-        self.theta.pack(side='left')
-        self.theta_unit = tk.Label(self.theta_frame, text="  deg", font=("Arial", units_size))
-        self.theta_unit.pack(side='left')
-
-    def enable(self):
-        return
-    
-    def disable(self):
-        self.velocity.config(text="--")
-        self.x.config(text="--")
-        self.y.config(text="--")
-        self.theta.config(text="--")
-
-    def update(self, vel, pos):
-        self._update_velocity(vel)
-        self._update_position(pos)
-    
-    def _update_velocity(self, vel):
-        self.velocity.config(text=f"{int(vel)}")
-
-    def _update_position(self, pos):
-        self.x.config(text=f"{int(pos[0])}")
-        self.y.config(text=f"{int(pos[1])}")
-        self.theta.config(text=f"{int(pos[2])}")
 
 class SensorsFrame(tk.Frame):
     def __init__(self, parent):

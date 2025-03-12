@@ -15,15 +15,6 @@ class DataReceiver:
     A simple TCP server that listens on a specific port (e.g., 5502)
     for display data and uses an update callback to notify the view.
 
-    Expected data format from the client:
-        DATA
-        <map_pixel_size>
-        GLOBAL_MAP
-        <global map string (or '-' if empty)>
-        LOCAL_MAP
-        <lidar points string (or '-' if empty)>
-        POSITION
-        <x> <y> <theta>  (or '-' if not available)
     """
     def __init__(self, tcp_port: int, update_callback, buffer_size: int = 1024):
         self.tcp_port = tcp_port
@@ -84,7 +75,7 @@ class DataReceiver:
             self.server_thread.join()
         logger.info("TCP server stopped.")
 
-    def parse_data(self, data: bytes) -> Tuple[bool, int, np.ndarray, List[Tuple[float, float]], Tuple[float, float, float]]:
+    def parse_data(self, data: bytes) -> Tuple[bool, int, np.ndarray, List[Tuple[float, float]], Tuple[float, float, float, float, float]]:
         """
         Decodifica il messaggio ricevuto e restituisce:
         - grid_np: la griglia come array NumPy di interi (con valori -1, 0, 1)
@@ -131,12 +122,12 @@ class DataReceiver:
             logger.debug(f"points data length: {points_data_length}")
 
             # --- Deserializzazione della posizione (3 int) ---
-            position = None
+            state = None
             if position_valid:
                 position_data = payload[:]
-                position: Tuple[int, int, int] = struct.unpack("3i", position_data)
+                state = struct.unpack("5d", position_data)
 
-            return True, grid_size, grid, lidar_points, position
+            return True, grid_size, grid, lidar_points, state
 
         except Exception as e:
             logger.error(f"PARSED DATA ERROR: {e}")

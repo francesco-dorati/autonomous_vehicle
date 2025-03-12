@@ -33,6 +33,8 @@ class Controller:
     def disconnect(self):
         # TODO disconnect all
         self.data_receiver.stop()
+        if self.manual_transmitter:
+            self.manual_transmitter.stop()
         self.connection.disconnect()
         self.view.disconnect()
 
@@ -72,6 +74,8 @@ class Controller:
         if not ok:
             mapping_var.set(not enabled)
     
+    def reset_odometry(self):
+        self.connection.reset_odometry()
     
     # CONTROL
     def set_control(self, control_type: str):
@@ -97,12 +101,14 @@ class Controller:
         self.model.control_type = control_type
         self.view.main_page.set_control(control_type)
 
-    def update_data(self, size, global_map, lidar_points, robot_pos):
+    def update_data(self, size, global_map, lidar_points, robot_state):
         # update map
         print("controller updating data")
-        if self.view and self.view.main_page.display_frame:
-            self.view.main_page.display_frame.update(size, global_map, lidar_points, robot_pos)
-
+        if self.view:
+            if self.view.main_page.display_frame:
+                self.view.main_page.display_frame.update(size, global_map, lidar_points, robot_state)
+            if self.view.main_page.odometry_frame:
+                self.view.main_page.odometry_frame.update(robot_state)
 
     def __periodic_ping(self):
         if self.connection:

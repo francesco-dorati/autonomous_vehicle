@@ -32,17 +32,17 @@ class CommandServer:
         self._running = False
         if self._connection:
             self._connection.close()
-        self._server_socket.close()
-
-        if self._manual_receiver:
-            self._manual_receiver.stop()
-            self._manual_receiver = None
-        if self._data_transmitter:
-            self._data_transmitter.stop()
-            self._data_transmitter = None
-        
         if self._thread.is_alive():
             self._thread.join()
+        self._server_socket.close()
+
+        # if self._manual_receiver:
+        #     self._manual_receiver.stop()
+        #     self._manual_receiver = None
+        # if self._data_transmitter:
+        #     self._data_transmitter.stop()
+        #     self._data_transmitter = None
+        
     
     def _listen_for_connections(self):
         while self._running:
@@ -54,12 +54,18 @@ class CommandServer:
                     if self._data_transmitter is None:
                         self._data_transmitter = DataTransmitter(client_address[0], self.robot)
                         self._data_transmitter.start()
+
                     # Handle client
                     self._handle_client(self._connection)
+
                     # Stop DataTransmitter
                     if self._data_transmitter:
                         self._data_transmitter.stop()
                         self._data_transmitter = None
+                    # Stop ManualReceiver
+                    if self._manual_receiver:
+                        self._manual_receiver.stop()
+                        self._manual_receiver = None
                     self._connection = None
 
             except Exception as e:
@@ -74,16 +80,24 @@ class CommandServer:
                     try:
                         data = connection.recv(1024).decode()
                         if not data:
-                            continue
+                            logger.info("Client disconnected.")
+                            break
+                        
                         buffer += data
                         while "\n" in buffer:
                             command, buffer = buffer.split("\n", 1)
                             logger.info("Received command: " + command)
                             response = self._process_command(command.strip())
                             connection.send((response + "\n").encode())
-                    
+
                     except socket.timeout:
                         continue
+                    except (socket.error, ConnectionResetError) as e:
+                        logger.warning(f"Client connection error: {e}")
+                        break  
+
+            except (ConnectionResetError, BrokenPipeError):
+                logger.info("Client forcefully disconnected.")
             except Exception as e:
                 logger.error(f"Error handling client: {e}")
 
@@ -96,6 +110,8 @@ class CommandServer:
                 return self._process_sys_command(tokens)
             elif command_type == "MAP":
                 return self._process_map_command(tokens)
+            elif command_type == "ODO":
+                return self._process_odometry_command(tokens)
             elif command_type == "CTL":
                 return self._process_control_command(tokens)
             return "KO"
@@ -164,6 +180,16 @@ class CommandServer:
             self.robot.stop_mapping()
             return "OK"
         return "KO"
+
+    def _process_odometry_command(self, tokens: List[str]) -> str:
+        command = tokens.pop(0)
+        if command == "RST":
+            """ Reset Odometry
+                "ODO RST" -> "OK"
+                resets the odometry of the robot
+            """
+            self.robot.reset_odometry()
+            return "OK"
 
     def _process_control_command(self, tokens: List[str]) -> str:
         command = tokens.pop(0)

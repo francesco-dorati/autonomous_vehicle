@@ -88,7 +88,7 @@ class DataTransmitter:
                     logger.debug("DATA TRANSMITTER start")
 
                     # Collect data from the robot
-                    global_map, lidar_points, position = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
+                    global_map, lidar_points, state = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
                     
                     logger.debug("DATA TRANSMITTER got data")
                     # logger.debug(f"DATA TRANSMITTER lidar points: {lidar_points}")
@@ -109,15 +109,15 @@ class DataTransmitter:
                     logger.debug(f"DATA TRANSMITTER local points: {lidar_size}")
                     
                     # position
-                    position_valid = position is not None
-                    position_bytes = b""
-                    if position_valid:
-                        position_bytes = struct.pack("3i", position.x, position.y, position.th)
+                    state_valid = state is not None
+                    state_bytes = b""
+                    if state_valid:
+                        state_bytes = struct.pack("5d", state.x, state.y, state.th, state.v, state.w)
 
-                    logger.debug(f"DATA TRANSMITTER position: {position_valid}")
+                    logger.debug(f"DATA TRANSMITTER position: {state_valid}")
 
                     # compose payload
-                    payload = grid_bytes + lidar_bytes + position_bytes
+                    payload = grid_bytes + lidar_bytes + state_bytes
                     checksum = zlib.crc32(payload)
                     compressed_payload = zlib.compress(payload)
 
@@ -134,7 +134,7 @@ class DataTransmitter:
                     #   H   -> Numero dei punti (2 byte)
                     #   ?   -> Posizione Valida (1 byte)
                     header = struct.pack("4sHIHHH?", b'RBT1', 1, len(compressed_payload),
-                                        grid_size, real_grid_size, lidar_size, position_valid)
+                                        grid_size, real_grid_size, lidar_size, state_valid)
                     
                     logger.debug(f"DATA TRANSMITTER header bytes: {header}")
 

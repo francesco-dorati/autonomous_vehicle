@@ -152,3 +152,15 @@ class ClientConnection:
         except Exception as e:
             print(f"Failed to send stop mapping command: {e}")
             return False
+        
+    def reset_odometry(self) -> bool:
+        """Sends a command to the robot to reset odometry."""
+        if not self.connection:
+            return
+        try:
+            self.connection.send("ODM RST\n".encode())
+            response = self.connection.recv(32).decode().strip()
+            return response == "OK"
+        except Exception as e:
+            print(f"Failed to send reset odometry command: {e}")
+            return False
