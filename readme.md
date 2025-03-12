@@ -16,14 +16,12 @@ This project is still under development.
 ![program structure](./img/main_structure.png)
 
 
+#### Robot Controller  (RaspberryPi)
+Main controller of the robot, handles main logic and runs the control loop. 
+[[robot.py](src/raspberry_pi/robot/robot.py)]
 
-
-
-
-
-#### Main Controller  (RaspberryPi)
-Controls the central loop of the robot, handles connections with client and robot controllers.  
-[[main.py](src/raspberry_pi/main.py), [manual.py](src/raspberry_pi/manual.py)]
+##### Control Loop
+Handles
 
 #### Sensor Controller (Arduino RP2040)
 Controls 4 distance sensors, 2 motor encoders and battery voltage.
