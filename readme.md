@@ -13,7 +13,14 @@ This project is still under development.
 
 ## Software Details
 ### Program Structure
-![Program Structure](./img/main_structure.png)
+![program structure](./img/main_structure.png)
+
+
+
+
+
+
+
 #### Main Controller  (RaspberryPi)
 Controls the central loop of the robot, handles connections with client and robot controllers.  
 [[main.py](src/raspberry_pi/main.py), [manual.py](src/raspberry_pi/manual.py)]
