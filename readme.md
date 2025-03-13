@@ -18,7 +18,6 @@ This project is still under development.
 
 #### Robot Controller  (RaspberryPi)
 Main controller of the robot, handles main logic and runs the control loop.  
-[[robot.py](src/raspberry_pi/robot/robot.py)]
 
 ##### Control Loop [4/5 Hz]
 The control loop is responsible for the continuous operation of the robot, handling perception, planning, and control tasks.
@@ -39,7 +38,7 @@ The control loop is responsible for the continuous operation of the robot, handl
     1. **Control Commands**: Depending on the control type (position or velocity), sends appropriate commands to the RP2040 to move the robot.
 
 The loop runs continuously at a specified interval, ensuring the robot can navigate and map its environment in real-time.
-
+[[robot.py](src/raspberry_pi/robot/robot.py)]
 
 #### Motor Controller (Arduino RP2040) [50 Hz]
 Handles velocity control of motors and wheel odomtery.
