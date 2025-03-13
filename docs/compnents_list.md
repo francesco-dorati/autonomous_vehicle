@@ -20,4 +20,5 @@
  - Ultrasonic Sensor HCSR04 (x4)
  - Digital Camera OV5647, 160° 5MP
 
+![schematics](../img/schematics.png)
 
