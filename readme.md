@@ -23,15 +23,20 @@ Main controller of the robot, handles main logic and runs the control loop.
 ##### Control Loop [4/5 Hz]
 The control loop is responsible for the continuous operation of the robot, handling perception, planning, and control tasks.
 
-##### Perception
-1. **Odometry Calculation**: Retrieves odometry data from the RP2040, including distance traveled and change in orientation.
-2. **State Prediction**: Uses an Extended Kalman Filter (EKF) to predict the robot's new state based on the odometry data.
-3. **Visual Odometry**: Processes data from the Lidar to refine the robot's position estimate.
-4. **State Update**: Updates the robot's current state with the new position estimate from the EKF.
-5. **Mapping**: If mapping is enabled, expands the global map with new data from the Lidar.
+1. **Perception**
+    1. **State Prediction**:
+        - Retreaves odometry data from Arduino RP2040
+        - Uses an **Extended Kalman Filter (EKF)** to predict the new state (x, y, th, v, w).
+    2. **Visual Odometry**:
+        - Processes data from the Lidar to create a local map.
+        - Uses **ICP** to compute map transformation.
+    3. **State Update**:
+        - Refines the predicted state using visual odometry data.
+    4. **Mapping**:
+         - If mapping is enabled, **expands the global map** with lidar data.
 
-##### Planning
-1. **Control Commands**: Depending on the control type (position or velocity), sends appropriate commands to the RP2040 to move the robot.
+2. **Planning**
+    1. **Control Commands**: Depending on the control type (position or velocity), sends appropriate commands to the RP2040 to move the robot.
 
 The loop runs continuously at a specified interval, ensuring the robot can navigate and map its environment in real-time.
 
@@ -57,7 +62,8 @@ Graphical interface to allow the end-user to remotely control the robot while re
 Connects to RaspberryPI with multiple socket connections.
 
 
-<!-- ### Interfaces & Connections
+<!--
+### Interfaces & Connections
 
 #### Sockets (DevConsole <-> RaspberryPI):
 - main: TCP (req/res)
@@ -65,18 +71,18 @@ Connects to RaspberryPI with multiple socket connections.
 - camera: UDP (monodirect)
 ```
 MAIN
-console (request) -->  raspberrypi (response)
-"P"          -->    "P <battery_v>"             // Ping
-"M <0/1>"    -->    "OK <manual_port>"          // Manual Start/Stop
-"C <0/1>"    -->    "OK <camera_port>"          // Camera Start/Stop
-"E"          -->    "OK"                        // Close Connection
+console (request) ->  raspberrypi (response)
+"P"          ->    "P <battery_v>"             // Ping
+"M <0/1>"    ->    "OK <manual_port>"          // Manual Start/Stop
+"C <0/1>"    ->    "OK <camera_port>"          // Camera Start/Stop
+"E"          ->    "OK"                        // Close Connection
 
 MANUAL
 console: "<boost> <x> <y>"                   // commands (boost, x, y ∈ [-1,0,1])
 raspberrypi: "D <fl> <fr> <rl> <rr>",        // obstacle distance (cm, cm, cm, cm)
              "E <vx> <vt> <x> <y> <theta>",  // encoders odometry (cm/s, deg/s, cm, cm, deg)
-``` -->
-<!-- 
+``` ->
+<- 
 #### Serial:
 - arduino nano: UART0
 - arduino rp2040: UART2 -->
