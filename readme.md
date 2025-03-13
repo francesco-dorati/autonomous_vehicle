@@ -37,7 +37,7 @@ The control loop is responsible for the continuous operation of the robot, handl
 2. **Planning**
     1. **Control Commands**: Depending on the control type (position or velocity), sends appropriate commands to the RP2040 to move the robot.
 
-The loop runs continuously at a specified interval, ensuring the robot can navigate and map its environment in real-time.
+The loop runs continuously at a specified interval, ensuring the robot can navigate and map its environment in real-time.  
 [[robot.py](src/raspberry_pi/robot/robot.py)]
 
 #### Motor Controller (Arduino RP2040) [50 Hz]
