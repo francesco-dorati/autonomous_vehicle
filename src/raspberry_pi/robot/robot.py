@@ -182,7 +182,7 @@ class Robot:
             self.__mapping = False
         
     @timing_decorator
-    def get_data(self, size_m) -> Tuple[OccupancyGrid, List[Tuple[int, int]], Optional[Position]]:
+    def get_data(self, size_m) -> Tuple[OccupancyGrid, List[Tuple[int, int]], State | None]:
         """ Returns data
             - global map: Occupancy Grid
             - local map: list of points (inside the grid frame)
@@ -204,7 +204,7 @@ class Robot:
                     size_mm=size_m)
 
             # LOCAL MAP
-            if self.__local_map:
+            if self.__local_map and self.__local_map.get_size() > 0:
                 lidar_points = self.__local_map.get_cartesian_points(
                     map_position=Position(0, 0, self.__actual_state.th), # rotate based on robot orientation
                     section_size=size_m)
@@ -333,13 +333,17 @@ class Robot:
 
                 # Visual Odometry calculation
                 local_map = Lidar.get_local_map()
-                fitness, z = VisualOdometry.compute(local_map.get_cartesian_points())
-                self.__ekf.update(z=z, fitness=fitness)
+                logger.debug(f"LOOP: Local map points: size {local_map.get_size()}")
+                if local_map.get_size() > 0:
+                    # ICP
+                    fitness, z = VisualOdometry.compute(local_map)
+                    logger.debug(f"LOOP: Visual Odometry z: {z}, finess: {fitness}")
+                    # EKF update
+                    self.__ekf.update(z=z, fitness=fitness)
+                    logger.debug(f"LOOP: EKF estimated position: {self.__ekf.get_position()}")
 
-                logger.debug(f"LOOP: Visual Odometry z: {z}, finess: {fitness}")
-                logger.debug(f"LOOP: EKF estimated position: {self.__ekf.get_position()}")
                 logger.debug(f"LOOP: control_type: {control_type}, mapping: {mapping_enabled}")
-
+                
                 # 🔒 LOCK 2 - Update shared state
                 with self.__lock:
                     logger.debug("LOOP acquired second lock")

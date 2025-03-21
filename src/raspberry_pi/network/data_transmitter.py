@@ -88,7 +88,7 @@ class DataTransmitter:
                     logger.debug("DATA TRANSMITTER start")
 
                     # Collect data from the robot
-                    global_map, lidar_points, state = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_MM)
+                    global_map, lidar_points, state = self._robot.get_data(DATA_SERVER_CONFIG.SIZE_M)
                     
                     logger.debug("DATA TRANSMITTER got data")
                     # logger.debug(f"DATA TRANSMITTER lidar points: {lidar_points}")
@@ -101,11 +101,12 @@ class DataTransmitter:
                     logger.debug(f"DATA TRANSMITTER grid size: {grid_size}")
 
                     # lidar points
-                    lidar_size = 0  # size in number of points
+                    lidar_size = 0
                     lidar_bytes = b""
                     if lidar_points:
                         flattened = lidar_points.flatten()
                         lidar_bytes = struct.pack(f"<{flattened.size}h", *flattened)
+                        lidar_size += 1
                     logger.debug(f"DATA TRANSMITTER local points: {lidar_size}")
                     
                     # position
@@ -134,7 +135,7 @@ class DataTransmitter:
                     #   H   -> Numero dei punti (2 byte)
                     #   ?   -> Posizione Valida (1 byte)
                     header = struct.pack("4sHIHHH?", b'RBT1', 1, len(compressed_payload),
-                                        grid_size, real_grid_size, lidar_size, state_valid)
+                                        int(grid_size), int(real_grid_size), int(lidar_size), state_valid)
                     
                     logger.debug(f"DATA TRANSMITTER header bytes: {header}")
 

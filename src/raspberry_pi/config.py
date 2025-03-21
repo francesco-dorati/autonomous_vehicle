@@ -13,7 +13,7 @@ class RobotConfig:
     SCANS_FOLDER: str
     BATTERY_MIN_MV: int
     BATTERY_CHECK_INTERVAL: float
-    GLOBAL_MAP_SIZE_MM: float
+    GLOBAL_MAP_SIZE_M: float
     GLOBAL_MAP_RESOLUTION: float
 
 ROBOT_CONFIG = RobotConfig(
@@ -24,7 +24,7 @@ ROBOT_CONFIG = RobotConfig(
     BATTERY_MIN_MV = 10500,
     BATTERY_CHECK_INTERVAL = 5,
 
-    GLOBAL_MAP_SIZE_MM = 10,
+    GLOBAL_MAP_SIZE_M = 10,
     GLOBAL_MAP_RESOLUTION = 0.1,
 )
 
@@ -54,11 +54,11 @@ MANUAL_SERVER_CONFIG = ManualServerConfig(
 class DataServerConfig:
     INTERVAL: float
     PORT: int
-    SIZE_MM: int
+    SIZE_M: int
 DATA_SERVER_CONFIG = DataServerConfig(
     PORT = 5502,
     INTERVAL = 0.5,
-    SIZE_MM = 5000, # mm
+    SIZE_M = 5, # m
 )
 
 

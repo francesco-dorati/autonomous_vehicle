@@ -114,7 +114,7 @@ import numpy as np
 
 from raspberry_pi.data_structures.states import PolarPoint
 from raspberry_pi.devices.device import Device
-from raspberry_pi.data_structures.maps import LocalMap, LidarScan
+from raspberry_pi.data_structures.maps import LocalMap
 
 from raspberry_pi.config import LIDAR_CONFIG
 
@@ -135,7 +135,7 @@ class Lidar(Device):
 
     _serial: serial.Serial | None = None
     _thread: threading.Thread | None = None
-    _scan: np.array | None = None
+    _scan: np.array = None
     _scanning: bool = False
     _data_lock = threading.Lock()
 
@@ -289,7 +289,7 @@ class Lidar(Device):
         # stop reading
         if Lidar._scanning:
             Lidar._scanning = False
-        Lidar._scan = None
+        Lidar._scan = np.array([])
 
         time.sleep(0.1)
         Lidar._serial.flush()
@@ -318,8 +318,13 @@ class Lidar(Device):
             raise Lidar.NotScanning("Lidar is not scanning")
         # create local map
         with Lidar._data_lock:
-            copy = np.copy(Lidar._scan)
-            Lidar._scan = np.zeros((360, 1), dtype=np.float32)
+            try:
+                copy = np.copy(Lidar._scan)
+                Lidar._scan = np.zeros((360, 1), dtype=np.float32)
+            except Exception as e:
+                logger.error("ERROR IN GET LOCAL MAP: ", e)
+                return LocalMap(np.zeros((360, 1), dtype=np.float32))
+
         return LocalMap(copy)
 
     # PRIVATE

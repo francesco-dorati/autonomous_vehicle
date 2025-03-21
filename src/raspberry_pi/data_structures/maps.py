@@ -47,6 +47,7 @@ class OccupancyGrid:
         ()
     """
     def __init__(self, size_m: int):
+
         self.__size_m: float = size_m
         self.__grid_size: float = Utils.dist_to_grid(size_m)
         self.__grid = None
@@ -54,6 +55,39 @@ class OccupancyGrid:
 
     def is_set(self):
         return self.__grid is not None
+    
+    def get_size_m(self) -> int:
+        return self.__size_m
+    def get_grid_size(self) -> int:
+        return self.__grid_size
+    def get_origin_world(self) -> CartPoint:
+        return self.__origin_world
+    def get(self, gx, gy) -> int:
+        if not (0 <= gx < self.__grid_size and 0 <= gy < self.__grid_size):
+            return -1
+        if self.__grid is None:
+            return -1
+        return self.__grid[gx][gy]
+    
+    def get_bytes(self) -> bytes:
+        """ get the bytes of the grid (shifted by 1) """
+        if self.__grid is None:
+            return b""
+        return self.__grid.astype(np.int8).tobytes()
+    
+    def get_string(self, row_sep: str = ";") -> str:
+        if self.__grid is None:
+            return "-"
+        return row_sep.join([" ".join(map(str, row)) for row in self.__grid])
+    
+    def get_copy(self):
+        copy_grid = OccupancyGrid(self.__grid_size)
+        copy_grid.set_origin_world(self.__origin_world) 
+        if self.__grid is not None:
+            copy_grid.__grid = np.copy(self.__grid)  # Deep copy of the grid array
+        return copy_grid
+    def get_grid(self) -> np.ndarray:
+        return self.__grid
         
     def set_origin_world(self, point: CartPoint):
         self.__origin_world = point
@@ -152,38 +186,7 @@ class OccupancyGrid:
             self.__grid = np.full((self.__grid_size, self.__grid_size), -1, dtype=int)
         self.__grid[gx][gy] = 1
     
-    def get_size_mm(self) -> int:
-        return self.__size_mm
-    def get_grid_size(self) -> int:
-        return self.__grid_size
-    def get_origin_world(self) -> CartPoint:
-        return self.__origin_world
-    def get(self, gx, gy) -> int:
-        if not (0 <= gx < self.__grid_size and 0 <= gy < self.__grid_size):
-            return -1
-        if self.__grid is None:
-            return -1
-        return self.__grid[gx][gy]
     
-    def get_bytes(self) -> bytes:
-        """ get the bytes of the grid (shifted by 1) """
-        if self.__grid is None:
-            return b""
-        return self.__grid.astype(np.int8).tobytes()
-    
-    def get_string(self, row_sep: str = ";") -> str:
-        if self.__grid is None:
-            return "-"
-        return row_sep.join([" ".join(map(str, row)) for row in self.__grid])
-    
-    def get_copy(self):
-        copy_grid = OccupancyGrid(self.__size_mm)
-        copy_grid.set_origin_world(self.__origin_world) 
-        if self.__grid is not None:
-            copy_grid.__grid = np.copy(self.__grid)  # Deep copy of the grid array
-        return copy_grid
-    def get_grid(self) -> np.ndarray:
-        return self.__grid
     def origin_grid(self):
         return ((self.__grid_size // 2), (self.__grid_size // 2))
 
@@ -284,6 +287,8 @@ class LocalMap:
         # print(scan)
         scan = []
         for ang_deg, dist_mm in enumerate(scan):
+            if dist_m == 0:
+                continue
             ang_rad = Utils.normalize_rad(np.radians(ang_deg))
             dist_m = float(dist_mm) / 1000.0
             scan.append([ang_rad, dist_m])
@@ -445,7 +450,7 @@ class GlobalMap:
 
     def __init__(self, name: str):
         self.name: str = name
-        self.__grid = OccupancyGrid(ROBOT_CONFIG.GLOBAL_MAP_SIZE_MM)
+        self.__grid = OccupancyGrid(ROBOT_CONFIG.GLOBAL_MAP_SIZE_M)
         self.__grid.set_origin_world(CartPoint(0, 0))
         
         # self.origin = lambda: ((self._grid_size // 2), (self._grid_size // 2))
@@ -506,7 +511,7 @@ class GlobalMap:
     def get_copy(self) -> OccupancyGrid:
         return self.__grid.get_copy()
     
-    def get_subsection(self, origin_world: CartPoint, size_mm: int, ) -> OccupancyGrid:
+    def get_subsection(self, origin_world: CartPoint, size_m: int, ) -> OccupancyGrid:
         """
         Get Subsection
         Returns a subsection of the grid based on the position and size
@@ -518,7 +523,7 @@ class GlobalMap:
         Returns:
             OccupancyGrid: subsection of the grid
         """
-        subsection = OccupancyGrid(size_mm)
+        subsection = OccupancyGrid(size_m)
         subsection.set_origin_world(origin_world)
         subsection.set_from(self.__grid)
         return subsection
@@ -537,8 +542,8 @@ class GlobalMap:
 
     def __expand_grid(self) -> None:
         """ Expand grid with one double the size """
-        new_size_mm = self.__grid.get_size_mm() * 2
-        new_grid = OccupancyGrid(new_size_mm)
+        new_size_m = self.__grid.get_size_m() * 2
+        new_grid = OccupancyGrid(new_size_m)
         new_grid.set_origin_world(self.__grid.get_origin_world())
         new_grid.set_from(self.__grid)
         self.__grid = new_grid

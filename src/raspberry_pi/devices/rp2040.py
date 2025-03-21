@@ -150,7 +150,7 @@ class RP2040(Device):
     
     @staticmethod
     @timing_decorator
-    def get_odometry_data(prev_position: Position) -> Position | None:
+    def get_odometry_data() -> Position | None:
         """
         Request odometry data from RP2040
 
@@ -158,7 +158,6 @@ class RP2040(Device):
             Position: position of the robot
         """
         with RP2040._data_lock:
-            out = None
             if RP2040._data_valid:
                 dT_s = RP2040._delta_t_us/1000000.0
                 dS_m = RP2040._delta_s_um/1000000.0
@@ -168,8 +167,8 @@ class RP2040(Device):
                 RP2040._delta_t_us = 0
                 RP2040._delta_s_um = 0
                 RP2040._delta_th_urad = 0
-
-            return dT_s, dS_m, dTh_m
+                return dT_s, dS_m, dTh_m
+            return 0, 0, 0
 
     @staticmethod
     def __receiver_loop():

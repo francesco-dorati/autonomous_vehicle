@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from raspberry_pi.data_structures.states import CartPoint, Position, State
+from raspberry_pi.data_structures.maps import LocalMap
 import open3d as o3d
 import numpy as np
 import time
@@ -14,12 +15,12 @@ class VisualOdometry:
     __last_time: float = 0
 
     @staticmethod
-    def init(self):
+    def init():
         VisualOdometry.__prev_points_3d = np.array([])
         VisualOdometry.__last_time = time.time()
 
     @staticmethod
-    def compute(current_points: np.array) -> Tuple[float, Position]:
+    def compute(local_map: LocalMap) -> Tuple[float, Position]:
         """_summary_
 
         Args:
@@ -35,10 +36,10 @@ class VisualOdometry:
             dt = (start_t-VisualOdometry.__last_time)*1000
             logger.debug(f"ICP time since last compute: {dt:.1f} ms")
 
-            if len(current_points) == 0:
+            if local_map.get_size() == 0:
                 logger.error("Empty scan")
                 raise Exception("Empty scan in visual odometry")
-            
+            current_points = local_map.get_cartesian_points()
             curr_points_3d = np.hstack([current_points, np.zeros((current_points.shape[0], 1))])
             if VisualOdometry.__prev_points.size == 0:
                 logger.debug("ICP previous points empty")
